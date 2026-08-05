@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(npx --yes create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias \"@/*\" --use-npm --no-turbopack)",
+      "Bash(npx --yes create-next-app@latest --help)",
+      "Bash(rm -rf ai-job-hunter-scaffold)",
+      "Bash(npx --yes create-next-app@latest ai-job-hunter-scaffold --typescript --tailwind --eslint --app --src-dir=false --import-alias \"@/*\" --use-npm --no-turbopack --disable-git --yes)",
+      "Bash(npm install *)",
+      "Bash(mkdir -p src/lib src/components)",
+      "Bash(mv lib/mock-data.ts src/lib/mock-data.ts)",
+      "Bash(rmdir lib *)",
+      "Bash(find /Users/master -maxdepth 1 -name \"package-lock.json\" 2>/dev/null)",
+      "Read(//Users/master/**)",
+      "Bash(npx --yes playwright --version)",
+      "Read(//Users/master/Library/Caches/**)"
+    ]
+  }
+}

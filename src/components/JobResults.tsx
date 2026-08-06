@@ -24,7 +24,7 @@ export function JobResults({ jobs, lastScraped }: { jobs: Job[]; lastScraped: st
   }, [jobs, sortKey]);
 
   return (
-    <div className="rounded-lg border border-border bg-surface">
+    <div className="rounded-lg border border-border bg-[#1A1A1D] shadow-lg shadow-black/50">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-5 py-4">
         <div className="flex items-center gap-3">
           <button

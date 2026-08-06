@@ -74,14 +74,14 @@ export function JobCard({ job }: { job: Job }) {
           href={job.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 rounded-xl border border-border-strong bg-surface px-3.5 py-2 text-[13px] font-medium text-text-muted transition-colors hover:bg-surface-hover hover:text-text active:scale-[0.98]"
+          className="flex items-center gap-1.5 rounded-xl border border-border-strong bg-surface px-3.5 py-2 text-[13px] font-normal text-text-muted transition-colors hover:bg-surface-hover hover:text-text active:scale-[0.98]"
         >
           <ArrowSquareOut size={15} weight="bold" />
           Open posting
         </a>
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-xl border border-border-strong bg-surface px-3.5 py-2 text-[13px] font-medium text-text-muted transition-colors hover:bg-surface-hover hover:text-text active:scale-[0.98]"
+          className="flex items-center gap-1.5 rounded-xl border border-border-strong bg-surface px-3.5 py-2 text-[13px] font-normal text-text-muted transition-colors hover:bg-surface-hover hover:text-text active:scale-[0.98]"
         >
           <FileText size={15} weight="bold" />
           Generate cover letter

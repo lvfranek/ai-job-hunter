@@ -37,8 +37,8 @@ export function Sidebar() {
             aria-current={active ? "page" : undefined}
             className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-white/20 ${
               active
-                ? "bg-white/10 text-text"
-                : "text-text-muted hover:bg-white/5 hover:text-text"
+                ? "panel text-text"
+                : "border border-transparent text-text-muted hover:border-border-strong hover:bg-surface-hover hover:text-text"
             }`}
           >
             <Icon size={16} weight={active ? "fill" : "regular"} />

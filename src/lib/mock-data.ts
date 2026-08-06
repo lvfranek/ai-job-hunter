@@ -1,7 +1,7 @@
 export type Platform = "linkedin" | "indeed" | "xing";
 
 export type Job = {
-  id: number;
+  id: string;
   title: string;
   company: string;
   matchScore: number;
@@ -9,6 +9,7 @@ export type Job = {
   daysAgo: number;
   platform: Platform;
   url: string;
+  isStale?: boolean;
 };
 
 export type AgentState = "idle" | "scraping" | "filtering" | "scoring";
@@ -34,7 +35,7 @@ export const platformIconSlugs: Record<Platform, string> = {
 
 export const mockJobs: Job[] = [
   {
-    id: 1,
+    id: "1",
     title: "Senior React Developer",
     company: "Blaupause Systems",
     matchScore: 92,
@@ -44,7 +45,7 @@ export const mockJobs: Job[] = [
     url: "https://linkedin.com/jobs/view/12345",
   },
   {
-    id: 2,
+    id: "2",
     title: "Backend Engineer, Python",
     company: "Kestrel Software",
     matchScore: 67,
@@ -54,7 +55,7 @@ export const mockJobs: Job[] = [
     url: "https://indeed.com/viewjob?jk=abc123",
   },
   {
-    id: 3,
+    id: "3",
     title: "Full-Stack Developer, Next.js",
     company: "Nordlicht Analytics",
     matchScore: 88,
@@ -64,7 +65,7 @@ export const mockJobs: Job[] = [
     url: "https://xing.com/jobs/view/98765",
   },
   {
-    id: 4,
+    id: "4",
     title: "DevOps Engineer",
     company: "Vantage Cloud Berlin",
     matchScore: 41,
@@ -74,7 +75,7 @@ export const mockJobs: Job[] = [
     url: "https://linkedin.com/jobs/view/55501",
   },
   {
-    id: 5,
+    id: "5",
     title: "Machine Learning Engineer",
     company: "Greenfield Robotics",
     matchScore: 74,
@@ -84,7 +85,7 @@ export const mockJobs: Job[] = [
     url: "https://indeed.com/viewjob?jk=def456",
   },
   {
-    id: 6,
+    id: "6",
     title: "Product Designer, UI/UX",
     company: "Pixelwerk Studio",
     matchScore: 58,
@@ -94,7 +95,7 @@ export const mockJobs: Job[] = [
     url: "https://xing.com/jobs/view/44210",
   },
   {
-    id: 7,
+    id: "7",
     title: "Frontend Developer, Vue",
     company: "Deutsche FinTech AG",
     matchScore: 23,
@@ -104,12 +105,5 @@ export const mockJobs: Job[] = [
     url: "https://linkedin.com/jobs/view/77832",
   },
 ];
-
-export const mockAgentStatus: AgentStatusData = {
-  state: "scoring",
-  agent: "Agent 3",
-  action: "Scoring jobs",
-  detail: "12/18 complete",
-};
 
 export const mockLastScraped = "2 hours ago";

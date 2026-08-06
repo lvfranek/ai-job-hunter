@@ -1,33 +1,50 @@
-import type { DbJob, Settings, Profile } from "./types";
+import type { DbJob, Preferences, Profile } from "./types";
 
 /**
- * Pre-filter jobs based on target titles and skills.
+ * Pre-filter jobs based on target titles (from Preferences) and skills (from Profile).
  * Returns job IDs that pass the filter.
  */
 export function prefilterJobs(
   jobs: DbJob[],
-  settings: Settings,
-  profile: Profile
+  profile: Profile,
+  preferences: Preferences
 ): string[] {
-  if (!profile.skills || profile.skills.length === 0) {
+  const allSkills = [
+    ...profile.skills_frontend,
+    ...profile.skills_backend,
+    ...profile.skills_devops,
+    ...profile.skills_soft,
+    ...profile.skills_tools,
+  ];
+
+  if (allSkills.length === 0) {
     return [];
   }
 
   const passingJobs: string[] = [];
 
   for (const job of jobs) {
-    const titleMatches = settings.target_titles.some((targetTitle) =>
-      job.title.toLowerCase().includes(targetTitle.toLowerCase())
+    const jobDescLower = (job.description || "").toLowerCase();
+    const jobTitleLower = job.title.toLowerCase();
+
+    const isExcluded = preferences.excluded_keywords.some(
+      (keyword) =>
+        jobTitleLower.includes(keyword.toLowerCase()) ||
+        jobDescLower.includes(keyword.toLowerCase())
+    );
+    if (isExcluded) continue;
+
+    const titleMatches = preferences.target_titles.some((targetTitle) =>
+      jobTitleLower.includes(targetTitle.toLowerCase())
     );
 
     if (!titleMatches) continue;
 
     // Skill overlap: at least 30% of profile skills mentioned in the job description
-    const jobDescLower = (job.description || "").toLowerCase();
-    const matchedSkills = profile.skills.filter((skill) =>
+    const matchedSkills = allSkills.filter((skill) =>
       jobDescLower.includes(skill.toLowerCase())
     );
-    const skillOverlapPct = (matchedSkills.length / profile.skills.length) * 100;
+    const skillOverlapPct = (matchedSkills.length / allSkills.length) * 100;
 
     if (skillOverlapPct >= 30) {
       passingJobs.push(job.id);

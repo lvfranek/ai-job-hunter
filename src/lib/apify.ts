@@ -1,3 +1,5 @@
+import type { Settings } from "./types";
+
 const apifyApiKey = process.env.APIFY_API_KEY || "";
 const apifyBaseUrl = "https://api.apify.com/v2";
 
@@ -34,7 +36,7 @@ export async function triggerApifyScraper(
  */
 export async function getScraperResults(runId: string): Promise<unknown[]> {
   try {
-    const res = await fetch(`${apifyBaseUrl}/runs/${runId}/dataset/items`, {
+    const res = await fetch(`${apifyBaseUrl}/actor-runs/${runId}/dataset/items`, {
       headers: { Authorization: `Bearer ${apifyApiKey}` },
     });
     if (!res.ok) return [];
@@ -50,7 +52,7 @@ export async function getScraperResults(runId: string): Promise<unknown[]> {
  */
 export async function getScraperStatus(runId: string): Promise<string> {
   try {
-    const res = await fetch(`${apifyBaseUrl}/runs/${runId}`, {
+    const res = await fetch(`${apifyBaseUrl}/actor-runs/${runId}`, {
       headers: { Authorization: `Bearer ${apifyApiKey}` },
     });
     if (!res.ok) return "unknown";
@@ -60,4 +62,52 @@ export async function getScraperStatus(runId: string): Promise<string> {
     console.error("Error fetching Apify status:", error);
     return "unknown";
   }
+}
+
+/**
+ * Poll an Apify run until it finishes, then return the dataset items.
+ * Polls every 2s, ~5 minute timeout (150 attempts).
+ */
+export async function pollApifyRun(runId: string, maxAttempts = 150): Promise<unknown[]> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const status = await getScraperStatus(runId);
+    if (status === "SUCCEEDED") return getScraperResults(runId);
+    if (status === "FAILED" || status === "ABORTED") {
+      throw new Error(`Apify run ${status.toLowerCase()}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+  throw new Error("Apify run timed out");
+}
+
+interface IndeedRawJob {
+  url: string;
+  title: string;
+  description?: { text?: string };
+  datePublished?: string;
+  dateOnIndeed?: string;
+  employer?: { name?: string };
+}
+
+/** Build inputs for the valig/indeed-jobs-scraper Apify actor. */
+export function buildIndeedInputs(settings: Settings): ApifyRunInput {
+  return {
+    country: "de",
+    title: settings.scraper_search_keywords.join(" OR "),
+    location: settings.scraper_location || "Germany",
+    limit: settings.scraper_results_per_scan,
+  };
+}
+
+/** Map a raw indeed-jobs-scraper dataset item to our job row shape. */
+export function mapIndeedJob(raw: unknown) {
+  const job = raw as IndeedRawJob;
+  return {
+    url: job.url,
+    title: job.title,
+    company: job.employer?.name || "Unknown",
+    description: job.description?.text || "",
+    platform: "indeed",
+    posted_date: job.datePublished || job.dateOnIndeed || null,
+  };
 }

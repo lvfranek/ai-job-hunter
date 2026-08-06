@@ -32,23 +32,3 @@ export const getGeminiModel = (modelName: string = DEFAULT_MODEL) => {
     },
   };
 };
-
-/**
- * Batch score multiple jobs in one request.
- * Returns array of match scores.
- */
-export async function batchScoreJobs(
-  jobs: unknown[],
-  userProfile: unknown,
-  model: string = DEFAULT_MODEL
-): Promise<number[]> {
-  try {
-    getGeminiModel(model);
-
-    // TODO: Implement actual batch scoring logic (Phase 2+)
-    return jobs.map(() => Math.floor(Math.random() * 100));
-  } catch (error) {
-    console.error("Error scoring jobs with OpenRouter:", error);
-    throw error;
-  }
-}

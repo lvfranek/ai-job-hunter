@@ -51,6 +51,11 @@ export function JobCard({ job }: { job: Job }) {
           <span>{job.company}</span>
           <span className="text-text-faint">·</span>
           <span className="text-[12px] text-text-faint">{job.postedDate}</span>
+          {job.isStale && (
+            <span className="rounded-md border border-score-mid/30 bg-score-mid/15 px-1.5 py-0.5 text-[11px] font-medium text-score-mid">
+              Score outdated
+            </span>
+          )}
           <span className="ml-1 flex items-center gap-1.5">
             <span className="flex size-6 items-center justify-center rounded-lg border border-border-strong bg-surface-hover">
               {job.platform === "linkedin" ? (

@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
 import { scoreJobsBatch } from "@/lib/agents/agent-3";
-import type { DbJob, Profile, Preferences } from "@/lib/types";
+import type { DbJob, Preferences } from "@/lib/types";
 
 export async function POST() {
   const supabase = getSupabaseServerClient();
 
-  const [{ data: profile }, { data: preferences }, { data: jobs }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("user_id", CURRENT_USER_ID).single(),
+  const [{ data: preferences }, { data: jobs }] = await Promise.all([
     supabase.from("preferences").select("*").eq("user_id", CURRENT_USER_ID).single(),
     supabase
       .from("jobs")
@@ -16,11 +15,8 @@ export async function POST() {
       .is("deleted_at", null),
   ]);
 
-  if (!profile || !preferences) {
-    return NextResponse.json(
-      { error: "Complete your profile and preferences first" },
-      { status: 400 }
-    );
+  if (!preferences) {
+    return NextResponse.json({ error: "Complete your preferences first" }, { status: 400 });
   }
 
   const unscored = ((jobs ?? []) as (DbJob & { job_matches: { id: string } | null })[]).filter(
@@ -32,7 +28,7 @@ export async function POST() {
   }
 
   try {
-    const results = await scoreJobsBatch(unscored, profile as Profile, preferences as Preferences);
+    const results = await scoreJobsBatch(unscored, preferences as Preferences);
 
     const { error } = await supabase
       .from("job_matches")

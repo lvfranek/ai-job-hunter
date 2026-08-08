@@ -10,12 +10,20 @@ import { useDirtyGuard } from "@/lib/unsaved-changes";
 
 interface PreferencesForm {
   target_titles: string[];
+  title_strictness: number;
+  target_skills_frontend: string[];
+  skills_frontend_strictness: number;
+  target_skills_backend: string[];
+  skills_backend_strictness: number;
+  target_skills_tools: string[];
+  skills_tools_strictness: number;
+  target_skills_other: string[];
+  skills_other_strictness: number;
   preferred_seniority: number;
   preferred_location: string;
   job_type: string[];
   company_size: string[];
   excluded_keywords: string[];
-  match_strictness: number;
 }
 
 const JOB_TYPES = ["remote", "hybrid", "on-site"];
@@ -30,11 +38,28 @@ const SENIORITY_LABELS: [number, string][] = [
 ];
 
 const STRICTNESS_LABELS: [number, string][] = [
-  [0, "Only my exact skills"],
-  [3, "Mostly my skills"],
+  [0, "Very strict"],
+  [3, "Mostly strict"],
   [5, "Balanced"],
-  [7, "Open to related skills"],
-  [9, "Very broad matches"],
+  [7, "Loose"],
+  [9, "Very loose"],
+];
+
+// One strictness slider per fuzzy-matched skill category — how leniently the AI
+// credits skills that aren't an exact match (e.g. Vue counting toward React).
+const SKILL_CATEGORIES: {
+  key: "target_skills_frontend" | "target_skills_backend" | "target_skills_tools" | "target_skills_other";
+  strictnessKey:
+    | "skills_frontend_strictness"
+    | "skills_backend_strictness"
+    | "skills_tools_strictness"
+    | "skills_other_strictness";
+  label: string;
+}[] = [
+  { key: "target_skills_frontend", strictnessKey: "skills_frontend_strictness", label: "Frontend" },
+  { key: "target_skills_backend", strictnessKey: "skills_backend_strictness", label: "Backend" },
+  { key: "target_skills_tools", strictnessKey: "skills_tools_strictness", label: "Tools" },
+  { key: "target_skills_other", strictnessKey: "skills_other_strictness", label: "Other" },
 ];
 
 function labelFor(labels: [number, string][], value: number): string {
@@ -47,29 +72,48 @@ function labelFor(labels: [number, string][], value: number): string {
 
 const DEFAULTS: PreferencesForm = {
   target_titles: [],
+  title_strictness: 5,
+  target_skills_frontend: [],
+  skills_frontend_strictness: 5,
+  target_skills_backend: [],
+  skills_backend_strictness: 5,
+  target_skills_tools: [],
+  skills_tools_strictness: 5,
+  target_skills_other: [],
+  skills_other_strictness: 5,
   preferred_seniority: 5,
   preferred_location: "",
   job_type: [],
   company_size: [],
   excluded_keywords: [],
-  match_strictness: 5,
 };
 
 function toForm(data: Record<string, unknown>): PreferencesForm {
+  const num = (value: unknown, fallback: number) => (value != null ? Number(value) : fallback);
   return {
     target_titles: (data.target_titles as string[]) ?? DEFAULTS.target_titles,
-    preferred_seniority:
-      data.preferred_seniority != null
-        ? Number(data.preferred_seniority)
-        : DEFAULTS.preferred_seniority,
+    title_strictness: num(data.title_strictness, DEFAULTS.title_strictness),
+    target_skills_frontend:
+      (data.target_skills_frontend as string[]) ?? DEFAULTS.target_skills_frontend,
+    skills_frontend_strictness: num(
+      data.skills_frontend_strictness,
+      DEFAULTS.skills_frontend_strictness
+    ),
+    target_skills_backend:
+      (data.target_skills_backend as string[]) ?? DEFAULTS.target_skills_backend,
+    skills_backend_strictness: num(
+      data.skills_backend_strictness,
+      DEFAULTS.skills_backend_strictness
+    ),
+    target_skills_tools: (data.target_skills_tools as string[]) ?? DEFAULTS.target_skills_tools,
+    skills_tools_strictness: num(data.skills_tools_strictness, DEFAULTS.skills_tools_strictness),
+    target_skills_other: (data.target_skills_other as string[]) ?? DEFAULTS.target_skills_other,
+    skills_other_strictness: num(data.skills_other_strictness, DEFAULTS.skills_other_strictness),
+    preferred_seniority: num(data.preferred_seniority, DEFAULTS.preferred_seniority),
     preferred_location: (data.preferred_location as string) ?? DEFAULTS.preferred_location,
     job_type: (data.job_type as string[]) ?? DEFAULTS.job_type,
     company_size: (data.company_size as string[]) ?? DEFAULTS.company_size,
     excluded_keywords: (data.excluded_keywords as string[]) ?? DEFAULTS.excluded_keywords,
-    match_strictness:
-      data.match_strictness != null
-        ? Number(data.match_strictness)
-        : DEFAULTS.match_strictness,
   };
 }
 
@@ -130,10 +174,12 @@ export default function PreferencesPage() {
       <Toast message={message} />
       <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
         <Target size={15} />
-        Preferences
+        AI Scoring Preferences
       </div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-text">Preferences</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-text">
+          AI Scoring Preferences
+        </h1>
       </div>
 
       {error && (
@@ -151,12 +197,50 @@ export default function PreferencesPage() {
             dashboard.
           </p>
 
-          <TagInput
-            label="Target job titles"
-            helperText="AI will score jobs matching these titles"
-            tags={form.target_titles}
-            onChange={(target_titles) => setForm({ ...form, target_titles })}
-          />
+          <div className="space-y-3">
+            <TagInput
+              label="Target job titles"
+              helperText="AI will score jobs matching these titles"
+              tags={form.target_titles}
+              onChange={(target_titles) => setForm({ ...form, target_titles })}
+            />
+            <Scale
+              label="Title matching strictness"
+              value={form.title_strictness}
+              onChange={(title_strictness) => setForm({ ...form, title_strictness })}
+              labelFor={(v) => labelFor(STRICTNESS_LABELS, v)}
+              leftHint="Strict"
+              rightHint="Loose"
+            />
+          </div>
+
+          <div>
+            <h2 className="mb-3 text-[15px] font-semibold text-text">Skills</h2>
+            <p className="mb-4 text-[12px] text-text-faint">
+              What the AI scores jobs against for skill fit, sorted by category
+              (independent of your CV in Cover Letter Profile). Each category has its own
+              strictness — e.g. very strict on frontend skills but loose on tools.
+            </p>
+            <div className="space-y-6">
+              {SKILL_CATEGORIES.map(({ key, strictnessKey, label }) => (
+                <div key={key} className="space-y-3">
+                  <TagInput
+                    label={`${label} skills`}
+                    tags={form[key]}
+                    onChange={(tags) => setForm({ ...form, [key]: tags })}
+                  />
+                  <Scale
+                    label={`${label} strictness`}
+                    value={form[strictnessKey]}
+                    onChange={(v) => setForm({ ...form, [strictnessKey]: v })}
+                    labelFor={(v) => labelFor(STRICTNESS_LABELS, v)}
+                    leftHint="Strict"
+                    rightHint="Loose"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
 
           <Scale
             label="Preferred seniority"
@@ -221,15 +305,6 @@ export default function PreferencesPage() {
             helperText="Technologies, industries, or employer types you don't want (e.g. Django, federal agency)"
             tags={form.excluded_keywords}
             onChange={(excluded_keywords) => setForm({ ...form, excluded_keywords })}
-          />
-
-          <Scale
-            label="AI matching strictness"
-            value={form.match_strictness}
-            onChange={(match_strictness) => setForm({ ...form, match_strictness })}
-            labelFor={(v) => labelFor(STRICTNESS_LABELS, v)}
-            leftHint="Only my exact skills"
-            rightHint="Very broad matches"
           />
 
           <button

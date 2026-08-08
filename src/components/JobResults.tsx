@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Briefcase, CaretDown, Lightning } from "@phosphor-icons/react";
+import { Briefcase, CaretDown, Lightning, Sparkle } from "@phosphor-icons/react";
 import type { Job } from "@/lib/mock-data";
 import { JobCard } from "@/components/JobCard";
 import { AgentStatus } from "@/components/AgentStatus";
@@ -14,7 +14,7 @@ const sortLabels: Record<SortKey, string> = {
   company: "Company name",
 };
 
-type ScrapeState = "idle" | "scraping" | "filtering";
+type ScrapeState = "idle" | "scraping";
 
 export function JobResults({
   jobs,
@@ -27,10 +27,24 @@ export function JobResults({
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [scrapeState, setScrapeState] = useState<ScrapeState>("idle");
-  const [progress, setProgress] = useState({ found: 0, filtered: 0 });
+  const [progress, setProgress] = useState({ found: 0 });
+  const [isScoring, setIsScoring] = useState(false);
   const [isRescoring, setIsRescoring] = useState(false);
 
   const staleCount = jobs.filter((job) => job.isStale).length;
+  const unscoredCount = jobs.filter((job) => !job.isScored).length;
+
+  async function handleScore() {
+    setIsScoring(true);
+    try {
+      await fetch("/api/score", { method: "POST" });
+    } catch (error) {
+      console.error("Scoring failed:", error);
+    } finally {
+      setIsScoring(false);
+      onScraped();
+    }
+  }
 
   async function handleRescore() {
     setIsRescoring(true);
@@ -53,7 +67,7 @@ export function JobResults({
 
   async function startScrape() {
     setScrapeState("scraping");
-    setProgress({ found: 0, filtered: 0 });
+    setProgress({ found: 0 });
     try {
       const res = await fetch("/api/scrape", { method: "POST" });
       const data = await res.json();
@@ -64,8 +78,7 @@ export function JobResults({
         const interval = setInterval(async () => {
           const statusRes = await fetch(`/api/scrape/status?runId=${runId}`);
           const status = await statusRes.json();
-          setProgress({ found: status.jobsFound ?? 0, filtered: status.jobsFiltered ?? 0 });
-          setScrapeState(status.jobsFound > 0 ? "filtering" : "scraping");
+          setProgress({ found: status.jobsFound ?? 0 });
 
           if (status.status === "completed" || status.status === "failed") {
             clearInterval(interval);
@@ -96,16 +109,26 @@ export function JobResults({
             <Lightning size={15} weight="fill" />
             {isScraping ? "Scraping…" : "Scrape Now"}
           </button>
+          <button
+            type="button"
+            onClick={handleScore}
+            disabled={isScraping || isScoring || unscoredCount === 0}
+            className="flex h-9 shrink-0 items-center gap-2 rounded-md border border-border-strong bg-surface px-3.5 text-[13px] font-semibold text-text outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98] disabled:opacity-50"
+          >
+            <Sparkle size={15} weight="fill" />
+            {isScoring
+              ? "Scoring…"
+              : unscoredCount > 0
+                ? `Score ${unscoredCount} new job${unscoredCount === 1 ? "" : "s"}`
+                : "All jobs scored"}
+          </button>
           {isScraping ? (
             <AgentStatus
               status={{
                 state: scrapeState,
                 agent: "Agent 2",
-                action: scrapeState === "filtering" ? "Pre-filtering jobs" : "Scraping Indeed",
-                detail:
-                  scrapeState === "filtering"
-                    ? `${progress.found} → ${progress.filtered} passed`
-                    : `${progress.found} found`,
+                action: "Scraping Indeed",
+                detail: `${progress.found} found`,
               }}
             />
           ) : (

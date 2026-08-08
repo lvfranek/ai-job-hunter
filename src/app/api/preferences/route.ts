@@ -13,12 +13,20 @@ export async function GET() {
 
     const defaultPreferences = {
       target_titles: [],
+      title_strictness: 5,
+      target_skills_frontend: [],
+      skills_frontend_strictness: 5,
+      target_skills_backend: [],
+      skills_backend_strictness: 5,
+      target_skills_tools: [],
+      skills_tools_strictness: 5,
+      target_skills_other: [],
+      skills_other_strictness: 5,
       preferred_seniority: 5,
       preferred_location: "",
       job_type: [],
       company_size: [],
       excluded_keywords: [],
-      match_strictness: 5,
     };
 
     return NextResponse.json(data || defaultPreferences);

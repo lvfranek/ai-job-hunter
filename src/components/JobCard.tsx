@@ -36,14 +36,23 @@ export function JobCard({ job }: { job: Job }) {
 
   return (
     <div className="flex flex-col gap-4 px-6 py-5 transition-colors hover:bg-white/3 sm:flex-row sm:items-center sm:gap-6">
-      <div
-        className={`flex h-8 w-14 shrink-0 items-center justify-center rounded-[10px] border ${tier.bg} ${tier.border}`}
-        aria-label={`Match score ${job.matchScore}, ${tier.label}`}
-      >
-        <span className={`text-[13px] font-semibold tabular-nums leading-none ${tier.text}`}>
-          {job.matchScore}
-        </span>
-      </div>
+      {job.isScored ? (
+        <div
+          className={`flex h-8 w-14 shrink-0 items-center justify-center rounded-[10px] border ${tier.bg} ${tier.border}`}
+          aria-label={`Match score ${job.matchScore}, ${tier.label}`}
+        >
+          <span className={`text-[13px] font-semibold tabular-nums leading-none ${tier.text}`}>
+            {job.matchScore}
+          </span>
+        </div>
+      ) : (
+        <div
+          className="flex h-8 w-14 shrink-0 items-center justify-center rounded-[10px] border border-border-strong bg-surface-hover"
+          aria-label="Not scored yet"
+        >
+          <span className="text-[11px] font-medium text-text-faint">—</span>
+        </div>
+      )}
 
       <div className="min-w-0 flex-1">
         <h3 className="truncate text-[16px] font-semibold text-text">{job.title}</h3>

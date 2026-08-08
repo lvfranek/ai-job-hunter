@@ -124,12 +124,14 @@ export default function ProfilePage() {
       <Toast message={message} />
       <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
         <UserCircle size={15} />
-        Profile
+        Cover Letter Profile
       </div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-text">
-          Upload &amp; Configure Profile
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-text">Cover Letter Profile</h1>
+        <p className="mt-1 text-[13px] text-text-faint">
+          Used only for generating cover letters — not for AI job scoring (see AI Scoring
+          Preferences for that).
+        </p>
       </div>
 
       {error && (

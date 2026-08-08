@@ -122,10 +122,10 @@ export default function SettingsPage() {
       <Toast message={message} />
       <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
         <GearSix size={15} />
-        Settings
+        Scraping Settings
       </div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-text">Settings</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-text">Scraping Settings</h1>
       </div>
 
       {error && (
@@ -148,7 +148,7 @@ export default function SettingsPage() {
 
             <TagInput
               label="Search keywords"
-              helperText="Broad terms that job boards will search for"
+              helperText="Combined into one search (e.g. 'A OR B') — not one scan per keyword"
               tags={form.scraper_search_keywords}
               onChange={(scraper_search_keywords) =>
                 setForm({ ...form, scraper_search_keywords })
@@ -200,7 +200,8 @@ export default function SettingsPage() {
                   className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
-                  How many jobs to fetch per scrape (more = longer)
+                  Max jobs fetched in total (all keywords combined) — all of them
+                  land on the dashboard, scored by AI, minus any already-seen duplicates
                 </p>
               </div>
             </div>

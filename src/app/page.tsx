@@ -26,6 +26,7 @@ function toUiJob(row: JobWithMatch): Job {
     platform: (row.platform as Platform) ?? "indeed",
     url: row.url,
     isStale: match?.stale_at != null,
+    isScored: match != null,
   };
 }
 

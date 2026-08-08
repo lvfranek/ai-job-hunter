@@ -15,9 +15,9 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: SquaresFour },
-  { href: "/profile", label: "Profile", icon: UserCircle },
-  { href: "/preferences", label: "Preferences", icon: Target },
-  { href: "/settings", label: "Settings", icon: GearSix },
+  { href: "/profile", label: "Cover Letter Profile", icon: UserCircle },
+  { href: "/preferences", label: "AI Scoring Preferences", icon: Target },
+  { href: "/settings", label: "Scraping Settings", icon: GearSix },
 ];
 
 export function Sidebar() {

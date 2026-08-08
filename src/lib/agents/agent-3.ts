@@ -1,5 +1,5 @@
 import { getGeminiModel } from "@/lib/gemini";
-import type { DbJob, Profile, Preferences } from "@/lib/types";
+import type { DbJob, Preferences } from "@/lib/types";
 
 export interface ScoringResult {
   job_id: string;
@@ -20,29 +20,25 @@ function strictnessGuidance(value: number): string {
   return "Very loose: credit any reasonably related skill or transferable experience, even if it's not in the candidate's list.";
 }
 
-function buildPrompt(jobs: DbJob[], profile: Profile, preferences: Preferences): string {
-  const allSkills = [
-    ...profile.skills_frontend,
-    ...profile.skills_backend,
-    ...profile.skills_devops,
-    ...profile.skills_tools,
-  ];
-
-  return `You are an expert job fit evaluator. Score jobs for a candidate based on their profile and preferences.
-
-Candidate profile:
-- Name: ${profile.name ?? "Unknown"}
-- Skills: ${allSkills.join(", ")}
-- Current situation: ${profile.current_situation ?? "unspecified"}
+function buildPrompt(jobs: DbJob[], preferences: Preferences): string {
+  return `You are an expert job fit evaluator. Score jobs for a candidate based on their preferences.
 
 Preferences:
 - Target titles: ${preferences.target_titles.join(", ")}
+  (title matching strictness: ${strictnessGuidance(preferences.title_strictness)})
+- Frontend skills: ${preferences.target_skills_frontend.join(", ") || "none"}
+  (strictness: ${strictnessGuidance(preferences.skills_frontend_strictness)})
+- Backend skills: ${preferences.target_skills_backend.join(", ") || "none"}
+  (strictness: ${strictnessGuidance(preferences.skills_backend_strictness)})
+- Tools: ${preferences.target_skills_tools.join(", ") || "none"}
+  (strictness: ${strictnessGuidance(preferences.skills_tools_strictness)})
+- Other skills: ${preferences.target_skills_other.join(", ") || "none"}
+  (strictness: ${strictnessGuidance(preferences.skills_other_strictness)})
 - Desired seniority (0 = entry level, 10 = lead/principal): ${preferences.preferred_seniority}
 - Location preference: ${preferences.preferred_location || "any"}
 - Things to avoid (reject or heavily penalize jobs matching these): ${
     preferences.excluded_keywords.join(", ") || "none"
   }
-- Matching strictness: ${strictnessGuidance(preferences.match_strictness)}
 
 For each job below, return four 0-100 scores plus one sentence of reasoning:
 - skill_overlap_pct: how many target skills appear in the job description
@@ -65,17 +61,16 @@ function clampScore(value: unknown): number {
   return Math.max(0, Math.min(100, Math.round(num)));
 }
 
-/** Score a batch of jobs against a profile + preferences in a single AI call. */
+/** Score a batch of jobs against preferences in a single AI call. */
 export async function scoreJobsBatch(
   jobs: DbJob[],
-  profile: Profile,
   preferences: Preferences,
   modelName?: string
 ): Promise<ScoringResult[]> {
   if (jobs.length === 0) return [];
 
   const model = getGeminiModel(modelName);
-  const result = await model.generateContent(buildPrompt(jobs, profile, preferences));
+  const result = await model.generateContent(buildPrompt(jobs, preferences));
   const raw = result.response.text().trim();
   const json = raw.replace(/^```(?:json)?\s*|\s*```$/g, "");
   const parsed = JSON.parse(json) as Array<Record<string, unknown>>;

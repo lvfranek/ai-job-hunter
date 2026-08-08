@@ -3,6 +3,8 @@ export interface Language {
   level: string; // "basic" | "conversational" | "fluent" | "native"
 }
 
+// Candidate data for the (future) cover-letter generator only — NOT used by AI
+// scoring. Preferences.target_skills_* fields are the scoring agent's skills input.
 export interface Profile {
   id: string;
   user_id: string;
@@ -29,12 +31,20 @@ export interface Preferences {
   id: string;
   user_id: string;
   target_titles: string[];
+  title_strictness: number; // 0 (exact title match) - 10 (loosely related titles)
+  target_skills_frontend: string[];
+  skills_frontend_strictness: number; // 0 (only exact skills) - 10 (also credit adjacent/related)
+  target_skills_backend: string[];
+  skills_backend_strictness: number;
+  target_skills_tools: string[];
+  skills_tools_strictness: number;
+  target_skills_other: string[];
+  skills_other_strictness: number;
   preferred_seniority: number; // 0 (entry level) - 10 (principal/leadership)
   preferred_location: string | null;
   job_type: string[];
   company_size: string[];
   excluded_keywords: string[]; // tech, employer types, etc. the candidate wants to avoid
-  match_strictness: number; // 0 (only my exact skills) - 10 (also credit adjacent/related skills)
   created_at: string;
   updated_at: string;
 }

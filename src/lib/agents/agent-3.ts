@@ -10,41 +10,25 @@ export interface ScoringResult {
   reasoning: string;
 }
 
-function strictnessGuidance(value: number): string {
-  if (value <= 2)
-    return "Very strict: only count skills that literally appear in the candidate's list. Do not credit related or adjacent skills.";
-  if (value <= 5)
-    return "Moderate: mostly count the candidate's exact skills, but give partial credit for closely related tools/frameworks (e.g. Vue counts partially toward a React requirement).";
-  if (value <= 8)
-    return "Loose: credit adjacent and transferable skills generously, not just exact matches.";
-  return "Very loose: credit any reasonably related skill or transferable experience, even if it's not in the candidate's list.";
-}
-
 function buildPrompt(jobs: DbJob[], preferences: Preferences): string {
-  return `You are an expert job fit evaluator. Score jobs for a candidate based on their preferences.
+  return `You are an expert job fit evaluator. Score jobs for a candidate based on what they're looking for.
 
-Preferences:
-- Target titles: ${preferences.target_titles.join(", ")}
-  (title matching strictness: ${strictnessGuidance(preferences.title_strictness)})
-- Frontend skills: ${preferences.target_skills_frontend.join(", ") || "none"}
-  (strictness: ${strictnessGuidance(preferences.skills_frontend_strictness)})
-- Backend skills: ${preferences.target_skills_backend.join(", ") || "none"}
-  (strictness: ${strictnessGuidance(preferences.skills_backend_strictness)})
-- Tools: ${preferences.target_skills_tools.join(", ") || "none"}
-  (strictness: ${strictnessGuidance(preferences.skills_tools_strictness)})
-- Other skills: ${preferences.target_skills_other.join(", ") || "none"}
-  (strictness: ${strictnessGuidance(preferences.skills_other_strictness)})
+What the candidate wants (their own words — this is the primary signal, including anything
+they explicitly say to avoid):
+"""
+${preferences.notes || "No specific preferences given."}
+"""
+
+Structured preferences:
 - Desired seniority (0 = entry level, 10 = lead/principal): ${preferences.preferred_seniority}
 - Location preference: ${preferences.preferred_location || "any"}
-- Things to avoid (reject or heavily penalize jobs matching these): ${
-    preferences.excluded_keywords.join(", ") || "none"
-  }
+- Job type: ${preferences.job_type.join(", ") || "any"}
 
 For each job below, return four 0-100 scores plus one sentence of reasoning:
-- skill_overlap_pct: how many target skills appear in the job description
+- skill_overlap_pct: how well the job's required skills/tech match what the candidate described wanting to work with
 - seniority_fit: how well the job's seniority matches the desired seniority
-- location_fit: how well the job location/remote policy matches the location preference
-- match_score: overall fit (weigh skills and seniority most heavily; score near 0 if the job matches something in "things to avoid")
+- location_fit: how well the job location/remote policy matches the location and job-type preference
+- match_score: overall fit (weigh skills and seniority most heavily; score near 0 if the job matches something the candidate said to avoid)
 
 Return ONLY a valid JSON array, no markdown, no explanations:
 [

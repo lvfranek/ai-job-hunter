@@ -5,6 +5,7 @@ import { Briefcase, CaretDown, Lightning, Sparkle } from "@phosphor-icons/react"
 import type { Job } from "@/lib/mock-data";
 import { JobCard } from "@/components/JobCard";
 import { AgentStatus } from "@/components/AgentStatus";
+import { CoverLetterModal } from "@/components/CoverLetterModal";
 
 type SortKey = "score" | "date" | "company";
 
@@ -30,6 +31,7 @@ export function JobResults({
   const [progress, setProgress] = useState({ found: 0 });
   const [isScoring, setIsScoring] = useState(false);
   const [isRescoring, setIsRescoring] = useState(false);
+  const [coverLetterJob, setCoverLetterJob] = useState<Job | null>(null);
 
   const staleCount = jobs.filter((job) => job.isStale).length;
   const unscoredCount = jobs.filter((job) => !job.isScored).length;
@@ -183,9 +185,13 @@ export function JobResults({
       ) : (
         <div className="divide-y divide-border">
           {sorted.map((job) => (
-            <JobCard key={job.id} job={job} />
+            <JobCard key={job.id} job={job} onGenerateCoverLetter={setCoverLetterJob} />
           ))}
         </div>
+      )}
+
+      {coverLetterJob && (
+        <CoverLetterModal job={coverLetterJob} onClose={() => setCoverLetterJob(null)} />
       )}
     </div>
   );

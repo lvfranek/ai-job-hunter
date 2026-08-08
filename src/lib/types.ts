@@ -3,8 +3,8 @@ export interface Language {
   level: string; // "basic" | "conversational" | "fluent" | "native"
 }
 
-// Candidate data for the (future) cover-letter generator only — NOT used by AI
-// scoring. Preferences.target_skills_* fields are the scoring agent's skills input.
+// Candidate data for the cover-letter generator only — NOT used by AI scoring.
+// Preferences.notes is the scoring agent's free-text input instead.
 export interface Profile {
   id: string;
   user_id: string;
@@ -14,7 +14,8 @@ export interface Profile {
   phone: string | null;
   date_of_birth: string | null;
   languages: Language[];
-  location: string | null;
+  location: string | null; // used as the "ZIP City" line in the cover letter header
+  street_address: string | null;
   // Professional
   cv_text: string | null;
   current_situation: string | null;
@@ -23,6 +24,10 @@ export interface Profile {
   skills_backend: string[];
   skills_devops: string[];
   skills_tools: string[];
+  // Cover letter content
+  personal_story: string | null; // opening hook, adapted per job by the AI
+  key_achievements: string[]; // AI picks the most relevant ones per job
+  motivation: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -30,21 +35,10 @@ export interface Profile {
 export interface Preferences {
   id: string;
   user_id: string;
-  target_titles: string[];
-  title_strictness: number; // 0 (exact title match) - 10 (loosely related titles)
-  target_skills_frontend: string[];
-  skills_frontend_strictness: number; // 0 (only exact skills) - 10 (also credit adjacent/related)
-  target_skills_backend: string[];
-  skills_backend_strictness: number;
-  target_skills_tools: string[];
-  skills_tools_strictness: number;
-  target_skills_other: string[];
-  skills_other_strictness: number;
+  notes: string; // free text: what the candidate wants and doesn't want, read directly by the AI scorer
   preferred_seniority: number; // 0 (entry level) - 10 (principal/leadership)
   preferred_location: string | null;
   job_type: string[];
-  company_size: string[];
-  excluded_keywords: string[]; // tech, employer types, etc. the candidate wants to avoid
   created_at: string;
   updated_at: string;
 }

@@ -31,7 +31,13 @@ function scoreTier(score: number) {
   };
 }
 
-export function JobCard({ job }: { job: Job }) {
+export function JobCard({
+  job,
+  onGenerateCoverLetter,
+}: {
+  job: Job;
+  onGenerateCoverLetter: (job: Job) => void;
+}) {
   const tier = scoreTier(job.matchScore);
 
   return (
@@ -95,6 +101,7 @@ export function JobCard({ job }: { job: Job }) {
         </a>
         <button
           type="button"
+          onClick={() => onGenerateCoverLetter(job)}
           className="flex items-center gap-1.5 rounded-xl border border-border-strong bg-surface px-3.5 py-2 text-[13px] font-normal text-text-muted transition-colors hover:bg-surface-hover hover:text-text active:scale-[0.98]"
         >
           <FileText size={15} weight="bold" />

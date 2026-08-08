@@ -15,12 +15,16 @@ interface ProfileForm {
   date_of_birth: string;
   languages: Language[];
   location: string;
+  street_address: string;
   current_situation: string;
   cv_text: string;
   skills_frontend: string[];
   skills_backend: string[];
   skills_devops: string[];
   skills_tools: string[];
+  personal_story: string;
+  key_achievements: string[];
+  motivation: string;
 }
 
 function toLanguages(raw: unknown): Language[] {
@@ -38,12 +42,16 @@ function toForm(data: Record<string, unknown>): ProfileForm {
     date_of_birth: (data.date_of_birth as string) ?? "",
     languages: toLanguages(data.languages),
     location: (data.location as string) ?? "",
+    street_address: (data.street_address as string) ?? "",
     current_situation: (data.current_situation as string) ?? "",
     cv_text: (data.cv_text as string) ?? "",
     skills_frontend: (data.skills_frontend as string[]) ?? [],
     skills_backend: (data.skills_backend as string[]) ?? [],
     skills_devops: (data.skills_devops as string[]) ?? [],
     skills_tools: (data.skills_tools as string[]) ?? [],
+    personal_story: (data.personal_story as string) ?? "",
+    key_achievements: (data.key_achievements as string[]) ?? [],
+    motivation: (data.motivation as string) ?? "",
   };
 }
 
@@ -107,6 +115,7 @@ export default function ProfilePage() {
         body: JSON.stringify({
           ...form,
           date_of_birth: form.date_of_birth || null,
+          key_achievements: form.key_achievements.map((a) => a.trim()).filter(Boolean),
         }),
       });
       if (!res.ok) throw new Error("Failed to save profile");
@@ -243,16 +252,30 @@ export default function ProfilePage() {
                   className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
                 />
               </div>
-              <div className="col-span-2">
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                  Street address
+                </label>
+                <input
+                  value={form.street_address}
+                  onChange={(e) => setForm({ ...form, street_address: e.target.value })}
+                  placeholder="Musterstraße 12"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                />
+              </div>
+              <div>
                 <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
                   Location
                 </label>
                 <input
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
-                  placeholder="Hamburg, Germany"
+                  placeholder="22765 Hamburg"
                   className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
                 />
+                <p className="mt-1.5 text-[12px] text-text-faint">
+                  Used as the &quot;ZIP City&quot; line in your cover letter header
+                </p>
               </div>
             </div>
             <LanguageInput
@@ -311,6 +334,60 @@ export default function ProfilePage() {
               tags={form.skills_tools}
               onChange={(skills_tools) => setForm({ ...form, skills_tools })}
             />
+          </section>
+
+          <section className="space-y-5 border-t border-border-strong pt-8">
+            <h2 className="text-[15px] font-semibold text-text">Cover Letter Content</h2>
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                Personal intro / opening story
+              </label>
+              <textarea
+                value={form.personal_story}
+                onChange={(e) => setForm({ ...form, personal_story: e.target.value })}
+                rows={4}
+                placeholder={
+                  'e.g. "After making €100k in my first year selling on Amazon, I realized ' +
+                  'e-commerce was in my blood..."'
+                }
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+              />
+              <p className="mt-1.5 text-[12px] text-text-faint">
+                Your personal hook — your biggest achievement or what drives you. The AI adapts
+                this to each job.
+              </p>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                Key achievements
+              </label>
+              <textarea
+                value={form.key_achievements.join("\n")}
+                onChange={(e) =>
+                  setForm({ ...form, key_achievements: e.target.value.split("\n") })
+                }
+                rows={5}
+                placeholder={
+                  "One achievement per line, e.g.\nGrew client revenue from €232k to €300k/month through PPC optimization\nShipped a React Native app used by 10k+ daily users"
+                }
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+              />
+              <p className="mt-1.5 text-[12px] text-text-faint">
+                One per line. The AI picks the most relevant ones per job.
+              </p>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                Motivation / what you&apos;re looking for
+              </label>
+              <textarea
+                value={form.motivation}
+                onChange={(e) => setForm({ ...form, motivation: e.target.value })}
+                rows={3}
+                placeholder="Why are you looking for a new role? What excites you about this field?"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+              />
+            </div>
           </section>
 
           <div className="flex gap-2">

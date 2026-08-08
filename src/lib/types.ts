@@ -20,7 +20,6 @@ export interface Profile {
   skills_frontend: string[];
   skills_backend: string[];
   skills_devops: string[];
-  skills_soft: string[];
   skills_tools: string[];
   created_at: string;
   updated_at: string;
@@ -35,6 +34,7 @@ export interface Preferences {
   job_type: string[];
   company_size: string[];
   excluded_keywords: string[]; // tech, employer types, etc. the candidate wants to avoid
+  match_strictness: number; // 0 (only my exact skills) - 10 (also credit adjacent/related skills)
   created_at: string;
   updated_at: string;
 }

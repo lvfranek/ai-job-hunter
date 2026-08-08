@@ -10,12 +10,21 @@ export interface ScoringResult {
   reasoning: string;
 }
 
+function strictnessGuidance(value: number): string {
+  if (value <= 2)
+    return "Very strict: only count skills that literally appear in the candidate's list. Do not credit related or adjacent skills.";
+  if (value <= 5)
+    return "Moderate: mostly count the candidate's exact skills, but give partial credit for closely related tools/frameworks (e.g. Vue counts partially toward a React requirement).";
+  if (value <= 8)
+    return "Loose: credit adjacent and transferable skills generously, not just exact matches.";
+  return "Very loose: credit any reasonably related skill or transferable experience, even if it's not in the candidate's list.";
+}
+
 function buildPrompt(jobs: DbJob[], profile: Profile, preferences: Preferences): string {
   const allSkills = [
     ...profile.skills_frontend,
     ...profile.skills_backend,
     ...profile.skills_devops,
-    ...profile.skills_soft,
     ...profile.skills_tools,
   ];
 
@@ -33,6 +42,7 @@ Preferences:
 - Things to avoid (reject or heavily penalize jobs matching these): ${
     preferences.excluded_keywords.join(", ") || "none"
   }
+- Matching strictness: ${strictnessGuidance(preferences.match_strictness)}
 
 For each job below, return four 0-100 scores plus one sentence of reasoning:
 - skill_overlap_pct: how many target skills appear in the job description

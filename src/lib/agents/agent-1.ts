@@ -10,7 +10,6 @@ export interface ParsedProfile {
   skills_frontend: string[];
   skills_backend: string[];
   skills_devops: string[];
-  skills_soft: string[];
   skills_tools: string[];
 }
 
@@ -28,7 +27,6 @@ Focus on:
    - backend (Node.js, Python, PostgreSQL, ...)
    - devops (Docker, AWS, Kubernetes, CI/CD, ...)
    - tools (Jira, Figma, Excel, or anything else that doesn't fit the categories above)
-   - soft (Leadership, Communication, ...)
 
 Return ONLY valid JSON, no markdown, no explanations:
 {
@@ -41,8 +39,7 @@ Return ONLY valid JSON, no markdown, no explanations:
   "skills_frontend": ["React", "TypeScript"],
   "skills_backend": ["Node.js", "PostgreSQL"],
   "skills_devops": ["Docker", "AWS"],
-  "skills_tools": ["Jira", "Figma"],
-  "skills_soft": ["Leadership", "Communication"]
+  "skills_tools": ["Jira", "Figma"]
 }
 
 CV Text:

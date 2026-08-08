@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Target } from "@phosphor-icons/react/dist/ssr";
 import { TagInput } from "@/components/TagInput";
 import { Checkbox } from "@/components/Checkbox";
-import { SeniorityScale } from "@/components/SeniorityScale";
+import { Scale } from "@/components/Scale";
 import { Toast } from "@/components/Toast";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
 
@@ -15,10 +15,35 @@ interface PreferencesForm {
   job_type: string[];
   company_size: string[];
   excluded_keywords: string[];
+  match_strictness: number;
 }
 
 const JOB_TYPES = ["remote", "hybrid", "on-site"];
 const COMPANY_SIZES = ["startup", "scale-up", "enterprise"];
+
+const SENIORITY_LABELS: [number, string][] = [
+  [0, "Entry level"],
+  [3, "Junior"],
+  [5, "Mid-level"],
+  [7, "Senior"],
+  [9, "Lead / Principal"],
+];
+
+const STRICTNESS_LABELS: [number, string][] = [
+  [0, "Only my exact skills"],
+  [3, "Mostly my skills"],
+  [5, "Balanced"],
+  [7, "Open to related skills"],
+  [9, "Very broad matches"],
+];
+
+function labelFor(labels: [number, string][], value: number): string {
+  let label = labels[0][1];
+  for (const [threshold, text] of labels) {
+    if (value >= threshold) label = text;
+  }
+  return label;
+}
 
 const DEFAULTS: PreferencesForm = {
   target_titles: [],
@@ -27,6 +52,7 @@ const DEFAULTS: PreferencesForm = {
   job_type: [],
   company_size: [],
   excluded_keywords: [],
+  match_strictness: 5,
 };
 
 function toForm(data: Record<string, unknown>): PreferencesForm {
@@ -40,6 +66,10 @@ function toForm(data: Record<string, unknown>): PreferencesForm {
     job_type: (data.job_type as string[]) ?? DEFAULTS.job_type,
     company_size: (data.company_size as string[]) ?? DEFAULTS.company_size,
     excluded_keywords: (data.excluded_keywords as string[]) ?? DEFAULTS.excluded_keywords,
+    match_strictness:
+      data.match_strictness != null
+        ? Number(data.match_strictness)
+        : DEFAULTS.match_strictness,
   };
 }
 
@@ -128,9 +158,13 @@ export default function PreferencesPage() {
             onChange={(target_titles) => setForm({ ...form, target_titles })}
           />
 
-          <SeniorityScale
+          <Scale
+            label="Preferred seniority"
             value={form.preferred_seniority}
             onChange={(preferred_seniority) => setForm({ ...form, preferred_seniority })}
+            labelFor={(v) => labelFor(SENIORITY_LABELS, v)}
+            leftHint="Entry level"
+            rightHint="Lead / Principal"
           />
 
           <div>
@@ -187,6 +221,15 @@ export default function PreferencesPage() {
             helperText="Technologies, industries, or employer types you don't want (e.g. Django, federal agency)"
             tags={form.excluded_keywords}
             onChange={(excluded_keywords) => setForm({ ...form, excluded_keywords })}
+          />
+
+          <Scale
+            label="AI matching strictness"
+            value={form.match_strictness}
+            onChange={(match_strictness) => setForm({ ...form, match_strictness })}
+            labelFor={(v) => labelFor(STRICTNESS_LABELS, v)}
+            leftHint="Only my exact skills"
+            rightHint="Very broad matches"
           />
 
           <button

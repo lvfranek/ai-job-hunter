@@ -18,6 +18,7 @@ export async function GET() {
       job_type: [],
       company_size: [],
       excluded_keywords: [],
+      match_strictness: 5,
     };
 
     return NextResponse.json(data || defaultPreferences);

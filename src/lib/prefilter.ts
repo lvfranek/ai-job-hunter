@@ -1,5 +1,17 @@
 import type { DbJob, Preferences, Profile } from "./types";
 
+const STOPWORDS = new Set([
+  "and", "or", "the", "a", "an", "of", "for", "in", "at", "to", "with",
+  "und", "oder", "der", "die", "das", "für", "mit", "bei",
+]);
+
+function significantWords(phrase: string): string[] {
+  return phrase
+    .toLowerCase()
+    .split(/[^a-zäöüß0-9]+/)
+    .filter((w) => w.length >= 2 && !STOPWORDS.has(w));
+}
+
 /**
  * Pre-filter jobs based on target titles (from Preferences) and skills (from Profile).
  * Returns job IDs that pass the filter.
@@ -9,15 +21,16 @@ export function prefilterJobs(
   profile: Profile,
   preferences: Preferences
 ): string[] {
-  const allSkills = [
+  // "Tools" (PowerPoint, Slack, Loom, ...) rarely appear verbatim in a job posting
+  // and dilute the overlap % without being a real technical-fit signal — only count
+  // the technical categories here. (The AI scorer still sees the full skill list.)
+  const technicalSkills = [
     ...profile.skills_frontend,
     ...profile.skills_backend,
     ...profile.skills_devops,
-    ...profile.skills_soft,
-    ...profile.skills_tools,
   ];
 
-  if (allSkills.length === 0) {
+  if (technicalSkills.length === 0) {
     return [];
   }
 
@@ -34,19 +47,23 @@ export function prefilterJobs(
     );
     if (isExcluded) continue;
 
+    // Loose match: any significant word from a target title shows up in the job title.
+    // (Real postings almost never contain a full target phrase verbatim.)
     const titleMatches = preferences.target_titles.some((targetTitle) =>
-      jobTitleLower.includes(targetTitle.toLowerCase())
+      significantWords(targetTitle).some((word) => jobTitleLower.includes(word))
     );
 
     if (!titleMatches) continue;
 
-    // Skill overlap: at least 30% of profile skills mentioned in the job description
-    const matchedSkills = allSkills.filter((skill) =>
+    // Skill overlap: at least 15% of technical skills mentioned in the job description.
+    // This is just a cheap pre-cut before spending AI credits on scoring — the title
+    // match already did the heavy lifting, so this stays loose on purpose.
+    const matchedSkills = technicalSkills.filter((skill) =>
       jobDescLower.includes(skill.toLowerCase())
     );
-    const skillOverlapPct = (matchedSkills.length / allSkills.length) * 100;
+    const skillOverlapPct = (matchedSkills.length / technicalSkills.length) * 100;
 
-    if (skillOverlapPct >= 30) {
+    if (skillOverlapPct >= 15) {
       passingJobs.push(job.id);
     }
   }

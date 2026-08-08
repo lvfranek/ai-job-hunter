@@ -1,32 +1,24 @@
 "use client";
 
-const LABELS: [number, string][] = [
-  [0, "Entry level"],
-  [3, "Junior"],
-  [5, "Mid-level"],
-  [7, "Senior"],
-  [9, "Lead / Principal"],
-];
-
-function labelFor(value: number): string {
-  let label = LABELS[0][1];
-  for (const [threshold, text] of LABELS) {
-    if (value >= threshold) label = text;
-  }
-  return label;
-}
-
-export function SeniorityScale({
+export function Scale({
+  label,
   value,
   onChange,
+  labelFor,
+  leftHint,
+  rightHint,
 }: {
+  label: string;
   value: number;
   onChange: (value: number) => void;
+  labelFor: (value: number) => string;
+  leftHint: string;
+  rightHint: string;
 }) {
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between">
-        <label className="text-[13px] font-medium text-text-muted">Preferred seniority</label>
+        <label className="text-[13px] font-medium text-text-muted">{label}</label>
         <span className="text-[13px] font-medium text-text">{labelFor(value)}</span>
       </div>
       <input
@@ -39,8 +31,8 @@ export function SeniorityScale({
         className="w-full accent-text"
       />
       <div className="mt-1 flex justify-between text-[11px] text-text-faint">
-        <span>Entry level</span>
-        <span>Lead / Principal</span>
+        <span>{leftHint}</span>
+        <span>{rightHint}</span>
       </div>
     </div>
   );

@@ -20,7 +20,6 @@ interface ProfileForm {
   skills_frontend: string[];
   skills_backend: string[];
   skills_devops: string[];
-  skills_soft: string[];
   skills_tools: string[];
 }
 
@@ -44,7 +43,6 @@ function toForm(data: Record<string, unknown>): ProfileForm {
     skills_frontend: (data.skills_frontend as string[]) ?? [],
     skills_backend: (data.skills_backend as string[]) ?? [],
     skills_devops: (data.skills_devops as string[]) ?? [],
-    skills_soft: (data.skills_soft as string[]) ?? [],
     skills_tools: (data.skills_tools as string[]) ?? [],
   };
 }
@@ -160,6 +158,7 @@ export default function ProfilePage() {
           <>
             <CircleNotch size={22} className="animate-spin text-text-muted" />
             <p className="text-[13px] text-text-muted">Parsing your CV…</p>
+            <p className="text-[12px] text-text-faint">This can take up to a minute</p>
           </>
         ) : (
           <>
@@ -303,11 +302,6 @@ export default function ProfilePage() {
               label="DevOps"
               tags={form.skills_devops}
               onChange={(skills_devops) => setForm({ ...form, skills_devops })}
-            />
-            <TagInput
-              label="Soft skills"
-              tags={form.skills_soft}
-              onChange={(skills_soft) => setForm({ ...form, skills_soft })}
             />
             <TagInput
               label="Tools & other"

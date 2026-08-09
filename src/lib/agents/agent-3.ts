@@ -45,14 +45,22 @@ function clampScore(value: unknown): number {
   return Math.max(0, Math.min(100, Math.round(num)));
 }
 
-/** Score a batch of jobs against preferences in a single AI call. */
-export async function scoreJobsBatch(
+// A single call with hundreds of full job descriptions embedded risks blowing
+// past the model's context window (or just getting slow/expensive) once scraping
+// pulls from multiple job boards at once. Chunking keeps each call bounded.
+const CHUNK_SIZE = 25;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
+  return chunks;
+}
+
+async function scoreChunk(
   jobs: DbJob[],
   preferences: Preferences,
   modelName?: string
 ): Promise<ScoringResult[]> {
-  if (jobs.length === 0) return [];
-
   const model = getGeminiModel(modelName);
   const result = await model.generateContent(buildPrompt(jobs, preferences));
   const raw = result.response.text().trim();
@@ -71,4 +79,27 @@ export async function scoreJobsBatch(
       location_fit: clampScore(entry.location_fit),
       reasoning: String(entry.reasoning ?? ""),
     }));
+}
+
+/**
+ * Score jobs against preferences, chunked into bounded-size AI calls run one after
+ * another. One bad chunk (malformed AI output, timeout) doesn't lose the others —
+ * it's logged and skipped, so the rest of the jobs still get scored.
+ */
+export async function scoreJobsBatch(
+  jobs: DbJob[],
+  preferences: Preferences,
+  modelName?: string
+): Promise<ScoringResult[]> {
+  if (jobs.length === 0) return [];
+
+  const results: ScoringResult[] = [];
+  for (const jobChunk of chunk(jobs, CHUNK_SIZE)) {
+    try {
+      results.push(...(await scoreChunk(jobChunk, preferences, modelName)));
+    } catch (error) {
+      console.error(`Scoring chunk of ${jobChunk.length} jobs failed:`, error);
+    }
+  }
+  return results;
 }

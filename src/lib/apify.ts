@@ -97,6 +97,17 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+// Each actor only offers a handful of fixed "posted within" buckets, not an
+// arbitrary day count. Pick the smallest bucket that still covers the requested
+// window; if the window is looser than every bucket, skip the filter (any time)
+// rather than silently scraping a narrower window than the user asked for.
+function pickDateFilter(days: number, buckets: [number, string][]): string | undefined {
+  for (const [threshold, value] of buckets) {
+    if (days <= threshold) return value;
+  }
+  return undefined;
+}
+
 interface IndeedRawJob {
   url: string;
   title: string;
@@ -109,12 +120,20 @@ interface IndeedRawJob {
 /** Build inputs for the valig/indeed-jobs-scraper Apify actor. */
 export function buildIndeedInputs(settings: Settings): ApifyRunInput {
   return {
+    // Fixed regardless of remote_only — this is what keeps results scoped to
+    // Germany even when location below becomes the literal "remote".
     country: "de",
     title: settings.scraper_search_keywords.join(" OR "),
     // The actor accepts the literal string "remote" as a location, filtering at
     // the source instead of scraping everything and discarding on-site jobs after.
     location: settings.remote_only ? "remote" : settings.scraper_location || "Germany",
     limit: settings.scraper_results_per_scan,
+    datePosted: pickDateFilter(settings.scraper_max_posting_age_days, [
+      [1, "1"],
+      [3, "3"],
+      [7, "7"],
+      [14, "14"],
+    ]),
   };
 }
 
@@ -148,6 +167,11 @@ export function buildLinkedinInputs(settings: Settings): ApifyRunInput {
     // "2" = Remote in the actor's own remote-work-option enum.
     remote: settings.remote_only ? ["2"] : undefined,
     limit: settings.scraper_results_per_scan,
+    datePosted: pickDateFilter(settings.scraper_max_posting_age_days, [
+      [1, "r86400"],
+      [7, "r604800"],
+      [30, "r2592000"],
+    ]),
   };
 }
 
@@ -182,6 +206,10 @@ export function buildStepstoneInputs(settings: Settings): ApifyRunInput {
     // "2" = Fully remote in the actor's own work-from-home-options enum.
     wfh: settings.remote_only ? "2" : undefined,
     limit: settings.scraper_results_per_scan,
+    ag: pickDateFilter(settings.scraper_max_posting_age_days, [
+      [1, "age_1"],
+      [7, "age_7"],
+    ]),
   };
 }
 
@@ -213,10 +241,16 @@ export function buildXingInputs(settings: Settings): ApifyRunInput {
   const keyword = settings.scraper_search_keywords.join(" OR ");
   return {
     // Xing's actor has no dedicated remote filter — append "remote" to the search
-    // term instead, same as the site's own "remote" job category search.
+    // term instead, same as the site's own "remote" job category search. Location
+    // stays as configured — "remote only" narrows work mode, not country.
     keyword: settings.remote_only ? `${keyword} remote` : keyword,
-    location: settings.remote_only ? "" : settings.scraper_location || "Germany",
+    location: settings.scraper_location || "Germany",
     results_wanted: settings.scraper_results_per_scan,
+    date_posted: pickDateFilter(settings.scraper_max_posting_age_days, [
+      [1, "LAST_24_HOURS"],
+      [7, "LAST_WEEK"],
+      [30, "LAST_MONTH"],
+    ]),
   };
 }
 

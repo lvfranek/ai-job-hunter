@@ -52,7 +52,6 @@ export interface Settings {
   scraper_results_per_scan: number;
   remote_only: boolean; // query the scraper for remote-only jobs at the source, where supported
   portal_toggles: Record<string, boolean>;
-  preferred_gemini_model: string;
   created_at: string;
   updated_at: string;
 }

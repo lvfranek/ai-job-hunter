@@ -166,11 +166,11 @@ export default function SettingsPage() {
                 value={form.scraper_location}
                 onChange={(e) => setForm({ ...form, scraper_location: e.target.value })}
                 placeholder="Hamburg, Germany"
-                disabled={form.remote_only}
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted disabled:opacity-50"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
               />
               <p className="mt-1.5 text-[12px] text-text-faint">
-                {form.remote_only ? "Ignored while Remote only is on" : "Where to search for jobs"}
+                Where to search for jobs — still applies with Remote only on, e.g. &quot;remote
+                jobs based in Germany&quot; rather than remote jobs worldwide
               </p>
               <div className="mt-2.5">
                 <Checkbox
@@ -179,10 +179,10 @@ export default function SettingsPage() {
                   onChange={() => setForm({ ...form, remote_only: !form.remote_only })}
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
-                  Query the scraper for remote jobs only, where the job board supports it — saves
-                  scraping work instead of filtering afterward. Works on Indeed, LinkedIn, and
-                  Stepstone; on Xing it&apos;s approximated by adding &quot;remote&quot; to the search
-                  keywords, since that board has no dedicated remote filter.
+                  Narrows to remote positions, on top of the location above — doesn&apos;t search
+                  worldwide. Works on Indeed, LinkedIn, and Stepstone; on Xing it&apos;s
+                  approximated by adding &quot;remote&quot; to the search keywords, since that
+                  board has no dedicated remote filter.
                 </p>
               </div>
             </div>
@@ -202,7 +202,9 @@ export default function SettingsPage() {
                   className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
-                  Only show jobs posted within this many days
+                  Only show jobs posted within this many days — each job board only offers a
+                  few fixed windows (e.g. 24h/week/month), so this snaps to the closest one
+                  that doesn&apos;t cut out jobs you asked for
                 </p>
               </div>
               <div>

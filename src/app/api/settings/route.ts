@@ -24,7 +24,6 @@ export async function GET() {
         stepstone: true,
         arbeitsagentur: true,
       },
-      preferred_gemini_model: "mistralai/mistral-nemo",
     };
 
     return NextResponse.json(data || defaultSettings);

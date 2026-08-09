@@ -206,6 +206,12 @@ export default function SettingsPage() {
                   few fixed windows (e.g. 24h/week/month), so this snaps to the closest one
                   that doesn&apos;t cut out jobs you asked for
                 </p>
+                <p className="mt-1 text-[12px] text-text-faint">
+                  This is your main lever for freshness on Indeed, LinkedIn, and Xing — none of
+                  the three let us request &quot;newest first&quot; results, so a tighter window
+                  is what actually keeps old postings out. Stepstone and Arbeitsagentur are
+                  always sorted newest-first automatically.
+                </p>
               </div>
               <div>
                 <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
@@ -227,6 +233,13 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
+
+            <p className="text-[12px] text-text-faint">
+              Indeed, LinkedIn, and Xing results can differ a little between scans a few
+              minutes apart — those sites rank their own search results and that ranking
+              isn&apos;t perfectly stable. Nothing you&apos;ve already seen gets added twice;
+              duplicates are always skipped.
+            </p>
 
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-text-muted">

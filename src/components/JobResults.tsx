@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Briefcase, CaretDown, Lightning, Sparkle } from "@phosphor-icons/react";
+import { useMemo, useRef, useState } from "react";
+import { Briefcase, CaretDown, Lightning, Sparkle, X } from "@phosphor-icons/react";
 import type { Job } from "@/lib/mock-data";
 import { JobCard } from "@/components/JobCard";
 import { AgentStatus } from "@/components/AgentStatus";
@@ -31,6 +31,8 @@ export function JobResults({
   const [progress, setProgress] = useState({ found: 0 });
   const [lastPortalCounts, setLastPortalCounts] = useState<Record<string, number> | null>(null);
   const [isScoring, setIsScoring] = useState(false);
+  const [scoreProgress, setScoreProgress] = useState({ scored: 0, total: 0 });
+  const scoreRunId = useRef<string | null>(null);
   const [coverLetterJob, setCoverLetterJob] = useState<Job | null>(null);
 
   // "Needs scoring" covers both never-scored jobs and ones whose score went
@@ -39,13 +41,45 @@ export function JobResults({
 
   async function handleAdjustScore() {
     setIsScoring(true);
+    setScoreProgress({ scored: 0, total: 0 });
     try {
-      await fetch("/api/score", { method: "POST" });
+      const res = await fetch("/api/score", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Scoring failed");
+      if (!data.runId) return; // nothing needed scoring
+
+      scoreRunId.current = data.runId;
+      await new Promise<void>((resolve) => {
+        const interval = setInterval(async () => {
+          const statusRes = await fetch(`/api/score/status?runId=${data.runId}`);
+          const status = await statusRes.json();
+          setScoreProgress({ scored: status.scored ?? 0, total: status.total ?? 0 });
+
+          if (status.status !== "running") {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 1500);
+      });
     } catch (error) {
       console.error("Scoring failed:", error);
     } finally {
+      scoreRunId.current = null;
       setIsScoring(false);
       onScraped();
+    }
+  }
+
+  async function handleCancelScore() {
+    if (!scoreRunId.current) return;
+    try {
+      await fetch("/api/score/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId: scoreRunId.current }),
+      });
+    } catch (error) {
+      console.error("Cancel failed:", error);
     }
   }
 
@@ -113,6 +147,24 @@ export function JobResults({
                 ? `Adjust score (${needsScoreCount})`
                 : "Scores up to date"}
           </button>
+          {isScoring && (
+            <>
+              <span className="text-[12px] tabular-nums text-text-faint">
+                {scoreProgress.total > 0
+                  ? `${scoreProgress.scored}/${scoreProgress.total} scored`
+                  : "Starting…"}
+              </span>
+              <button
+                type="button"
+                onClick={handleCancelScore}
+                aria-label="Cancel scoring"
+                title="Cancel scoring"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-faint transition-colors hover:text-text"
+              >
+                <X size={13} weight="bold" />
+              </button>
+            </>
+          )}
           {isScraping ? (
             <AgentStatus
               status={{

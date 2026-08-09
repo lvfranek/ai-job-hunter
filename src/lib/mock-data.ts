@@ -14,7 +14,7 @@ export type Job = {
   isScored: boolean;
 };
 
-export type AgentState = "idle" | "scraping";
+export type AgentState = "idle" | "scraping" | "scoring";
 
 export type AgentStatusData = {
   state: AgentState;
@@ -30,11 +30,10 @@ export const platformLabels: Record<Platform, string> = {
   arbeitsagentur: "Arbeitsagentur",
 };
 
-// Arbeitsagentur has no logo on simpleicons.org — JobCard renders a Phosphor
-// icon for it instead of this image-based lookup.
-export const platformIconSlugs: Record<Exclude<Platform, "arbeitsagentur">, string> = {
+// Arbeitsagentur and Stepstone have no logo on simpleicons.org (stepstone 404s) —
+// JobCard renders a Phosphor icon for both instead of this image-based lookup.
+export const platformIconSlugs: Record<Exclude<Platform, "arbeitsagentur" | "stepstone">, string> = {
   linkedin: "linkedin",
   indeed: "indeed",
   xing: "xing",
-  stepstone: "stepstone",
 };

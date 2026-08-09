@@ -210,6 +210,8 @@ export function buildStepstoneInputs(settings: Settings): ApifyRunInput {
       [1, "age_1"],
       [7, "age_7"],
     ]),
+    // "2" = Date (newest first) in the actor's own sort enum; default is "1" (Relevance).
+    sort: "2",
   };
 }
 
@@ -297,6 +299,8 @@ export function buildArbeitsagenturInputs(settings: Settings): ApifyRunInput {
     publishedSince: Math.min(settings.scraper_max_posting_age_days, 30),
     includeDetails: true,
     descriptionFormat: "text",
+    // "date" = newest-first in the actor's own sortBy enum; default is "relevance".
+    sortBy: "date",
   };
 }
 

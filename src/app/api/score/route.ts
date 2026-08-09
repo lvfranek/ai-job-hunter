@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
-import { scoreJobsBatch } from "@/lib/agents/agent-3";
+import { CHUNK_SIZE, chunk, scoreChunk } from "@/lib/agents/agent-3";
 import type { DbJob, Preferences } from "@/lib/types";
+
+// Run this many chunks concurrently — cuts wall-clock time roughly proportionally
+// (5 sequential chunks at ~60s each was a 5-minute wait; 3 at a time is ~2 rounds)
+// without hammering the AI provider's rate limits.
+const CONCURRENCY = 3;
 
 // Scores jobs that have never been scored AND jobs whose score went stale
 // (preferences changed since) — one action, "keep my scores current", instead
@@ -31,21 +36,82 @@ export async function POST() {
     return NextResponse.json({ jobsScored: 0 });
   }
 
+  const { data: runData, error: runError } = await supabase
+    .from("score_runs")
+    .insert({ user_id: CURRENT_USER_ID, status: "running", total: needsScoring.length })
+    .select()
+    .single();
+
+  if (runError) {
+    return NextResponse.json({ error: String(runError) }, { status: 500 });
+  }
+
+  // ponytail: fire-and-forget background run, same pattern as the scrape pipeline.
+  runScorePipeline(runData.id, needsScoring, preferences as Preferences).catch((err) =>
+    console.error("Score pipeline failed:", err)
+  );
+
+  return NextResponse.json({ runId: runData.id });
+}
+
+async function runScorePipeline(runId: string, jobs: DbJob[], preferences: Preferences) {
+  const supabase = getSupabaseServerClient();
+  const chunks = chunk(jobs, CHUNK_SIZE);
+  const errors: Record<string, string> = {};
+  let scored = 0;
+
   try {
-    const results = await scoreJobsBatch(needsScoring, preferences as Preferences);
+    for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+      // Cooperative cancellation: check between rounds rather than mid-flight —
+      // chunks already launched still finish, but no new ones start.
+      const { data: current } = await supabase
+        .from("score_runs")
+        .select("status")
+        .eq("id", runId)
+        .single();
+      if (current?.status === "cancelled") return;
 
-    const { error } = await supabase
-      .from("job_matches")
-      .upsert(
-        results.map((r) => ({ ...r, user_id: CURRENT_USER_ID, stale_at: null })),
-        { onConflict: "job_id" }
+      const round = chunks.slice(i, i + CONCURRENCY);
+      await Promise.all(
+        round.map(async (jobChunk, idx) => {
+          try {
+            const results = await scoreChunk(jobChunk, preferences);
+            const { error } = await supabase
+              .from("job_matches")
+              .upsert(
+                results.map((r) => ({ ...r, user_id: CURRENT_USER_ID, stale_at: null })),
+                { onConflict: "job_id" }
+              );
+            if (error) throw error;
+          } catch (error) {
+            console.error(`Scoring chunk failed:`, error);
+            errors[`chunk_${i + idx}`] = String(error);
+          } finally {
+            // Count the chunk as processed either way so progress still reaches
+            // 100% and the run finishes instead of hanging on a failed chunk.
+            scored += jobChunk.length;
+            await supabase.from("score_runs").update({ scored }).eq("id", runId);
+          }
+        })
       );
-    if (error) throw error;
+    }
 
-    return NextResponse.json({ jobsScored: results.length });
+    await supabase
+      .from("score_runs")
+      .update({
+        status: "completed",
+        ended_at: new Date().toISOString(),
+        errors: Object.keys(errors).length > 0 ? errors : null,
+      })
+      .eq("id", runId);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : (error as { message?: string })?.message;
-    return NextResponse.json({ error: message || String(error) }, { status: 500 });
+    await supabase
+      .from("score_runs")
+      .update({
+        status: "failed",
+        ended_at: new Date().toISOString(),
+        errors: { message: String(error) },
+      })
+      .eq("id", runId);
   }
 }

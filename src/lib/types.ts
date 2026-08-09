@@ -97,6 +97,17 @@ export interface ScrapeRun {
   created_at: string;
 }
 
+export interface ScoreRun {
+  id: string;
+  user_id: string;
+  status: "running" | "completed" | "failed" | "cancelled";
+  total: number;
+  scored: number;
+  started_at: string;
+  ended_at: string | null;
+  errors: Record<string, string> | null;
+}
+
 // PostgREST embeds job_matches as a single nullable object, not an array,
 // because job_matches.job_id is UNIQUE (one match per job).
 export type JobWithMatch = DbJob & {

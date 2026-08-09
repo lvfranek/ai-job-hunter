@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   ArrowSquareOut,
   Bank,
+  Briefcase,
   CaretDown,
   FileText,
   LinkedinLogo,
@@ -110,6 +111,8 @@ export function JobCard({
                   <LinkedinLogo size={12} weight="fill" className="text-text-faint" />
                 ) : job.platform === "arbeitsagentur" ? (
                   <Bank size={12} weight="fill" className="text-text-faint" />
+                ) : job.platform === "stepstone" ? (
+                  <Briefcase size={12} weight="fill" className="text-text-faint" />
                 ) : (
                   <img
                     src={`https://cdn.simpleicons.org/${platformIconSlugs[job.platform]}/8b8b94`}

@@ -1,7 +1,15 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Briefcase, CaretDown, Lightning, Sparkle, X } from "@phosphor-icons/react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Briefcase,
+  CaretDown,
+  Lightning,
+  Sparkle,
+  X,
+} from "@phosphor-icons/react";
 import type { Job } from "@/lib/mock-data";
 import { JobCard } from "@/components/JobCard";
 import { AgentStatus } from "@/components/AgentStatus";
@@ -13,6 +21,8 @@ const sortLabels: Record<SortKey, string> = {
   score: "Match score",
   date: "Posted date",
 };
+
+const PAGE_SIZE = 25;
 
 type ScrapeState = "idle" | "scraping";
 
@@ -27,6 +37,7 @@ export function JobResults({
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [minScore, setMinScore] = useState(0);
+  const [page, setPage] = useState(1);
   const [scrapeState, setScrapeState] = useState<ScrapeState>("idle");
   const [progress, setProgress] = useState({ found: 0 });
   const [lastPortalCounts, setLastPortalCounts] = useState<Record<string, number> | null>(null);
@@ -89,6 +100,10 @@ export function JobResults({
     return copy.sort((a, b) => a.daysAgo - b.daysAgo);
   }, [jobs, sortKey, minScore]);
 
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paged = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   async function startScrape() {
     setScrapeState("scraping");
     setProgress({ found: 0 });
@@ -122,14 +137,14 @@ export function JobResults({
   const isScraping = scrapeState !== "idle";
 
   return (
-    <div className="rounded-lg border border-border bg-[#1A1A1D] shadow-lg shadow-black/50">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+    <div className="rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D7E4ED] px-4 py-2.5">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={startScrape}
             disabled={isScraping}
-            className="flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-text px-3 text-[13px] font-semibold text-bg outline-none transition-colors hover:bg-text/90 focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98] disabled:opacity-50"
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-xl bg-[#101828] px-3 text-[13px] font-semibold text-white outline-none transition-colors hover:bg-[#1E293B] focus-visible:ring-2 focus-visible:ring-[#101828]/30 active:scale-[0.98] disabled:opacity-50"
           >
             <Lightning size={14} weight="fill" />
             {isScraping ? "Scraping…" : "Scrape Now"}
@@ -138,7 +153,7 @@ export function JobResults({
             type="button"
             onClick={handleAdjustScore}
             disabled={isScraping || isScoring || needsScoreCount === 0}
-            className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border-strong bg-surface px-3 text-[13px] font-semibold text-text outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98] disabled:opacity-50"
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-xl border border-[#B9CCDA] bg-white px-3 text-[13px] font-semibold text-[#1E2A3D] shadow-[0_1px_2px_rgba(30,64,120,0.06)] outline-none transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] focus-visible:ring-2 focus-visible:ring-[#101828]/20 active:scale-[0.98] disabled:opacity-50 disabled:hover:border-[#B9CCDA] disabled:hover:bg-white"
           >
             <Sparkle size={14} weight="fill" />
             {isScoring
@@ -149,7 +164,7 @@ export function JobResults({
           </button>
           {isScoring && (
             <>
-              <span className="text-[12px] tabular-nums text-text-faint">
+              <span className="text-[12px] tabular-nums text-[#94A3B8]">
                 {scoreProgress.total > 0
                   ? `${scoreProgress.scored}/${scoreProgress.total} scored`
                   : "Starting…"}
@@ -159,7 +174,7 @@ export function JobResults({
                 onClick={handleCancelScore}
                 aria-label="Cancel scoring"
                 title="Cancel scoring"
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-faint transition-colors hover:text-text"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[#94A3B8] transition-colors hover:text-[#1E2A3D]"
               >
                 <X size={13} weight="bold" />
               </button>
@@ -174,7 +189,7 @@ export function JobResults({
               }}
             />
           ) : (
-            <span className="text-[12px] text-text-faint">
+            <span className="text-[12px] text-[#94A3B8]">
               Last scraped: {lastScraped}
               {lastPortalCounts && Object.keys(lastPortalCounts).length > 0 && (
                 <>
@@ -192,27 +207,33 @@ export function JobResults({
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <span className="text-[12px] text-text-faint">Min score</span>
+            <span className="text-[12px] text-[#94A3B8]">Min score</span>
             <input
               type="number"
               min={0}
               max={100}
               value={minScore || ""}
-              onChange={(e) => setMinScore(Number(e.target.value) || 0)}
+              onChange={(e) => {
+                setMinScore(Number(e.target.value) || 0);
+                setPage(1);
+              }}
               placeholder="0"
-              className="h-8 w-14 rounded-md border border-border-strong bg-surface-hover px-2 text-[13px] text-text-muted outline-none focus:border-text-muted focus:text-text"
+              className="h-8 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-[13px] text-[#64748B] outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D]"
             />
           </div>
-          <span className="text-[12px] text-text-faint">Sort</span>
+          <span className="text-[12px] text-[#94A3B8]">Sort</span>
           <div className="relative">
             <select
               value={sortKey}
-              onChange={(e) => setSortKey(e.target.value as SortKey)}
+              onChange={(e) => {
+                setSortKey(e.target.value as SortKey);
+                setPage(1);
+              }}
               aria-label="Sort jobs by"
-              className="h-8 appearance-none rounded-md border border-border-strong bg-surface-hover pl-3 pr-8 text-[13px] text-text-muted transition-colors hover:text-text focus:border-text-muted focus:outline-none"
+              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-[13px] text-[#64748B] transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none"
             >
               {(Object.keys(sortLabels) as SortKey[]).map((key) => (
-                <option key={key} value={key} className="bg-surface">
+                <option key={key} value={key}>
                   {sortLabels[key]}
                 </option>
               ))}
@@ -220,7 +241,7 @@ export function JobResults({
             <CaretDown
               size={13}
               weight="bold"
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-faint"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
             />
           </div>
         </div>
@@ -228,17 +249,47 @@ export function JobResults({
 
       {jobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-          <Briefcase size={28} weight="regular" className="text-text-faint" />
-          <p className="text-[14px] text-text-muted">
+          <Briefcase size={28} weight="regular" className="text-[#B8C4D1]" />
+          <p className="text-[14px] text-[#64748B]">
             Click &quot;Scrape Now&quot; to find jobs.
           </p>
         </div>
       ) : (
-        <div className="divide-y divide-border">
-          {sorted.map((job) => (
-            <JobCard key={job.id} job={job} onGenerateCoverLetter={setCoverLetterJob} />
-          ))}
-        </div>
+        <>
+          <div className="divide-y divide-[#D7E4ED]">
+            {paged.map((job) => (
+              <JobCard key={job.id} job={job} onGenerateCoverLetter={setCoverLetterJob} />
+            ))}
+          </div>
+
+          {pageCount > 1 && (
+            <div className="flex items-center justify-between border-t border-[#D7E4ED] px-4 py-3">
+              <span className="text-[12px] text-[#94A3B8]">
+                {sorted.length} jobs · page {currentPage} of {pageCount}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  aria-label="Previous page"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#B9CCDA] bg-white text-[#1E2A3D] transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] disabled:opacity-40 disabled:hover:border-[#B9CCDA] disabled:hover:bg-white"
+                >
+                  <ArrowLeft size={14} weight="bold" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  disabled={currentPage === pageCount}
+                  aria-label="Next page"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#B9CCDA] bg-white text-[#1E2A3D] transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] disabled:opacity-40 disabled:hover:border-[#B9CCDA] disabled:hover:bg-white"
+                >
+                  <ArrowRight size={14} weight="bold" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {coverLetterJob && (

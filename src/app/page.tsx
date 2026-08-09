@@ -50,25 +50,25 @@ export default function DashboardPage() {
   const highMatches = jobs.filter((job) => job.matchScore >= 80).length;
 
   return (
-    <main className="px-8 py-8">
-      <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
+    <main className="min-h-screen bg-[#DFE9F0] py-8 pr-8">
+      <div className="mb-4 flex items-center gap-2 text-[13px] text-[#7C8CA0]">
         <SquaresFour size={15} />
         Dashboard
       </div>
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight text-text">
+      <h1 className="mb-4 text-2xl font-semibold tracking-tight text-[#1E2A3D]">
         Job matches
       </h1>
 
       <div className="mb-4 flex flex-wrap gap-4">
-        <div className="w-44 rounded-lg border border-border bg-[#1A1A1D] px-5 py-4 shadow-lg shadow-black/50">
-          <p className="text-[13px] text-text-muted">Jobs found</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-text">
+        <div className="w-44 rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-5 py-4 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)]">
+          <p className="text-[13px] text-[#7C8CA0]">Jobs found</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-[#1E2A3D]">
             {jobs.length}
           </p>
         </div>
-        <div className="w-44 rounded-lg border border-border bg-[#1A1A1D] px-5 py-4 shadow-lg shadow-black/50">
-          <p className="text-[13px] text-text-muted">High matches</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-score-high">
+        <div className="w-44 rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-5 py-4 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)]">
+          <p className="text-[13px] text-[#7C8CA0]">High matches</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-emerald-600">
             {highMatches}
           </p>
         </div>

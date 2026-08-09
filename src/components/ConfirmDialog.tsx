@@ -33,7 +33,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg border border-score-low/30 bg-score-low/15 px-3.5 py-1.5 text-[13px] font-medium text-score-low transition-colors hover:bg-score-low/25 active:scale-[0.98]"
+            className="rounded-lg border border-rose-300 bg-rose-100 px-3.5 py-1.5 text-[13px] font-medium text-rose-800 transition-colors hover:bg-rose-200 active:scale-[0.98]"
           >
             {confirmLabel}
           </button>

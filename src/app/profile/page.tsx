@@ -129,7 +129,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="px-8 py-8">
+    <main className="py-8 pr-8">
       <Toast message={message} />
       <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
         <UserCircle size={15} />
@@ -144,7 +144,7 @@ export default function ProfilePage() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-score-low/30 bg-score-low/15 px-3.5 py-2.5 text-[13px] text-score-low">
+        <div className="mb-4 rounded-lg border border-rose-300 bg-rose-100 px-3.5 py-2.5 text-[13px] text-rose-800">
           {error}
         </div>
       )}
@@ -218,7 +218,7 @@ export default function ProfilePage() {
                 <input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
                 />
               </div>
               <div>
@@ -228,7 +228,7 @@ export default function ProfilePage() {
                 <input
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
                 />
               </div>
               <div>
@@ -238,7 +238,7 @@ export default function ProfilePage() {
                 <input
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
                 />
               </div>
               <div>
@@ -249,7 +249,7 @@ export default function ProfilePage() {
                   type="date"
                   value={form.date_of_birth}
                   onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
                 />
               </div>
               <div>
@@ -260,7 +260,7 @@ export default function ProfilePage() {
                   value={form.street_address}
                   onChange={(e) => setForm({ ...form, street_address: e.target.value })}
                   placeholder="Musterstraße 12"
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
                 />
               </div>
               <div>
@@ -271,7 +271,7 @@ export default function ProfilePage() {
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
                   placeholder="22765 Hamburg"
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
                   Used as the &quot;ZIP City&quot; line in your cover letter header
@@ -295,7 +295,7 @@ export default function ProfilePage() {
                 onChange={(e) => setForm({ ...form, current_situation: e.target.value })}
                 rows={3}
                 placeholder="e.g. Employed as Senior Developer at Acme Corp / Between jobs, studying data science / Freelancing since 2023"
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
               />
             </div>
             <div>
@@ -306,7 +306,7 @@ export default function ProfilePage() {
                 value={form.cv_text}
                 onChange={(e) => setForm({ ...form, cv_text: e.target.value })}
                 rows={8}
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
               />
             </div>
           </section>
@@ -350,7 +350,7 @@ export default function ProfilePage() {
                   'e.g. "After making €100k in my first year selling on Amazon, I realized ' +
                   'e-commerce was in my blood..."'
                 }
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
               />
               <p className="mt-1.5 text-[12px] text-text-faint">
                 Your personal hook — your biggest achievement or what drives you. The AI adapts
@@ -370,7 +370,7 @@ export default function ProfilePage() {
                 placeholder={
                   "One achievement per line, e.g.\nGrew client revenue from €232k to €300k/month through PPC optimization\nShipped a React Native app used by 10k+ daily users"
                 }
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
               />
               <p className="mt-1.5 text-[12px] text-text-faint">
                 One per line. The AI picks the most relevant ones per job.
@@ -385,7 +385,7 @@ export default function ProfilePage() {
                 onChange={(e) => setForm({ ...form, motivation: e.target.value })}
                 rows={3}
                 placeholder="Why are you looking for a new role? What excites you about this field?"
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
               />
             </div>
           </section>
@@ -395,7 +395,7 @@ export default function ProfilePage() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="rounded-xl border border-border-strong bg-surface px-4 py-2 text-[13px] font-medium text-text transition-colors hover:bg-surface-hover active:scale-[0.98] disabled:opacity-50"
+              className="rounded-xl bg-[#101828] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
             >
               {saving ? "Saving…" : "Save Profile"}
             </button>

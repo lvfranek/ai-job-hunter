@@ -104,7 +104,7 @@ export default function PreferencesPage() {
   }
 
   return (
-    <main className="px-8 py-8">
+    <main className="py-8 pr-8">
       <Toast message={message} />
       <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
         <Target size={15} />
@@ -117,7 +117,7 @@ export default function PreferencesPage() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-score-low/30 bg-score-low/15 px-3.5 py-2.5 text-[13px] text-score-low">
+        <div className="mb-4 rounded-lg border border-rose-300 bg-rose-100 px-3.5 py-2.5 text-[13px] text-rose-800">
           {error}
         </div>
       )}
@@ -126,7 +126,7 @@ export default function PreferencesPage() {
         <p className="text-[13px] text-text-faint">Loading…</p>
       ) : (
         <div className="max-w-2xl space-y-6">
-          <p className="rounded-lg border border-score-mid/30 bg-score-mid/15 px-3.5 py-2.5 text-[12px] text-score-mid">
+          <p className="rounded-lg border border-amber-300 bg-amber-100 px-3.5 py-2.5 text-[12px] text-amber-800">
             Changing these preferences marks all job scores as outdated. Rescore anytime from the
             dashboard.
           </p>
@@ -144,7 +144,7 @@ export default function PreferencesPage() {
                 "comfortable with Node.js on the backend. Open to Vue or Svelte roles too. " +
                 "Not interested in Django/PHP-heavy roles or anything in gaming."
               }
-              className="w-full resize-y rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-[13px] leading-relaxed text-text outline-none focus:border-text-muted"
+              className="w-full resize-y rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-[13px] leading-relaxed text-text outline-none focus:border-[#101828]"
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
               The AI reads this directly — titles, skills, and anything you want to avoid, all
@@ -169,7 +169,7 @@ export default function PreferencesPage() {
               value={form.preferred_location}
               onChange={(e) => setForm({ ...form, preferred_location: e.target.value })}
               placeholder="Berlin, Germany"
-              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
               Where you want to work (can differ from where you live)
@@ -196,7 +196,7 @@ export default function PreferencesPage() {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="rounded-xl border border-border-strong bg-surface px-4 py-2 text-[13px] font-medium text-text transition-colors hover:bg-surface-hover active:scale-[0.98] disabled:opacity-50"
+            className="rounded-xl bg-[#101828] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save Preferences"}
           </button>

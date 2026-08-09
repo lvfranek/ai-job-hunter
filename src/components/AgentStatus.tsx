@@ -8,17 +8,17 @@ export function AgentStatus({ status }: { status: AgentStatusData }) {
     <div className="flex min-w-0 items-start gap-2">
       <span
         className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${
-          isActive ? "bg-white/10 text-text" : "bg-white/5 text-text-faint"
+          isActive ? "bg-[#101828]/10 text-[#1E2A3D]" : "bg-[#101828]/5 text-[#94A3B8]"
         }`}
       >
         <CircleNotch size={12} weight="bold" className={isActive ? "animate-spin" : ""} />
       </span>
-      <div className="min-w-0 text-[12px] leading-snug text-text-muted">
+      <div className="min-w-0 text-[12px] leading-snug text-[#64748B]">
         {isActive ? (
           <>
-            <p className="text-text">{status.action}</p>
+            <p className="text-[#1E2A3D]">{status.action}</p>
             {status.detail && (
-              <p className="tabular-nums text-text-faint">{status.detail}</p>
+              <p className="tabular-nums text-[#94A3B8]">{status.detail}</p>
             )}
           </>
         ) : (

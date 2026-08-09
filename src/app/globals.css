@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --color-bg: #0b0b0e;
-  --color-surface: #111114;
-  --color-surface-hover: #19191d;
-  --color-border: #202024;
-  --color-border-strong: #2a2a30;
-  --color-text: #f2f2f0;
-  --color-text-muted: #8b8b94;
-  --color-text-faint: #5c5c66;
+  --color-bg: #dfe9f0;
+  --color-surface: #ffffff;
+  --color-surface-hover: #e4eef5;
+  --color-border: #d7e4ed;
+  --color-border-strong: #b9ccda;
+  --color-text: #1e2a3d;
+  --color-text-muted: #64748b;
+  --color-text-faint: #94a3b8;
 
-  --color-score-high: #34d399;
-  --color-score-mid: #fbbf24;
-  --color-score-low: #f87171;
+  --color-score-high: #059669;
+  --color-score-mid: #d97706;
+  --color-score-low: #dc2626;
 }
 
 @theme inline {
@@ -33,12 +33,6 @@
 body {
   background: var(--color-bg);
   color: var(--color-text);
-}
-
-/* flat chip: solid dark grey, one plain border. no shadow, no blur, no floating. */
-.panel {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
 }
 
 @media (prefers-reduced-motion: reduce) {

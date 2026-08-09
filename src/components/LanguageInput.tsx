@@ -42,7 +42,7 @@ export function LanguageInput({
                   )
                 )
               }
-              className="rounded-md border border-border-strong bg-surface-hover px-2 py-1 text-[12px] text-text capitalize outline-none focus:border-text-muted"
+              className="rounded-md border border-border-strong bg-surface-hover px-2 py-1 text-[12px] text-text capitalize outline-none focus:border-[#101828]"
             >
               {LEVELS.map((level) => (
                 <option key={level} value={level} className="capitalize">
@@ -71,7 +71,7 @@ export function LanguageInput({
           }}
           onBlur={addLanguage}
           placeholder="Type a language and press Enter"
-          className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none placeholder:text-text-faint focus:border-text-muted"
+          className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none placeholder:text-text-faint focus:border-[#101828]"
         />
       </div>
       <p className="mt-1.5 text-[12px] text-text-faint">

@@ -53,12 +53,12 @@ export function CoverLetterModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-sm rounded-xl border border-border-strong bg-surface p-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#101828]/40 px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-5 shadow-[0_20px_50px_-20px_rgba(30,64,120,0.4)]">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-[15px] font-semibold text-text">Generate Cover Letter</h2>
-            <p className="mt-1 text-[13px] text-text-muted">
+            <h2 className="text-[15px] font-semibold text-[#1E2A3D]">Generate Cover Letter</h2>
+            <p className="mt-1 text-[13px] text-[#64748B]">
               Applying to: {job.title} at {job.company}
             </p>
           </div>
@@ -66,14 +66,14 @@ export function CoverLetterModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-text-faint hover:text-text"
+            className="text-[#94A3B8] hover:text-[#1E2A3D]"
           >
             <X size={16} weight="bold" />
           </button>
         </div>
 
         <div className="mt-4">
-          <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+          <label className="mb-1.5 block text-[13px] font-medium text-[#64748B]">
             Language
           </label>
           <div className="flex gap-2">
@@ -84,8 +84,8 @@ export function CoverLetterModal({
                 onClick={() => setLanguage(lang)}
                 className={`flex-1 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors ${
                   language === lang
-                    ? "border-text-muted bg-surface-hover text-text"
-                    : "border-border-strong text-text-muted hover:text-text"
+                    ? "border-[#101828] bg-[#E4EEF5] text-[#1E2A3D]"
+                    : "border-[#B9CCDA] text-[#64748B] hover:border-[#8FA8BD] hover:bg-[#E4EEF5] hover:text-[#1E2A3D]"
                 }`}
               >
                 {lang === "de" ? "Deutsch" : "English"}
@@ -95,7 +95,7 @@ export function CoverLetterModal({
         </div>
 
         {status === "error" && (
-          <p className="mt-4 rounded-lg border border-score-low/30 bg-score-low/15 px-3 py-2 text-[12px] text-score-low">
+          <p className="mt-4 rounded-lg border border-rose-300 bg-rose-100 px-3 py-2 text-[12px] text-rose-800">
             {error}
           </p>
         )}
@@ -106,7 +106,7 @@ export function CoverLetterModal({
               href={download.url}
               download={download.filename}
               title={download.filename}
-              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-text px-3.5 text-[13px] font-semibold text-bg transition-colors hover:bg-text/90 active:scale-[0.98]"
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-[#101828] px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98]"
             >
               <DownloadSimple size={15} weight="bold" className="shrink-0" />
               <span className="truncate">Download {download.filename}</span>
@@ -116,7 +116,7 @@ export function CoverLetterModal({
               type="button"
               onClick={handleGenerate}
               disabled={status === "generating"}
-              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-text px-3.5 text-[13px] font-semibold text-bg transition-colors hover:bg-text/90 active:scale-[0.98] disabled:opacity-50"
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-[#101828] px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
             >
               {status === "generating" && (
                 <CircleNotch size={15} className="animate-spin" />

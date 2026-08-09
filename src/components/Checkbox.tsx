@@ -23,8 +23,8 @@ export function Checkbox({
         <span
           className={`flex size-4 items-center justify-center rounded-[5px] border transition-colors ${
             checked
-              ? "border-text bg-text text-bg"
-              : "border-border-strong bg-surface peer-focus-visible:ring-2 peer-focus-visible:ring-white/20"
+              ? "border-[#101828] bg-[#101828] text-white"
+              : "border-border-strong bg-surface peer-focus-visible:ring-2 peer-focus-visible:ring-[#101828]/30"
           }`}
         >
           {checked && <Check size={11} weight="bold" />}

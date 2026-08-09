@@ -11,16 +11,16 @@ import {
   mapStepstoneJob,
   buildXingInputs,
   mapXingJob,
+  buildArbeitsagenturInputs,
+  mapArbeitsagenturJob,
   type ApifyRunInput,
   type ScrapedJob,
 } from "@/lib/apify";
 import { isJobDuplicate } from "@/lib/prefilter";
 import type { DbJob, Settings } from "@/lib/types";
 
-// Arbeitsagentur has no actor wired up yet — its portal_toggles entry is simply
-// never active until a scraper is added here.
 const PORTAL_SCRAPERS: Record<
-  "indeed" | "linkedin" | "stepstone" | "xing",
+  "indeed" | "linkedin" | "stepstone" | "xing" | "arbeitsagentur",
   {
     actorId: string;
     buildInput: (settings: Settings) => ApifyRunInput;
@@ -46,6 +46,11 @@ const PORTAL_SCRAPERS: Record<
     actorId: process.env.APIFY_SCRAPER_XING || "",
     buildInput: buildXingInputs,
     mapJob: mapXingJob,
+  },
+  arbeitsagentur: {
+    actorId: process.env.APIFY_SCRAPER_ARBEITSAGENTUR || "",
+    buildInput: buildArbeitsagenturInputs,
+    mapJob: mapArbeitsagenturJob,
   },
 };
 

@@ -89,8 +89,8 @@ export interface ScrapedJob {
   posted_date: string | null;
 }
 
-// Only portals with a real actor ID (below) and a scraper implementation (in
-// route.ts's PORTAL_SCRAPERS) actually run. Arbeitsagentur has neither yet.
+// Only portals with a real actor ID configured (via env) and a scraper
+// implementation (in route.ts's PORTAL_SCRAPERS) actually run.
 export type Portal = "indeed" | "linkedin" | "stepstone" | "xing" | "arbeitsagentur";
 
 function stripHtml(html: string): string {
@@ -264,5 +264,51 @@ export function mapXingJob(raw: unknown): ScrapedJob {
     description: job.description_text || stripHtml(job.description_html || ""),
     platform: "xing",
     posted_date: job.date_posted || null,
+  };
+}
+
+interface ArbeitsagenturRawJob {
+  portalUrl: string;
+  title: string;
+  employer?: string;
+  description?: string;
+  publishedDate?: string;
+  firstPublishedDate?: string;
+}
+
+/** Build inputs for the blackfalcondata/arbeitsagentur-jobs-feed Apify actor. */
+// Unlike the international sites, this actor's location must be an actual German
+// city/region — passing the country name itself ("Germany"/"Deutschland", the
+// common default here since every other portal treats that as valid) returns
+// zero results. Since the whole site is Germany-only anyway, just omit it.
+function isCountryLevelLocation(location: string): boolean {
+  return /^(germany|deutschland)$/i.test(location.trim());
+}
+
+export function buildArbeitsagenturInputs(settings: Settings): ApifyRunInput {
+  const location = settings.scraper_location?.trim();
+  return {
+    query: settings.scraper_search_keywords.join(" OR "),
+    location: location && !isCountryLevelLocation(location) ? location : undefined,
+    maxResults: settings.scraper_results_per_scan,
+    remoteOnly: settings.remote_only,
+    // The actor caps this at 30 days itself; no bucket-mapping needed like the
+    // other portals since it takes a raw day count.
+    publishedSince: Math.min(settings.scraper_max_posting_age_days, 30),
+    includeDetails: true,
+    descriptionFormat: "text",
+  };
+}
+
+/** Map a raw arbeitsagentur-jobs-feed dataset item to our job row shape. */
+export function mapArbeitsagenturJob(raw: unknown): ScrapedJob {
+  const job = raw as ArbeitsagenturRawJob;
+  return {
+    url: job.portalUrl,
+    title: job.title,
+    company: job.employer || "Unknown",
+    description: job.description || "",
+    platform: "arbeitsagentur",
+    posted_date: job.publishedDate || job.firstPublishedDate || null,
   };
 }

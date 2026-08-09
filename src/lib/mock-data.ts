@@ -1,4 +1,4 @@
-export type Platform = "linkedin" | "indeed" | "xing" | "stepstone";
+export type Platform = "linkedin" | "indeed" | "xing" | "stepstone" | "arbeitsagentur";
 
 export type Job = {
   id: string;
@@ -18,7 +18,6 @@ export type AgentState = "idle" | "scraping";
 
 export type AgentStatusData = {
   state: AgentState;
-  agent: string;
   action: string;
   detail: string;
 };
@@ -28,9 +27,12 @@ export const platformLabels: Record<Platform, string> = {
   indeed: "Indeed",
   xing: "Xing",
   stepstone: "Stepstone",
+  arbeitsagentur: "Arbeitsagentur",
 };
 
-export const platformIconSlugs: Record<Platform, string> = {
+// Arbeitsagentur has no logo on simpleicons.org — JobCard renders a Phosphor
+// icon for it instead of this image-based lookup.
+export const platformIconSlugs: Record<Exclude<Platform, "arbeitsagentur">, string> = {
   linkedin: "linkedin",
   indeed: "indeed",
   xing: "xing",

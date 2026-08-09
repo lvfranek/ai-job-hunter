@@ -3,6 +3,9 @@ import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
 import { scoreJobsBatch } from "@/lib/agents/agent-3";
 import type { DbJob, Preferences } from "@/lib/types";
 
+// Scores jobs that have never been scored AND jobs whose score went stale
+// (preferences changed since) — one action, "keep my scores current", instead
+// of two separate buttons for what the user experiences as the same thing.
 export async function POST() {
   const supabase = getSupabaseServerClient();
 
@@ -10,7 +13,7 @@ export async function POST() {
     supabase.from("preferences").select("*").eq("user_id", CURRENT_USER_ID).single(),
     supabase
       .from("jobs")
-      .select("*, job_matches(id)")
+      .select("*, job_matches(id, stale_at)")
       .eq("user_id", CURRENT_USER_ID)
       .is("deleted_at", null),
   ]);
@@ -19,21 +22,22 @@ export async function POST() {
     return NextResponse.json({ error: "Complete your preferences first" }, { status: 400 });
   }
 
-  const unscored = ((jobs ?? []) as (DbJob & { job_matches: { id: string } | null })[]).filter(
-    (job) => job.job_matches === null
+  type JobWithMatchInfo = DbJob & { job_matches: { id: string; stale_at: string | null } | null };
+  const needsScoring = ((jobs ?? []) as JobWithMatchInfo[]).filter(
+    (job) => job.job_matches === null || job.job_matches.stale_at !== null
   );
 
-  if (unscored.length === 0) {
+  if (needsScoring.length === 0) {
     return NextResponse.json({ jobsScored: 0 });
   }
 
   try {
-    const results = await scoreJobsBatch(unscored, preferences as Preferences);
+    const results = await scoreJobsBatch(needsScoring, preferences as Preferences);
 
     const { error } = await supabase
       .from("job_matches")
       .upsert(
-        results.map((r) => ({ ...r, user_id: CURRENT_USER_ID })),
+        results.map((r) => ({ ...r, user_id: CURRENT_USER_ID, stale_at: null })),
         { onConflict: "job_id" }
       );
     if (error) throw error;

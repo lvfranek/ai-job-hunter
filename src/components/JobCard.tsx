@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   ArrowSquareOut,
+  Bank,
   CaretDown,
   FileText,
   LinkedinLogo,
@@ -58,25 +59,39 @@ export function JobCard({
           }
         }}
         aria-expanded={expanded}
-        className="flex cursor-pointer flex-col gap-4 px-6 py-5 transition-colors hover:bg-white/3 sm:flex-row sm:items-center sm:gap-6"
+        className="flex cursor-pointer flex-col gap-3 px-4 py-3 transition-colors hover:bg-white/3 sm:flex-row sm:items-center sm:gap-6"
       >
-        {job.isScored ? (
-          <div
-            className={`flex h-8 w-14 shrink-0 items-center justify-center rounded-[10px] border ${tier.bg} ${tier.border}`}
-            aria-label={`Match score ${job.matchScore}, ${tier.label}`}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {job.isScored ? (
+            <div
+              className={`flex h-8 w-10 shrink-0 items-center justify-center rounded-[10px] border ${tier.bg} ${tier.border}`}
+              aria-label={`Match score ${job.matchScore}, ${tier.label}`}
+            >
+              <span className={`text-[13px] font-semibold tabular-nums leading-none ${tier.text}`}>
+                {job.matchScore}
+              </span>
+            </div>
+          ) : (
+            <div
+              className="flex h-8 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border-strong bg-surface-hover"
+              aria-label="Not scored yet"
+            >
+              <span className="text-[11px] font-medium text-text-faint">—</span>
+            </div>
+          )}
+
+          <a
+            href={job.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Open posting"
+            title="Open posting"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-text-faint transition-colors hover:text-text active:scale-[0.98]"
           >
-            <span className={`text-[13px] font-semibold tabular-nums leading-none ${tier.text}`}>
-              {job.matchScore}
-            </span>
-          </div>
-        ) : (
-          <div
-            className="flex h-8 w-14 shrink-0 items-center justify-center rounded-[10px] border border-border-strong bg-surface-hover"
-            aria-label="Not scored yet"
-          >
-            <span className="text-[11px] font-medium text-text-faint">—</span>
-          </div>
-        )}
+            <ArrowSquareOut size={17} weight="bold" />
+          </a>
+        </div>
 
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[16px] font-semibold text-text">{job.title}</h3>
@@ -93,6 +108,8 @@ export function JobCard({
               <span className="flex size-6 items-center justify-center rounded-lg border border-border-strong bg-surface-hover">
                 {job.platform === "linkedin" ? (
                   <LinkedinLogo size={12} weight="fill" className="text-text-faint" />
+                ) : job.platform === "arbeitsagentur" ? (
+                  <Bank size={12} weight="fill" className="text-text-faint" />
                 ) : (
                   <img
                     src={`https://cdn.simpleicons.org/${platformIconSlugs[job.platform]}/8b8b94`}
@@ -108,16 +125,6 @@ export function JobCard({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <a
-            href={job.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 rounded-xl border border-border-strong bg-surface px-3.5 py-2 text-[13px] font-normal text-text-muted transition-colors hover:bg-surface-hover hover:text-text active:scale-[0.98]"
-          >
-            <ArrowSquareOut size={15} weight="bold" />
-            Open posting
-          </a>
           <button
             type="button"
             onClick={(e) => {
@@ -138,7 +145,7 @@ export function JobCard({
       </div>
 
       {expanded && (
-        <div className="border-t border-border bg-black/20 px-6 py-5">
+        <div className="border-t border-border bg-black/20 px-4 py-5">
           {job.description ? (
             <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-text">
               {job.description}

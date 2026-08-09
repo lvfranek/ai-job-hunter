@@ -7,12 +7,11 @@ import { JobCard } from "@/components/JobCard";
 import { AgentStatus } from "@/components/AgentStatus";
 import { CoverLetterModal } from "@/components/CoverLetterModal";
 
-type SortKey = "score" | "date" | "company";
+type SortKey = "score" | "date";
 
 const sortLabels: Record<SortKey, string> = {
   score: "Match score",
   date: "Posted date",
-  company: "Company name",
 };
 
 type ScrapeState = "idle" | "scraping";
@@ -27,17 +26,18 @@ export function JobResults({
   onScraped: () => void;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("score");
+  const [minScore, setMinScore] = useState(0);
   const [scrapeState, setScrapeState] = useState<ScrapeState>("idle");
   const [progress, setProgress] = useState({ found: 0 });
   const [lastPortalCounts, setLastPortalCounts] = useState<Record<string, number> | null>(null);
   const [isScoring, setIsScoring] = useState(false);
-  const [isRescoring, setIsRescoring] = useState(false);
   const [coverLetterJob, setCoverLetterJob] = useState<Job | null>(null);
 
-  const staleCount = jobs.filter((job) => job.isStale).length;
-  const unscoredCount = jobs.filter((job) => !job.isScored).length;
+  // "Needs scoring" covers both never-scored jobs and ones whose score went
+  // stale (preferences changed) — one button handles both.
+  const needsScoreCount = jobs.filter((job) => !job.isScored || job.isStale).length;
 
-  async function handleScore() {
+  async function handleAdjustScore() {
     setIsScoring(true);
     try {
       await fetch("/api/score", { method: "POST" });
@@ -49,24 +49,11 @@ export function JobResults({
     }
   }
 
-  async function handleRescore() {
-    setIsRescoring(true);
-    try {
-      await fetch("/api/score/rescore", { method: "POST" });
-    } catch (error) {
-      console.error("Rescore failed:", error);
-    } finally {
-      setIsRescoring(false);
-      onScraped();
-    }
-  }
-
   const sorted = useMemo(() => {
-    const copy = [...jobs];
+    const copy = jobs.filter((job) => job.matchScore >= minScore);
     if (sortKey === "score") return copy.sort((a, b) => b.matchScore - a.matchScore);
-    if (sortKey === "date") return copy.sort((a, b) => a.daysAgo - b.daysAgo);
-    return copy.sort((a, b) => a.company.localeCompare(b.company));
-  }, [jobs, sortKey]);
+    return copy.sort((a, b) => a.daysAgo - b.daysAgo);
+  }, [jobs, sortKey, minScore]);
 
   async function startScrape() {
     setScrapeState("scraping");
@@ -102,35 +89,34 @@ export function JobResults({
 
   return (
     <div className="rounded-lg border border-border bg-[#1A1A1D] shadow-lg shadow-black/50">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-5 py-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={startScrape}
             disabled={isScraping}
-            className="flex h-9 shrink-0 items-center gap-2 rounded-md bg-text px-3.5 text-[13px] font-semibold text-bg outline-none transition-colors hover:bg-text/90 focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98] disabled:opacity-50"
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-text px-3 text-[13px] font-semibold text-bg outline-none transition-colors hover:bg-text/90 focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98] disabled:opacity-50"
           >
-            <Lightning size={15} weight="fill" />
+            <Lightning size={14} weight="fill" />
             {isScraping ? "Scraping…" : "Scrape Now"}
           </button>
           <button
             type="button"
-            onClick={handleScore}
-            disabled={isScraping || isScoring || unscoredCount === 0}
-            className="flex h-9 shrink-0 items-center gap-2 rounded-md border border-border-strong bg-surface px-3.5 text-[13px] font-semibold text-text outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98] disabled:opacity-50"
+            onClick={handleAdjustScore}
+            disabled={isScraping || isScoring || needsScoreCount === 0}
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border-strong bg-surface px-3 text-[13px] font-semibold text-text outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98] disabled:opacity-50"
           >
-            <Sparkle size={15} weight="fill" />
+            <Sparkle size={14} weight="fill" />
             {isScoring
-              ? "Scoring…"
-              : unscoredCount > 0
-                ? `Score ${unscoredCount} new job${unscoredCount === 1 ? "" : "s"}`
-                : "All jobs scored"}
+              ? "Adjusting…"
+              : needsScoreCount > 0
+                ? `Adjust score (${needsScoreCount})`
+                : "Scores up to date"}
           </button>
           {isScraping ? (
             <AgentStatus
               status={{
                 state: scrapeState,
-                agent: "Agent 2",
                 action: "Scraping job boards",
                 detail: `${progress.found} found`,
               }}
@@ -153,28 +139,29 @@ export function JobResults({
         </div>
 
         <div className="flex items-center gap-3">
-          {staleCount > 0 && !isScraping && (
-            <button
-              type="button"
-              onClick={handleRescore}
-              disabled={isRescoring}
-              className="flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-score-mid/30 bg-score-mid/15 px-3 text-[13px] font-medium text-score-mid transition-colors hover:bg-score-mid/25 active:scale-[0.98] disabled:opacity-50"
-            >
-              {isRescoring
-                ? "Rescoring…"
-                : `Rescore ${staleCount} outdated job${staleCount === 1 ? "" : "s"}`}
-            </button>
-          )}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[12px] text-text-faint">Min score</span>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={minScore || ""}
+              onChange={(e) => setMinScore(Number(e.target.value) || 0)}
+              placeholder="0"
+              className="h-8 w-14 rounded-md border border-border-strong bg-surface-hover px-2 text-[13px] text-text-muted outline-none focus:border-text-muted focus:text-text"
+            />
+          </div>
+          <span className="text-[12px] text-text-faint">Sort</span>
           <div className="relative">
             <select
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
               aria-label="Sort jobs by"
-              className="h-9 appearance-none rounded-md border border-border-strong bg-surface-hover pl-3 pr-8 text-[13px] text-text-muted transition-colors hover:text-text focus:border-text-muted focus:outline-none"
+              className="h-8 appearance-none rounded-md border border-border-strong bg-surface-hover pl-3 pr-8 text-[13px] text-text-muted transition-colors hover:text-text focus:border-text-muted focus:outline-none"
             >
               {(Object.keys(sortLabels) as SortKey[]).map((key) => (
                 <option key={key} value={key} className="bg-surface">
-                  Sort: {sortLabels[key]}
+                  {sortLabels[key]}
                 </option>
               ))}
             </select>

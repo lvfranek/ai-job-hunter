@@ -16,8 +16,7 @@ export function AgentStatus({ status }: { status: AgentStatusData }) {
       <div className="min-w-0 text-[12px] leading-snug text-text-muted">
         {isActive ? (
           <>
-            <p className="font-semibold text-text">{status.agent}</p>
-            <p>{status.action}</p>
+            <p className="text-text">{status.action}</p>
             {status.detail && (
               <p className="tabular-nums text-text-faint">{status.detail}</p>
             )}

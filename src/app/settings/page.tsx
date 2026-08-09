@@ -29,7 +29,7 @@ const PORTALS: { key: keyof PortalToggles; label: string }[] = [
   { key: "linkedin", label: "LinkedIn" },
   { key: "xing", label: "Xing" },
   { key: "stepstone", label: "Stepstone" },
-  { key: "arbeitsagentur", label: "Arbeitsagentur (coming soon)" },
+  { key: "arbeitsagentur", label: "Arbeitsagentur" },
 ];
 
 const DEFAULTS: SettingsForm = {
@@ -180,9 +180,9 @@ export default function SettingsPage() {
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
                   Narrows to remote positions, on top of the location above — doesn&apos;t search
-                  worldwide. Works on Indeed, LinkedIn, and Stepstone; on Xing it&apos;s
-                  approximated by adding &quot;remote&quot; to the search keywords, since that
-                  board has no dedicated remote filter.
+                  worldwide. Works on Indeed, LinkedIn, Stepstone, and Arbeitsagentur; on Xing
+                  it&apos;s approximated by adding &quot;remote&quot; to the search keywords,
+                  since that board has no dedicated remote filter.
                 </p>
               </div>
             </div>

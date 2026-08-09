@@ -1,10 +1,53 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
-import { triggerApifyScraper, pollApifyRun, buildIndeedInputs, mapIndeedJob } from "@/lib/apify";
+import {
+  triggerApifyScraper,
+  pollApifyRun,
+  buildIndeedInputs,
+  mapIndeedJob,
+  buildLinkedinInputs,
+  mapLinkedinJob,
+  buildStepstoneInputs,
+  mapStepstoneJob,
+  buildXingInputs,
+  mapXingJob,
+  type ApifyRunInput,
+  type ScrapedJob,
+} from "@/lib/apify";
 import { isJobDuplicate } from "@/lib/prefilter";
 import type { DbJob, Settings } from "@/lib/types";
 
-const INDEED_ACTOR_ID = process.env.APIFY_SCRAPER_INDEED || "";
+// Arbeitsagentur has no actor wired up yet — its portal_toggles entry is simply
+// never active until a scraper is added here.
+const PORTAL_SCRAPERS: Record<
+  "indeed" | "linkedin" | "stepstone" | "xing",
+  {
+    actorId: string;
+    buildInput: (settings: Settings) => ApifyRunInput;
+    mapJob: (raw: unknown) => ScrapedJob;
+  }
+> = {
+  indeed: {
+    actorId: process.env.APIFY_SCRAPER_INDEED || "",
+    buildInput: buildIndeedInputs,
+    mapJob: mapIndeedJob,
+  },
+  linkedin: {
+    actorId: process.env.APIFY_SCRAPER_LINKEDIN || "",
+    buildInput: buildLinkedinInputs,
+    mapJob: mapLinkedinJob,
+  },
+  stepstone: {
+    actorId: process.env.APIFY_SCRAPER_STEPSTONE || "",
+    buildInput: buildStepstoneInputs,
+    mapJob: mapStepstoneJob,
+  },
+  xing: {
+    actorId: process.env.APIFY_SCRAPER_XING || "",
+    buildInput: buildXingInputs,
+    mapJob: mapXingJob,
+  },
+};
 
 export async function POST() {
   const supabase = getSupabaseServerClient();
@@ -47,21 +90,46 @@ async function runScrapePipeline(runId: string, settings: Settings) {
   const supabase = getSupabaseServerClient();
 
   try {
-    const apifyRunId = await triggerApifyScraper(INDEED_ACTOR_ID, buildIndeedInputs(settings));
-    const rawJobs = await pollApifyRun(apifyRunId);
+    const portals = (Object.keys(PORTAL_SCRAPERS) as (keyof typeof PORTAL_SCRAPERS)[]).filter(
+      (portal) => settings.portal_toggles[portal] && PORTAL_SCRAPERS[portal].actorId
+    );
 
-    await supabase.from("scrape_runs").update({ total_scraped: rawJobs.length }).eq("id", runId);
+    const results = await Promise.allSettled(
+      portals.map(async (portal) => {
+        const { actorId, buildInput, mapJob } = PORTAL_SCRAPERS[portal];
+        const apifyRunId = await triggerApifyScraper(actorId, buildInput(settings));
+        const rawJobs = await pollApifyRun(apifyRunId);
+        return rawJobs.map(mapJob);
+      })
+    );
 
-    const candidates: DbJob[] = rawJobs.map((raw) => {
-      const mapped = mapIndeedJob(raw);
-      return {
-        ...mapped,
-        id: mapped.url,
-        user_id: CURRENT_USER_ID,
-        created_at: "",
-        deleted_at: null,
-      } as DbJob;
+    // One portal failing (bad actor input, rate limit, etc.) shouldn't lose the
+    // jobs the other portals already found.
+    const scraped: ScrapedJob[] = [];
+    const portalCounts: Record<string, number> = {};
+    const portalErrors: Record<string, string> = {};
+    results.forEach((result, i) => {
+      if (result.status === "fulfilled") {
+        scraped.push(...result.value);
+        portalCounts[portals[i]] = result.value.length;
+      } else {
+        portalErrors[portals[i]] = String(result.reason);
+        console.error(`Scraping ${portals[i]} failed:`, result.reason);
+      }
     });
+
+    await supabase
+      .from("scrape_runs")
+      .update({ total_scraped: scraped.length, portal_counts: portalCounts })
+      .eq("id", runId);
+
+    const candidates: DbJob[] = scraped.map((mapped) => ({
+      ...mapped,
+      id: mapped.url,
+      user_id: CURRENT_USER_ID,
+      created_at: "",
+      deleted_at: null,
+    }));
 
     // No pre-filtering — every scraped job is stored. Scoring happens separately,
     // triggered by the user via the "Score" button (POST /api/score).
@@ -98,6 +166,7 @@ async function runScrapePipeline(runId: string, settings: Settings) {
         // "scored" predates the scrape/score split — repurposed here as "newly stored" count.
         scored: stored,
         duplicates_found: duplicates,
+        errors: Object.keys(portalErrors).length > 0 ? portalErrors : null,
       })
       .eq("id", runId);
   } catch (error) {

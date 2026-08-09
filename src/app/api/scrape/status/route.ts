@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     jobsFound: data.total_scraped,
     jobsFiltered: data.passed_prefilter,
     jobsStored: data.scored,
+    portalCounts: data.portal_counts ?? {},
     completedAt: data.ended_at,
   });
 }

@@ -16,6 +16,7 @@ export async function GET() {
       scraper_location: "",
       scraper_max_posting_age_days: 30,
       scraper_results_per_scan: 100,
+      remote_only: false,
       portal_toggles: {
         indeed: true,
         linkedin: true,

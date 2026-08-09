@@ -29,6 +29,7 @@ export function JobResults({
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [scrapeState, setScrapeState] = useState<ScrapeState>("idle");
   const [progress, setProgress] = useState({ found: 0 });
+  const [lastPortalCounts, setLastPortalCounts] = useState<Record<string, number> | null>(null);
   const [isScoring, setIsScoring] = useState(false);
   const [isRescoring, setIsRescoring] = useState(false);
   const [coverLetterJob, setCoverLetterJob] = useState<Job | null>(null);
@@ -83,6 +84,7 @@ export function JobResults({
           setProgress({ found: status.jobsFound ?? 0 });
 
           if (status.status === "completed" || status.status === "failed") {
+            setLastPortalCounts(status.portalCounts ?? null);
             clearInterval(interval);
             resolve();
           }
@@ -129,13 +131,23 @@ export function JobResults({
               status={{
                 state: scrapeState,
                 agent: "Agent 2",
-                action: "Scraping Indeed",
+                action: "Scraping job boards",
                 detail: `${progress.found} found`,
               }}
             />
           ) : (
             <span className="text-[12px] text-text-faint">
               Last scraped: {lastScraped}
+              {lastPortalCounts && Object.keys(lastPortalCounts).length > 0 && (
+                <>
+                  {" "}
+                  (
+                  {Object.entries(lastPortalCounts)
+                    .map(([portal, count]) => `${portal[0].toUpperCase()}${portal.slice(1)} ${count}`)
+                    .join(", ")}
+                  )
+                </>
+              )}
             </span>
           )}
         </div>

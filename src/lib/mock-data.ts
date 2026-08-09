@@ -1,4 +1,4 @@
-export type Platform = "linkedin" | "indeed" | "xing";
+export type Platform = "linkedin" | "indeed" | "xing" | "stepstone";
 
 export type Job = {
   id: string;
@@ -9,6 +9,7 @@ export type Job = {
   daysAgo: number;
   platform: Platform;
   url: string;
+  description: string | null;
   isStale?: boolean;
   isScored: boolean;
 };
@@ -26,10 +27,12 @@ export const platformLabels: Record<Platform, string> = {
   linkedin: "LinkedIn",
   indeed: "Indeed",
   xing: "Xing",
+  stepstone: "Stepstone",
 };
 
 export const platformIconSlugs: Record<Platform, string> = {
   linkedin: "linkedin",
   indeed: "indeed",
   xing: "xing",
+  stepstone: "stepstone",
 };

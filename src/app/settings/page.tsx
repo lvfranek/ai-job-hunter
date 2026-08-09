@@ -20,6 +20,7 @@ interface SettingsForm {
   scraper_location: string;
   scraper_max_posting_age_days: number;
   scraper_results_per_scan: number;
+  remote_only: boolean;
   portal_toggles: PortalToggles;
 }
 
@@ -28,7 +29,7 @@ const PORTALS: { key: keyof PortalToggles; label: string }[] = [
   { key: "linkedin", label: "LinkedIn" },
   { key: "xing", label: "Xing" },
   { key: "stepstone", label: "Stepstone" },
-  { key: "arbeitsagentur", label: "Arbeitsagentur" },
+  { key: "arbeitsagentur", label: "Arbeitsagentur (coming soon)" },
 ];
 
 const DEFAULTS: SettingsForm = {
@@ -36,6 +37,7 @@ const DEFAULTS: SettingsForm = {
   scraper_location: "",
   scraper_max_posting_age_days: 30,
   scraper_results_per_scan: 100,
+  remote_only: false,
   portal_toggles: {
     indeed: true,
     linkedin: true,
@@ -54,6 +56,7 @@ function toForm(data: Record<string, unknown>): SettingsForm {
       (data.scraper_max_posting_age_days as number) ?? DEFAULTS.scraper_max_posting_age_days,
     scraper_results_per_scan:
       (data.scraper_results_per_scan as number) ?? DEFAULTS.scraper_results_per_scan,
+    remote_only: (data.remote_only as boolean) ?? DEFAULTS.remote_only,
     portal_toggles: {
       ...DEFAULTS.portal_toggles,
       ...(data.portal_toggles as Partial<PortalToggles>),
@@ -163,9 +166,25 @@ export default function SettingsPage() {
                 value={form.scraper_location}
                 onChange={(e) => setForm({ ...form, scraper_location: e.target.value })}
                 placeholder="Hamburg, Germany"
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
+                disabled={form.remote_only}
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted disabled:opacity-50"
               />
-              <p className="mt-1.5 text-[12px] text-text-faint">Where to search for jobs</p>
+              <p className="mt-1.5 text-[12px] text-text-faint">
+                {form.remote_only ? "Ignored while Remote only is on" : "Where to search for jobs"}
+              </p>
+              <div className="mt-2.5">
+                <Checkbox
+                  label="Remote only"
+                  checked={form.remote_only}
+                  onChange={() => setForm({ ...form, remote_only: !form.remote_only })}
+                />
+                <p className="mt-1.5 text-[12px] text-text-faint">
+                  Query the scraper for remote jobs only, where the job board supports it — saves
+                  scraping work instead of filtering afterward. Works on Indeed, LinkedIn, and
+                  Stepstone; on Xing it&apos;s approximated by adding &quot;remote&quot; to the search
+                  keywords, since that board has no dedicated remote filter.
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -200,8 +219,9 @@ export default function SettingsPage() {
                   className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-text-muted"
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
-                  Max jobs fetched in total (all keywords combined) — all of them
-                  land on the dashboard, scored by AI, minus any already-seen duplicates
+                  Max jobs fetched per job board (all keywords combined) — with several boards
+                  active, the total across all of them can be higher. All land on the
+                  dashboard, scored by AI, minus any already-seen duplicates
                 </p>
               </div>
             </div>

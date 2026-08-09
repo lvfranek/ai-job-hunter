@@ -50,6 +50,7 @@ export interface Settings {
   scraper_location: string;
   scraper_max_posting_age_days: number;
   scraper_results_per_scan: number;
+  remote_only: boolean; // query the scraper for remote-only jobs at the source, where supported
   portal_toggles: Record<string, boolean>;
   preferred_gemini_model: string;
   created_at: string;
@@ -92,6 +93,7 @@ export interface ScrapeRun {
   passed_prefilter: number;
   duplicates_found: number;
   scored: number;
+  portal_counts: Record<string, number>;
   errors: Record<string, string> | null;
   created_at: string;
 }

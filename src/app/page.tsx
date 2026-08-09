@@ -25,6 +25,7 @@ function toUiJob(row: JobWithMatch): Job {
     daysAgo,
     platform: (row.platform as Platform) ?? "indeed",
     url: row.url,
+    description: row.description,
     isStale: match?.stale_at != null,
     isScored: match != null,
   };

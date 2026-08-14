@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { SquaresFour } from "@phosphor-icons/react/dist/ssr";
 import { JobResults } from "@/components/JobResults";
-import type { Job, Platform } from "@/lib/mock-data";
+import type { Job, JobStatus, Platform } from "@/lib/mock-data";
 import type { JobWithMatch } from "@/lib/types";
 
 function formatDaysAgo(days: number) {
@@ -26,6 +26,7 @@ function toUiJob(row: JobWithMatch): Job {
     platform: (row.platform as Platform) ?? "indeed",
     url: row.url,
     description: row.description,
+    status: (row.status as JobStatus | null) ?? null,
     isStale: match?.stale_at != null,
     isScored: match != null,
   };
@@ -48,6 +49,22 @@ export default function DashboardPage() {
   }, []);
 
   const highMatches = jobs.filter((job) => job.matchScore >= 80).length;
+
+  async function updateJobStatus(jobId: string, status: JobStatus | null) {
+    const prev = jobs;
+    setJobs((js) => js.map((j) => (j.id === jobId ? { ...j, status } : j)));
+    try {
+      const res = await fetch(`/api/jobs/${jobId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Update failed");
+    } catch (error) {
+      console.error("Status update failed:", error);
+      setJobs(prev);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#DFE9F0] py-8 pr-8">
@@ -81,6 +98,7 @@ export default function DashboardPage() {
           setLastScraped("Just now");
           fetchJobs();
         }}
+        onStatusChange={updateJobStatus}
       />
     </main>
   );

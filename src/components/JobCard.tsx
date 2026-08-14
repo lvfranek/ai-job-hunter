@@ -9,8 +9,8 @@ import {
   FileText,
   LinkedinLogo,
 } from "@phosphor-icons/react/dist/ssr";
-import type { Job } from "@/lib/mock-data";
-import { platformIconSlugs, platformLabels } from "@/lib/mock-data";
+import type { Job, JobStatus } from "@/lib/mock-data";
+import { JOB_STATUSES, jobStatusLabels, platformIconSlugs, platformLabels } from "@/lib/mock-data";
 
 function scoreTier(score: number) {
   if (score >= 80) {
@@ -37,12 +37,21 @@ function scoreTier(score: number) {
   };
 }
 
+const statusTier: Record<JobStatus, { text: string; bg: string; border: string }> = {
+  interested: { text: "text-sky-800", bg: "bg-sky-100", border: "border-sky-300" },
+  applied: { text: "text-violet-800", bg: "bg-violet-100", border: "border-violet-300" },
+  interview: { text: "text-blue-800", bg: "bg-blue-100", border: "border-blue-300" },
+  not_interested: { text: "text-slate-600", bg: "bg-slate-100", border: "border-slate-300" },
+};
+
 export function JobCard({
   job,
   onGenerateCoverLetter,
+  onStatusChange,
 }: {
   job: Job;
   onGenerateCoverLetter: (job: Job) => void;
+  onStatusChange: (jobId: string, status: JobStatus | null) => void;
 }) {
   const tier = scoreTier(job.matchScore);
   const [expanded, setExpanded] = useState(false);
@@ -128,6 +137,36 @@ export function JobCard({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          <div className="relative">
+            <select
+              value={job.status ?? ""}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                e.stopPropagation();
+                onStatusChange(job.id, (e.target.value || null) as JobStatus | null);
+              }}
+              aria-label="Application status"
+              className={`h-8 appearance-none rounded-xl border px-3 pr-7 text-[13px] font-medium outline-none transition-colors ${
+                job.status
+                  ? `${statusTier[job.status].bg} ${statusTier[job.status].border} ${statusTier[job.status].text}`
+                  : "border-[#B9CCDA] bg-white text-[#64748B]"
+              }`}
+            >
+              <option value="">No status</option>
+              {JOB_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {jobStatusLabels[s]}
+                </option>
+              ))}
+            </select>
+            <CaretDown
+              size={12}
+              weight="bold"
+              className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${
+                job.status ? statusTier[job.status].text : "text-[#94A3B8]"
+              }`}
+            />
+          </div>
           <button
             type="button"
             onClick={(e) => {

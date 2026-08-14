@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Job Hunter
 
-## Getting Started
+Scrapes job boards (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur), scores matches against your
+profile with an LLM, and helps you generate tailored cover letters. Built with Next.js and Supabase.
 
-First, run the development server:
+## Setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1. **Clone and install**
+   ```bash
+   git clone <this-repo>
+   cd ai-job-hunter
+   npm install
+   ```
+
+2. **Create a Supabase project** at [supabase.com](https://supabase.com), then run every file in
+   `supabase/migrations/` against it, in order (via the Supabase SQL editor, or `supabase db push`
+   if you use the Supabase CLI).
+
+3. **Copy the env template** and fill in your Supabase project's URL, anon key, and service role
+   key (Project Settings → API in the Supabase dashboard):
+   ```bash
+   cp .env.local.example .env.local
+   ```
+
+4. **Generate the two required app secrets** and paste them into `.env.local`:
+   - `CREDENTIALS_ENCRYPTION_KEY` — encrypts any API keys you enter later via the Settings page:
+     ```bash
+     openssl rand -hex 32
+     ```
+   - `AUTH_PASSWORD_HASH` — the password that protects your deployment (nobody without it can
+     reach the app):
+     ```bash
+     node -e "const c=require('crypto');const s=c.randomBytes(16).toString('hex');c.scrypt(process.argv[1],s,64,(e,k)=>console.log(s+':'+k.toString('hex')))" "your-password-here"
+     ```
+
+5. **Start the app** and log in with the password you hashed in step 4:
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000).
+
+6. **Add your Apify and OpenRouter API keys** via Settings → API Keys in the app itself — no need
+   to touch `.env.local` for these. (You can still set them as env vars instead if you prefer; the
+   Settings UI values take priority when both are set.)
+
+7. **Deploying**: always put this behind HTTPS (Vercel and most hosts do this automatically) — the
+   login cookie is only meaningful over an encrypted connection.
+
+## Automation (optional)
+
+`POST /api/cron/scrape` runs a full scrape + score pass and waits for it to finish before
+responding — unlike the "Scan now" button in the UI, which fires in the background. Point any
+scheduler at it: a cron job, [n8n](https://n8n.io), Zapier, a scheduled GitHub Action, whatever
+you already use. The app doesn't depend on a specific one.
+
+1. Generate a secret and set it as `CRON_SECRET` in your env:
+   ```bash
+   openssl rand -hex 32
+   ```
+2. Call the endpoint with it as a bearer token, on whatever schedule you like:
+   ```bash
+   curl -X POST https://your-app.vercel.app/api/cron/scrape \
+     -H "Authorization: Bearer $CRON_SECRET"
+   ```
+   Response: `{ "runId": "...", "jobsFound": 12, "jobsStored": 9, "jobsScored": 9, "notified": true }`
+
+### Webhook notifications
+
+Set `NOTIFICATION_WEBHOOK_URL` to have the app POST a summary of newly-scored high-fit jobs after
+each cron run (leave it unset to skip this — the cron endpoint works fine without it). The score
+threshold is set in Settings → Notifications (default 75). Each job is only ever notified once,
+even if it gets rescored later. Any receiver that accepts a JSON POST works — a Slack/Discord
+webhook relay, [webhook.site](https://webhook.site) for testing, your own endpoint, etc.
+
+Payload shape:
+```json
+{
+  "event": "new_jobs",
+  "count": 1,
+  "jobs": [
+    {
+      "title": "Senior React Developer",
+      "company": "TechCorp GmbH",
+      "url": "https://...",
+      "platform": "indeed",
+      "score": 87,
+      "reasoning": "Matches React and TypeScript, remote, senior level",
+      "postedDate": "2026-08-14"
+    }
+  ]
+}
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Built with [Next.js](https://nextjs.org) and [Supabase](https://supabase.com).

@@ -10,7 +10,8 @@ import {
   Sparkle,
   X,
 } from "@phosphor-icons/react";
-import type { Job } from "@/lib/mock-data";
+import type { Job, JobStatus } from "@/lib/mock-data";
+import { jobStatusLabels } from "@/lib/mock-data";
 import { JobCard } from "@/components/JobCard";
 import { AgentStatus } from "@/components/AgentStatus";
 import { CoverLetterModal } from "@/components/CoverLetterModal";
@@ -22,6 +23,13 @@ const sortLabels: Record<SortKey, string> = {
   date: "Posted date",
 };
 
+type StatusFilter = JobStatus | "all";
+
+const statusFilterLabels: Record<StatusFilter, string> = {
+  all: "All statuses",
+  ...jobStatusLabels,
+};
+
 const PAGE_SIZE = 25;
 
 type ScrapeState = "idle" | "scraping";
@@ -30,13 +38,16 @@ export function JobResults({
   jobs,
   lastScraped,
   onScraped,
+  onStatusChange,
 }: {
   jobs: Job[];
   lastScraped: string;
   onScraped: () => void;
+  onStatusChange: (jobId: string, status: JobStatus | null) => void;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [minScore, setMinScore] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
   const [scrapeState, setScrapeState] = useState<ScrapeState>("idle");
   const [progress, setProgress] = useState({ found: 0 });
@@ -95,10 +106,12 @@ export function JobResults({
   }
 
   const sorted = useMemo(() => {
-    const copy = jobs.filter((job) => job.matchScore >= minScore);
+    const copy = jobs
+      .filter((job) => job.matchScore >= minScore)
+      .filter((job) => statusFilter === "all" || job.status === statusFilter);
     if (sortKey === "score") return copy.sort((a, b) => b.matchScore - a.matchScore);
     return copy.sort((a, b) => a.daysAgo - b.daysAgo);
-  }, [jobs, sortKey, minScore]);
+  }, [jobs, sortKey, minScore, statusFilter]);
 
   const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -244,6 +257,29 @@ export function JobResults({
               className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
             />
           </div>
+          <span className="text-[12px] text-[#94A3B8]">Status</span>
+          <div className="relative">
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value as StatusFilter);
+                setPage(1);
+              }}
+              aria-label="Filter by status"
+              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-[13px] text-[#64748B] transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none"
+            >
+              {(Object.keys(statusFilterLabels) as StatusFilter[]).map((key) => (
+                <option key={key} value={key}>
+                  {statusFilterLabels[key]}
+                </option>
+              ))}
+            </select>
+            <CaretDown
+              size={13}
+              weight="bold"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+            />
+          </div>
         </div>
       </div>
 
@@ -258,7 +294,12 @@ export function JobResults({
         <>
           <div className="divide-y divide-[#D7E4ED]">
             {paged.map((job) => (
-              <JobCard key={job.id} job={job} onGenerateCoverLetter={setCoverLetterJob} />
+              <JobCard
+                key={job.id}
+                job={job}
+                onGenerateCoverLetter={setCoverLetterJob}
+                onStatusChange={onStatusChange}
+              />
             ))}
           </div>
 

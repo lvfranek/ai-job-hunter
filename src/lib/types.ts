@@ -52,6 +52,7 @@ export interface Settings {
   scraper_results_per_scan: number;
   remote_only: boolean; // query the scraper for remote-only jobs at the source, where supported
   portal_toggles: Record<string, boolean>;
+  notification_threshold: number; // min match_score (0-100) to trigger a webhook notification
   created_at: string;
   updated_at: string;
 }
@@ -64,6 +65,7 @@ export interface DbJob {
   company: string;
   description: string | null;
   platform: string;
+  status: string | null;
   posted_date: string | null;
   created_at: string;
   deleted_at: string | null;
@@ -79,6 +81,7 @@ export interface JobMatch {
   location_fit: number;
   reasoning: string | null;
   stale_at: string | null;
+  notified_at: string | null;
   created_at: string;
 }
 

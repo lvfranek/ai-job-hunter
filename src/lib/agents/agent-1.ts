@@ -49,7 +49,7 @@ export async function parseProfileFromCV(
   cvText: string,
   modelName?: string
 ): Promise<ParsedProfile> {
-  const model = getGeminiModel(modelName);
+  const model = await getGeminiModel(modelName);
   const result = await model.generateContent(PROMPT + cvText);
   const raw = result.response.text().trim();
   const json = raw.replace(/^```(?:json)?\s*|\s*```$/g, "");

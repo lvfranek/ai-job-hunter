@@ -1,6 +1,5 @@
 import type { Settings } from "./types";
 
-const apifyApiKey = process.env.APIFY_API_KEY || "";
 const apifyBaseUrl = "https://api.apify.com/v2";
 
 export interface ApifyRunInput {
@@ -12,12 +11,13 @@ export interface ApifyRunInput {
  */
 export async function triggerApifyScraper(
   scraperId: string,
-  inputs: ApifyRunInput
+  inputs: ApifyRunInput,
+  apiKey: string
 ): Promise<string> {
   const res = await fetch(`${apifyBaseUrl}/acts/${scraperId}/runs`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apifyApiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(inputs),
@@ -34,10 +34,10 @@ export async function triggerApifyScraper(
 /**
  * Get results from a completed Apify run. Returns array of job listings.
  */
-export async function getScraperResults(runId: string): Promise<unknown[]> {
+export async function getScraperResults(runId: string, apiKey: string): Promise<unknown[]> {
   try {
     const res = await fetch(`${apifyBaseUrl}/actor-runs/${runId}/dataset/items`, {
-      headers: { Authorization: `Bearer ${apifyApiKey}` },
+      headers: { Authorization: `Bearer ${apiKey}` },
     });
     if (!res.ok) return [];
     return (await res.json()) || [];
@@ -50,10 +50,10 @@ export async function getScraperResults(runId: string): Promise<unknown[]> {
 /**
  * Get status of an Apify run.
  */
-export async function getScraperStatus(runId: string): Promise<string> {
+export async function getScraperStatus(runId: string, apiKey: string): Promise<string> {
   try {
     const res = await fetch(`${apifyBaseUrl}/actor-runs/${runId}`, {
-      headers: { Authorization: `Bearer ${apifyApiKey}` },
+      headers: { Authorization: `Bearer ${apiKey}` },
     });
     if (!res.ok) return "unknown";
     const data = await res.json();
@@ -68,10 +68,14 @@ export async function getScraperStatus(runId: string): Promise<string> {
  * Poll an Apify run until it finishes, then return the dataset items.
  * Polls every 2s, ~5 minute timeout (150 attempts).
  */
-export async function pollApifyRun(runId: string, maxAttempts = 150): Promise<unknown[]> {
+export async function pollApifyRun(
+  runId: string,
+  apiKey: string,
+  maxAttempts = 150
+): Promise<unknown[]> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const status = await getScraperStatus(runId);
-    if (status === "SUCCEEDED") return getScraperResults(runId);
+    const status = await getScraperStatus(runId, apiKey);
+    if (status === "SUCCEEDED") return getScraperResults(runId, apiKey);
     if (status === "FAILED" || status === "ABORTED") {
       throw new Error(`Apify run ${status.toLowerCase()}`);
     }

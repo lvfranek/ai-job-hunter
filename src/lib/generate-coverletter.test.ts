@@ -37,6 +37,7 @@ const job: DbJob = {
   company: "Acme GmbH",
   description: "desc",
   platform: "indeed",
+  status: null,
   posted_date: null,
   created_at: "",
   deleted_at: null,

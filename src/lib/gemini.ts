@@ -1,7 +1,6 @@
-const apiKey = process.env.OPENROUTER_API_KEY || "";
-const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || "mistralai/mistral-nemo";
+import { getCredential } from "./credentials";
 
-async function callOpenRouter(model: string, prompt: string): Promise<string> {
+async function callOpenRouter(model: string, prompt: string, apiKey: string): Promise<string> {
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -24,11 +23,16 @@ async function callOpenRouter(model: string, prompt: string): Promise<string> {
 
 // Mimics the @google/generative-ai model shape so callers (e.g. agent-1.ts)
 // don't need to change: model.generateContent(prompt) -> { response: { text() } }
-export const getGeminiModel = (modelName: string = DEFAULT_MODEL) => {
+export async function getGeminiModel(modelName?: string) {
+  const [apiKey, resolvedModel] = await Promise.all([
+    getCredential("openrouter_api_key"),
+    modelName ? Promise.resolve(modelName) : getCredential("openrouter_model"),
+  ]);
+  const model = resolvedModel || "mistralai/mistral-nemo";
   return {
     generateContent: async (prompt: string) => {
-      const text = await callOpenRouter(modelName, prompt);
+      const text = await callOpenRouter(model, prompt, apiKey);
       return { response: { text: () => text } };
     },
   };
-};
+}

@@ -6,6 +6,7 @@ import { TagInput } from "@/components/TagInput";
 import { Checkbox } from "@/components/Checkbox";
 import { Toast } from "@/components/Toast";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
+import { ApiKeysSection } from "./ApiKeysSection";
 
 interface PortalToggles {
   indeed: boolean;
@@ -22,6 +23,7 @@ interface SettingsForm {
   scraper_results_per_scan: number;
   remote_only: boolean;
   portal_toggles: PortalToggles;
+  notification_threshold: number;
 }
 
 const PORTALS: { key: keyof PortalToggles; label: string }[] = [
@@ -45,6 +47,7 @@ const DEFAULTS: SettingsForm = {
     stepstone: true,
     arbeitsagentur: true,
   },
+  notification_threshold: 75,
 };
 
 function toForm(data: Record<string, unknown>): SettingsForm {
@@ -61,6 +64,8 @@ function toForm(data: Record<string, unknown>): SettingsForm {
       ...DEFAULTS.portal_toggles,
       ...(data.portal_toggles as Partial<PortalToggles>),
     },
+    notification_threshold:
+      (data.notification_threshold as number) ?? DEFAULTS.notification_threshold,
   };
 }
 
@@ -71,8 +76,10 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [apiKeysDirty, setApiKeysDirty] = useState(false);
+  const [webhookConfigured, setWebhookConfigured] = useState(false);
 
-  useDirtyGuard(!loading && JSON.stringify(form) !== savedSnapshot);
+  useDirtyGuard((!loading && JSON.stringify(form) !== savedSnapshot) || apiKeysDirty);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -81,6 +88,7 @@ export default function SettingsPage() {
         const next = toForm(data);
         setForm(next);
         setSavedSnapshot(JSON.stringify(next));
+        setWebhookConfigured(Boolean(data.webhook_configured));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -102,6 +110,8 @@ export default function SettingsPage() {
       return setError("Results per scan must be greater than 0");
     if (!Object.values(form.portal_toggles).some(Boolean))
       return setError("Select at least one job board to search");
+    if (form.notification_threshold < 0 || form.notification_threshold > 100)
+      return setError("Notification threshold must be between 0 and 100");
 
     setSaving(true);
     try {
@@ -266,6 +276,39 @@ export default function SettingsPage() {
             </div>
           </section>
 
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-[15px] font-semibold text-text">Notifications</h2>
+              <p className="text-[12px] text-text-faint">
+                For automated runs via the cron endpoint — see README for setup.
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                Notification threshold
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={form.notification_threshold}
+                onChange={(e) =>
+                  setForm({ ...form, notification_threshold: Number(e.target.value) })
+                }
+                className="w-full max-w-40 rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+              />
+              <p className="mt-1.5 text-[12px] text-text-faint">
+                Jobs scoring at or above this trigger a webhook notification. Only affects the
+                webhook — the dashboard still shows every job regardless of score. Configure the
+                webhook URL via the <code>NOTIFICATION_WEBHOOK_URL</code> environment variable.
+              </p>
+              <p className="mt-2 text-[12px] text-text-faint">
+                {webhookConfigured ? "Webhook configured" : "No webhook configured"}
+              </p>
+            </div>
+          </section>
+
           <button
             type="button"
             onClick={handleSave}
@@ -274,6 +317,8 @@ export default function SettingsPage() {
           >
             {saving ? "Saving…" : "Save Settings"}
           </button>
+
+          <ApiKeysSection onDirtyChange={setApiKeysDirty} />
         </div>
       )}
     </main>

@@ -1,5 +1,16 @@
 export type Platform = "linkedin" | "indeed" | "xing" | "stepstone" | "arbeitsagentur";
 
+export type JobStatus = "interested" | "applied" | "interview" | "not_interested";
+
+export const JOB_STATUSES: JobStatus[] = ["interested", "applied", "interview", "not_interested"];
+
+export const jobStatusLabels: Record<JobStatus, string> = {
+  interested: "Interested",
+  applied: "Applied",
+  interview: "Interview",
+  not_interested: "Not interested",
+};
+
 export type Job = {
   id: string;
   title: string;
@@ -10,6 +21,7 @@ export type Job = {
   platform: Platform;
   url: string;
   description: string | null;
+  status: JobStatus | null;
   isStale?: boolean;
   isScored: boolean;
 };

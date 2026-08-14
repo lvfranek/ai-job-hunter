@@ -24,9 +24,14 @@ export async function GET() {
         stepstone: true,
         arbeitsagentur: true,
       },
+      notification_threshold: 75,
     };
 
-    return NextResponse.json(data || defaultSettings);
+    // Derived, not stored — never expose the webhook URL itself to the client.
+    return NextResponse.json({
+      ...(data || defaultSettings),
+      webhook_configured: Boolean(process.env.NOTIFICATION_WEBHOOK_URL),
+    });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : (error as { message?: string })?.message;

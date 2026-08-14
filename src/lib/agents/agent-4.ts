@@ -45,7 +45,7 @@ export async function generateCoverLetterBody(
   job: DbJob,
   language: CoverLetterLanguage
 ): Promise<string[]> {
-  const model = getGeminiModel();
+  const model = await getGeminiModel();
   const result = await model.generateContent(buildPrompt(profile, job, language));
   const raw = result.response.text().trim();
 

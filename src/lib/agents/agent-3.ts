@@ -65,7 +65,7 @@ export async function scoreChunk(
   preferences: Preferences,
   modelName?: string
 ): Promise<ScoringResult[]> {
-  const model = getGeminiModel(modelName);
+  const model = await getGeminiModel(modelName);
   const result = await model.generateContent(buildPrompt(jobs, preferences));
   const raw = result.response.text().trim();
   const json = raw.replace(/^```(?:json)?\s*|\s*```$/g, "");

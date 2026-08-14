@@ -26,6 +26,8 @@ export function Sidebar() {
   const { dirty, setDirty } = useUnsavedChanges();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
 
+  if (pathname === "/login") return null;
+
   function guardNav(e: React.MouseEvent, href: string) {
     if (dirty) {
       e.preventDefault();

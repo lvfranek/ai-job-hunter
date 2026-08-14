@@ -1,7 +1,9 @@
 # AI Job Hunter
 
 Scrapes job boards (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur), scores matches against your
-profile with an LLM, and helps you generate tailored cover letters. Built with Next.js and Supabase.
+profile with an LLM, and helps you generate tailored cover letters. Track each job's application
+status (interested, applied, interview, not interested) and filter the list by it. Built with
+Next.js and Supabase.
 
 ## Setup
 
@@ -46,6 +48,19 @@ profile with an LLM, and helps you generate tailored cover letters. Built with N
 7. **Deploying**: always put this behind HTTPS (Vercel and most hosts do this automatically) — the
    login cookie is only meaningful over an encrypted connection.
 
+## Deployment
+
+The reference deployment runs on [Vercel](https://vercel.com), connected directly to this GitHub
+repo — push to your default branch and it redeploys.
+
+Set every variable from `.env.local.example` in **Project Settings → Environment Variables**. Use
+the exact same `AUTH_PASSWORD_HASH` and `CREDENTIALS_ENCRYPTION_KEY` values you generated locally —
+regenerating them on Vercel would lock you out of your own password and make any API keys already
+stored in Supabase undecryptable.
+
+The app is single-user by design: the password gate (`AUTH_PASSWORD_HASH`) is the only account
+there is, there's no public sign-up or multi-user support.
+
 ## Automation (optional)
 
 `POST /api/cron/scrape` runs a full scrape + score pass and waits for it to finish before
@@ -63,6 +78,8 @@ you already use. The app doesn't depend on a specific one.
      -H "Authorization: Bearer $CRON_SECRET"
    ```
    Response: `{ "runId": "...", "jobsFound": 12, "jobsStored": 9, "jobsScored": 9, "notified": true }`
+
+   Returns 401 if the bearer token is missing or doesn't match `CRON_SECRET`.
 
 ### Webhook notifications
 
@@ -90,6 +107,29 @@ Payload shape:
   ]
 }
 ```
+
+### Recommended settings for automated scraping
+
+If you point a scheduler at the cron endpoint on a recurring basis (e.g. every 2 hours during work
+hours), these starting values in Settings keep it useful without wasting Apify credits:
+
+| Setting | Recommended value | Why |
+|---|---|---|
+| Results per scan | 20 | Covers realistic daily posting volume per portal without wasting Apify credits |
+| Max posting age (days) | 2 | Keeps results fresh for time-sensitive applications, avoids re-scraping stale listings |
+| Notification threshold | 75 | Only notifies on genuinely strong matches, avoids notification fatigue |
+
+Tune these after a few days based on actual `scrape_runs` data (duplicate rate, jobs found vs.
+stored).
+
+## Security notes
+
+- Row Level Security is enabled on every Supabase table, scoped to the single hardcoded app user —
+  see `supabase/migrations/015_enable_rls.sql`.
+- The cron endpoint bypasses the password gate (external schedulers can't hold a login cookie) but
+  requires its own bearer token instead — never expose `CRON_SECRET` in client-side code.
+- `NOTIFICATION_WEBHOOK_URL` has no built-in auth on the receiving end by default — treat the URL
+  itself as a secret; anyone who has it can see your job matches.
 
 ## Learn More
 

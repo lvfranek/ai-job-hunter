@@ -5,6 +5,8 @@ profile with an LLM, and helps you generate tailored cover letters. Track each j
 status (interested, applied, interview, not interested) and filter the list by it. Built with
 Next.js and Supabase.
 
+![AI Job Hunter](public/aijobhunter.png)
+
 ## Setup
 
 1. **Clone and install**

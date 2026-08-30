@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
+import { DemoModeBanner } from "@/components/DemoModeBanner";
 import { UnsavedChangesProvider } from "@/lib/unsaved-changes";
 
 const inter = Inter({
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full bg-bg text-text">
         <UnsavedChangesProvider>
+          <DemoModeBanner />
           <div className="flex min-h-screen">
             <Sidebar />
             <div className="min-w-0 flex-1">{children}</div>

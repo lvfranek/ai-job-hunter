@@ -1,7 +1,17 @@
 import crypto from "crypto";
+import type { NextRequest } from "next/server";
 
 export const COOKIE_NAME = "job_hunter_session";
 export const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+
+// Guest/demo mode. This cookie unlocks a read-only tour backed entirely by canned
+// fixtures (see src/lib/demo-data.ts + src/app/api/demo). It guards nothing
+// sensitive — no real data, no writes, no paid API calls — so it's a plain flag,
+// not a signed token.
+export const DEMO_COOKIE_NAME = "job_hunter_demo";
+export const DEMO_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+// Set by POST /api/demo/score so GET /api/demo/jobs can return the "scored" fixtures.
+export const DEMO_SCORED_COOKIE_NAME = "job_hunter_demo_scored";
 
 export function verifyPassword(password: string): boolean {
   const raw = process.env.AUTH_PASSWORD_HASH;
@@ -28,6 +38,13 @@ export function isValidSessionCookie(value: string | undefined): boolean {
   const expected = Buffer.from(sessionToken());
   const actual = Buffer.from(value);
   return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+}
+
+// True when the request carries the demo cookie. Used by the money-spending routes
+// as a belt-and-suspenders guard — the proxy already rewrites demo traffic to
+// /api/demo/* before it can reach them.
+export function isDemoRequest(request: NextRequest): boolean {
+  return request.cookies.get(DEMO_COOKIE_NAME)?.value === "1";
 }
 
 // For the cron endpoint: "Authorization: Bearer <CRON_SECRET>". Doesn't distinguish

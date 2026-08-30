@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { COOKIE_NAME, COOKIE_MAX_AGE, sessionToken, verifyPassword } from "@/lib/auth";
+import {
+  COOKIE_NAME,
+  COOKIE_MAX_AGE,
+  DEMO_COOKIE_NAME,
+  DEMO_SCORED_COOKIE_NAME,
+  sessionToken,
+  verifyPassword,
+} from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   const { password } = (await request.json()) as { password?: string };
@@ -16,5 +23,8 @@ export async function POST(request: NextRequest) {
     maxAge: COOKIE_MAX_AGE,
     path: "/",
   });
+  // A real login supersedes any demo session.
+  res.cookies.delete(DEMO_COOKIE_NAME);
+  res.cookies.delete(DEMO_SCORED_COOKIE_NAME);
   return res;
 }

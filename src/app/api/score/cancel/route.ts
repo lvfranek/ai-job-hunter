@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase";
+import { isDemoRequest } from "@/lib/auth";
 
 // Cooperative cancel: flips the run's status so the background pipeline stops
 // launching new chunks at its next check. Chunks already in flight still finish
 // and their results are kept — there's no way to abort an in-progress AI call.
 export async function POST(request: NextRequest) {
+  if (isDemoRequest(request)) {
+    return NextResponse.json({ error: "Not available in demo" }, { status: 403 });
+  }
+
   const { runId } = await request.json();
   if (!runId) {
     return NextResponse.json({ error: "runId is required" }, { status: 400 });

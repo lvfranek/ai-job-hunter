@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
+import { isDemoRequest } from "@/lib/auth";
 import { generateCoverLetterBody, type CoverLetterLanguage } from "@/lib/agents/agent-4";
 import { generateCoverLetterDocx } from "@/lib/generate-coverletter";
 import type { DbJob, Profile } from "@/lib/types";
@@ -9,6 +10,10 @@ function sanitizeFilenamePart(value: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  if (isDemoRequest(request)) {
+    return NextResponse.json({ error: "Not available in demo" }, { status: 403 });
+  }
+
   const body = await request.json();
   const jobId = body.jobId as string | undefined;
   const language: CoverLetterLanguage = body.language === "en" ? "en" : "de";

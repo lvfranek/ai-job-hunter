@@ -121,8 +121,9 @@ export default function SettingsPage() {
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error("Failed to save settings");
+      const data = await res.json().catch(() => null);
       setSavedSnapshot(JSON.stringify(form));
-      setMessage("Settings saved");
+      setMessage(data?.demo ? "Demo mode — changes aren't saved" : "Settings saved");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {

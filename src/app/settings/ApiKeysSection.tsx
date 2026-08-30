@@ -101,9 +101,10 @@ export function ApiKeysSection({ onDirtyChange }: { onDirtyChange: (dirty: boole
         body: JSON.stringify({ secrets, config }),
       });
       if (!res.ok) throw new Error("Failed to save API keys");
+      const data = await res.json().catch(() => null);
       setSecretInputs({});
       await refresh();
-      setMessage("API keys saved");
+      setMessage(data?.demo ? "Demo mode — changes aren't saved" : "API keys saved");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {

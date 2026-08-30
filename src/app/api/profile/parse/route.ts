@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isDemoRequest } from "@/lib/auth";
 import { extractCvText } from "@/lib/cv-parser";
 import { parseProfileFromCV } from "@/lib/agents/agent-1";
 
@@ -10,6 +11,10 @@ const ALLOWED_TYPES = [
 ];
 
 export async function POST(request: NextRequest) {
+  if (isDemoRequest(request)) {
+    return NextResponse.json({ error: "Not available in demo" }, { status: 403 });
+  }
+
   const formData = await request.formData();
   const file = formData.get("file");
 

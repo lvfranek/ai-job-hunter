@@ -119,8 +119,9 @@ export default function ProfilePage() {
         }),
       });
       if (!res.ok) throw new Error("Failed to save profile");
+      const data = await res.json().catch(() => null);
       setSavedSnapshot(JSON.stringify(form));
-      setMessage("Profile saved");
+      setMessage(data?.demo ? "Demo mode — changes aren't saved" : "Profile saved");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {

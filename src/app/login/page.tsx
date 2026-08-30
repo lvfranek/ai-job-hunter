@@ -10,6 +10,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,6 +32,20 @@ function LoginForm() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function enterDemo() {
+    setError(null);
+    setDemoLoading(true);
+    try {
+      const res = await fetch("/api/auth/demo", { method: "POST" });
+      if (!res.ok) throw new Error("Could not start the demo");
+      router.push("/");
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setDemoLoading(false);
     }
   }
 
@@ -73,6 +88,26 @@ function LoginForm() {
         >
           {submitting ? "Signing in…" : "Sign in"}
         </button>
+
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-border-strong/60" />
+          <span className="text-[11px] uppercase tracking-wide text-text-faint">or</span>
+          <span className="h-px flex-1 bg-border-strong/60" />
+        </div>
+
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={enterDemo}
+            disabled={demoLoading || submitting}
+            className="w-full rounded-xl border border-border-strong bg-surface px-4 py-2 text-[13px] font-medium text-text transition-colors hover:bg-[#E4EEF5] active:scale-[0.98] disabled:opacity-50"
+          >
+            {demoLoading ? "Loading demo…" : "Explore the demo"}
+          </button>
+          <p className="text-center text-[12px] text-text-faint">
+            Browse sample data — no sign-up, nothing is saved.
+          </p>
+        </div>
       </form>
     </main>
   );

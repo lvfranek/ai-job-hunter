@@ -94,8 +94,9 @@ export default function PreferencesPage() {
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error("Failed to save preferences");
+      const data = await res.json().catch(() => null);
       setSavedSnapshot(JSON.stringify(form));
-      setMessage("Preferences saved");
+      setMessage(data?.demo ? "Demo mode — changes aren't saved" : "Preferences saved");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {

@@ -1,8 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
+import { isDemoRequest } from "@/lib/auth";
 import { getJobsNeedingScoring, runScorePipeline } from "@/lib/pipeline/run-score";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  // Belt-and-suspenders: the proxy already rewrites demo traffic to /api/demo.
+  if (isDemoRequest(request)) {
+    return NextResponse.json({ error: "Not available in demo" }, { status: 403 });
+  }
+
   const supabase = getSupabaseServerClient();
   const { jobs: needsScoring, preferences } = await getJobsNeedingScoring(supabase);
 

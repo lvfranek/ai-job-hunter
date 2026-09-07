@@ -341,7 +341,7 @@ export const demoSettings: Settings = {
   ],
   scraper_location: "Berlin, Germany",
   scraper_max_posting_age_days: 21,
-  scraper_results_per_scan: 100,
+  scraper_results_per_scan: 25,
   remote_only: false,
   portal_toggles: {
     indeed: true,
@@ -464,6 +464,9 @@ export const demoScrapeStatus = {
   jobsFiltered: 9,
   jobsStored: 4,
   portalCounts: { indeed: 5, linkedin: 4, xing: 2, stepstone: 3 },
+  totalRuns: 16,
+  completedRuns: 16,
+  stalled: false,
   completedAt: new Date().toISOString(),
 };
 

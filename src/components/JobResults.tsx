@@ -16,6 +16,7 @@ import { jobStatusLabels } from "@/lib/mock-data";
 import { JobCard } from "@/components/JobCard";
 import { AgentStatus } from "@/components/AgentStatus";
 import { CoverLetterModal } from "@/components/CoverLetterModal";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Toast } from "@/components/Toast";
 
 type SortKey = "score" | "date";
@@ -54,8 +55,13 @@ export function JobResults({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
   const [scrapeState, setScrapeState] = useState<ScrapeState>("idle");
-  const [progress, setProgress] = useState({ found: 0 });
+  const [progress, setProgress] = useState({ found: 0, completedRuns: 0, totalRuns: 0 });
   const [lastPortalCounts, setLastPortalCounts] = useState<Record<string, number> | null>(null);
+  // Set when "Scrape Now" is clicked — holds the run/job estimate for the
+  // confirm dialog; scraping starts only once the user confirms.
+  const [scrapeConfirm, setScrapeConfirm] = useState<{ runs: number; maxJobs: number } | null>(
+    null
+  );
   const [isScoring, setIsScoring] = useState(false);
   // Always-on status line shown next to the Adjust-score button: what the run is
   // doing right now, then how it ended. Never left blank while a run is live.
@@ -213,25 +219,66 @@ export function JobResults({
   const currentPage = Math.min(page, pageCount);
   const paged = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  // "Scrape Now" now fans out to one Apify run per keyword per board — show what
+  // that costs (run count + max jobs) before firing it.
+  async function requestScrape() {
+    try {
+      const res = await fetch("/api/settings");
+      const s = await res.json();
+      const keywords = ((s.scraper_search_keywords as string[]) ?? []).filter(
+        (k) => k && k.trim()
+      ).length;
+      const boards = Object.values(s.portal_toggles ?? {}).filter(Boolean).length;
+      const perSearch = Number(s.scraper_results_per_scan) || 0;
+      const runs = keywords * boards;
+      setScrapeConfirm({ runs, maxJobs: runs * perSearch });
+    } catch {
+      setScrapeConfirm({ runs: 0, maxJobs: 0 }); // still let them confirm; the API validates
+    }
+  }
+
   async function startScrape() {
     setScrapeState("scraping");
-    setProgress({ found: 0 });
+    setProgress({ found: 0, completedRuns: 0, totalRuns: 0 });
     try {
       const res = await fetch("/api/scrape", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Scrape failed");
 
       const runId = data.runId;
+      const startedAt = Date.now();
+      const MAX_POLL_MS = 40 * 60 * 1000;
+      let consecutiveErrors = 0;
+
       await new Promise<void>((resolve) => {
         const interval = setInterval(async () => {
-          const statusRes = await fetch(`/api/scrape/status?runId=${runId}`);
-          const status = await statusRes.json();
-          setProgress({ found: status.jobsFound ?? 0 });
+          try {
+            const statusRes = await fetch(`/api/scrape/status?runId=${runId}`);
+            if (!statusRes.ok) throw new Error(`status ${statusRes.status}`);
+            const status = await statusRes.json();
+            consecutiveErrors = 0;
+            setProgress({
+              found: status.jobsFound ?? 0,
+              completedRuns: status.completedRuns ?? 0,
+              totalRuns: status.totalRuns ?? 0,
+            });
 
-          if (status.status === "completed" || status.status === "failed") {
-            setLastPortalCounts(status.portalCounts ?? null);
-            clearInterval(interval);
-            resolve();
+            const done =
+              status.status === "completed" ||
+              status.status === "failed" ||
+              status.stalled === true ||
+              Date.now() - startedAt > MAX_POLL_MS;
+            if (done) {
+              setLastPortalCounts(status.portalCounts ?? null);
+              clearInterval(interval);
+              resolve();
+            }
+          } catch (err) {
+            console.error("Scrape status poll failed:", err);
+            if (++consecutiveErrors >= 5) {
+              clearInterval(interval);
+              resolve();
+            }
           }
         }, 1500);
       });
@@ -252,7 +299,7 @@ export function JobResults({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={startScrape}
+            onClick={requestScrape}
             disabled={isScraping}
             className="flex h-8 shrink-0 items-center gap-1.5 rounded-xl bg-[#101828] px-3 text-[13px] font-semibold text-white outline-none transition-colors hover:bg-[#1E293B] focus-visible:ring-2 focus-visible:ring-[#101828]/30 active:scale-[0.98] disabled:opacity-50"
           >
@@ -295,7 +342,10 @@ export function JobResults({
               status={{
                 state: scrapeState,
                 action: "Scraping job boards",
-                detail: `${progress.found} found`,
+                detail:
+                  progress.totalRuns > 0
+                    ? `Board ${progress.completedRuns}/${progress.totalRuns} · ${progress.found} found`
+                    : `${progress.found} found`,
               }}
             />
           ) : (
@@ -485,6 +535,26 @@ export function JobResults({
       {coverLetterJob && (
         <CoverLetterModal job={coverLetterJob} onClose={() => setCoverLetterJob(null)} />
       )}
+
+      <ConfirmDialog
+        open={scrapeConfirm !== null}
+        title="Start scraping?"
+        message={
+          scrapeConfirm && scrapeConfirm.runs > 0
+            ? `This runs ${scrapeConfirm.runs} search${scrapeConfirm.runs === 1 ? "" : "es"} ` +
+              `(one per keyword per board) and fetches up to ~${scrapeConfirm.maxJobs} jobs. ` +
+              `Lower "Results per search" in Settings to fetch fewer.`
+            : "This starts a scrape across your active job boards and keywords."
+        }
+        confirmLabel="Scrape now"
+        cancelLabel="Cancel"
+        tone="default"
+        onConfirm={() => {
+          setScrapeConfirm(null);
+          startScrape();
+        }}
+        onCancel={() => setScrapeConfirm(null)}
+      />
     </div>
   );
 }

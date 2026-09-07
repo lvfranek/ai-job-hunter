@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
 import { isValidCronToken } from "@/lib/auth";
-import { runScrapePipeline } from "@/lib/pipeline/run-scrape";
+import { runScrapePipeline, failStaleScrapeRuns } from "@/lib/pipeline/run-scrape";
 import { getJobsNeedingScoring, runScorePipeline } from "@/lib/pipeline/run-score";
 import { notifyNewJobs } from "@/lib/notify";
 import type { Settings } from "@/lib/types";
+
+// A scrape fans out to one Apify run per board × keyword (up to 25) and this
+// endpoint awaits the whole scrape + score + notify chain, so give it headroom.
+export const maxDuration = 300;
 
 // For external schedulers (cron, n8n, Zapier, ...) — unlike POST /api/scrape (fire-and-forget,
 // for the UI button), this awaits the full scrape + score + notify pipeline before responding,
@@ -15,6 +19,8 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = getSupabaseServerClient();
+
+  await failStaleScrapeRuns(supabase);
 
   const { data: settings } = await supabase
     .from("settings")

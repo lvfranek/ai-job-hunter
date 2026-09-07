@@ -1,8 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
 import { isDemoRequest } from "@/lib/auth";
-import { runScrapePipeline } from "@/lib/pipeline/run-scrape";
+import { runScrapePipeline, failStaleScrapeRuns } from "@/lib/pipeline/run-scrape";
 import type { Settings } from "@/lib/types";
+
+// A scrape now fans out to one Apify run per active board × per keyword (up to
+// 25), so it runs much longer than before. `after` keeps it going once the
+// response is sent — on a Node server it just runs; on serverless it extends the
+// invocation via waitUntil. Platforms cap this; a cutoff degrades gracefully
+// (the stale-run reaper fails the row, the user re-runs).
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   // Belt-and-suspenders: the proxy already rewrites demo traffic to /api/demo.
@@ -11,6 +18,9 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = getSupabaseServerClient();
+
+  // Clear out any zombie run (dead worker) so it can't linger as 'running'.
+  await failStaleScrapeRuns(supabase);
 
   const { data: settings } = await supabase
     .from("settings")
@@ -35,11 +45,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: String(runError) }, { status: 500 });
   }
 
-  // ponytail: fire-and-forget background run — fine for this single-process local
-  // app; would need a real job queue if this ever runs on serverless/multi-instance hosting.
-  runScrapePipeline(runData.id, settings as Settings).catch((err) =>
-    console.error("Scrape pipeline failed:", err)
-  );
+  after(async () => {
+    try {
+      await runScrapePipeline(runData.id, settings as Settings);
+    } catch (err) {
+      console.error("Scrape pipeline failed:", err);
+    }
+  });
 
   return NextResponse.json({ runId: runData.id });
 }

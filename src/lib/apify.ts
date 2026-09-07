@@ -122,12 +122,12 @@ interface IndeedRawJob {
 }
 
 /** Build inputs for the valig/indeed-jobs-scraper Apify actor. */
-export function buildIndeedInputs(settings: Settings): ApifyRunInput {
+export function buildIndeedInputs(settings: Settings, keyword: string): ApifyRunInput {
   return {
     // Fixed regardless of remote_only — this is what keeps results scoped to
     // Germany even when location below becomes the literal "remote".
     country: "de",
-    title: settings.scraper_search_keywords.join(" OR "),
+    title: keyword,
     // The actor accepts the literal string "remote" as a location, filtering at
     // the source instead of scraping everything and discarding on-site jobs after.
     location: settings.remote_only ? "remote" : settings.scraper_location || "Germany",
@@ -164,9 +164,9 @@ interface LinkedinRawJob {
 }
 
 /** Build inputs for the valig/linkedin-jobs-scraper Apify actor. */
-export function buildLinkedinInputs(settings: Settings): ApifyRunInput {
+export function buildLinkedinInputs(settings: Settings, keyword: string): ApifyRunInput {
   return {
-    title: settings.scraper_search_keywords.join(" OR "),
+    title: keyword,
     location: settings.scraper_location || "Germany",
     // "2" = Remote in the actor's own remote-work-option enum.
     remote: settings.remote_only ? ["2"] : undefined,
@@ -203,9 +203,9 @@ interface StepstoneRawJob {
 }
 
 /** Build inputs for the valig/stepstone-jobs-scraper Apify actor. */
-export function buildStepstoneInputs(settings: Settings): ApifyRunInput {
+export function buildStepstoneInputs(settings: Settings, keyword: string): ApifyRunInput {
   return {
-    keywords: settings.scraper_search_keywords.join(" OR "),
+    keywords: keyword,
     location: settings.scraper_location || "Germany",
     // "2" = Fully remote in the actor's own work-from-home-options enum.
     wfh: settings.remote_only ? "2" : undefined,
@@ -243,8 +243,7 @@ interface XingRawJob {
 }
 
 /** Build inputs for the shahidirfan/xing-jobs-scraper Apify actor. */
-export function buildXingInputs(settings: Settings): ApifyRunInput {
-  const keyword = settings.scraper_search_keywords.join(" OR ");
+export function buildXingInputs(settings: Settings, keyword: string): ApifyRunInput {
   return {
     // Xing's actor has no dedicated remote filter — append "remote" to the search
     // term instead, same as the site's own "remote" job category search. Location
@@ -291,10 +290,10 @@ function isCountryLevelLocation(location: string): boolean {
   return /^(germany|deutschland)$/i.test(location.trim());
 }
 
-export function buildArbeitsagenturInputs(settings: Settings): ApifyRunInput {
+export function buildArbeitsagenturInputs(settings: Settings, keyword: string): ApifyRunInput {
   const location = settings.scraper_location?.trim();
   return {
-    query: settings.scraper_search_keywords.join(" OR "),
+    query: keyword,
     location: location && !isCountryLevelLocation(location) ? location : undefined,
     maxResults: settings.scraper_results_per_scan,
     remoteOnly: settings.remote_only,

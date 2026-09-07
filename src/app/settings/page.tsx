@@ -2,11 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { GearSix } from "@phosphor-icons/react/dist/ssr";
-import { TagInput } from "@/components/TagInput";
 import { Checkbox } from "@/components/Checkbox";
 import { Toast } from "@/components/Toast";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
 import { ApiKeysSection } from "./ApiKeysSection";
+
+// Each portal is scraped once per keyword (most job boards return nothing for
+// "kw1 OR kw2"), so keywords are a small fixed set, not a free list.
+const KEYWORD_SLOTS = 5;
+
+function padKeywords(list: string[]): string[] {
+  return Array.from({ length: KEYWORD_SLOTS }, (_, i) => list[i] ?? "");
+}
 
 interface PortalToggles {
   indeed: boolean;
@@ -38,7 +45,7 @@ const DEFAULTS: SettingsForm = {
   scraper_search_keywords: [],
   scraper_location: "",
   scraper_max_posting_age_days: 30,
-  scraper_results_per_scan: 100,
+  scraper_results_per_scan: 25,
   remote_only: false,
   portal_toggles: {
     indeed: true,
@@ -52,8 +59,12 @@ const DEFAULTS: SettingsForm = {
 
 function toForm(data: Record<string, unknown>): SettingsForm {
   return {
-    scraper_search_keywords:
-      (data.scraper_search_keywords as string[]) ?? DEFAULTS.scraper_search_keywords,
+    scraper_search_keywords: padKeywords(
+      ((data.scraper_search_keywords as string[]) ?? DEFAULTS.scraper_search_keywords).slice(
+        0,
+        KEYWORD_SLOTS
+      )
+    ),
     scraper_location: (data.scraper_location as string) ?? DEFAULTS.scraper_location,
     scraper_max_posting_age_days:
       (data.scraper_max_posting_age_days as number) ?? DEFAULTS.scraper_max_posting_age_days,
@@ -101,8 +112,12 @@ export default function SettingsPage() {
 
   async function handleSave() {
     setError(null);
-    if (form.scraper_search_keywords.length === 0)
-      return setError("Add at least one search keyword");
+
+    const cleanedKeywords = form.scraper_search_keywords
+      .map((k) => k.trim())
+      .filter(Boolean)
+      .slice(0, KEYWORD_SLOTS);
+    if (cleanedKeywords.length === 0) return setError("Add at least one search keyword");
     if (!form.scraper_location.trim()) return setError("Add a scraper location");
     if (form.scraper_max_posting_age_days <= 0)
       return setError("Max posting age must be greater than 0");
@@ -113,16 +128,19 @@ export default function SettingsPage() {
     if (form.notification_threshold < 0 || form.notification_threshold > 100)
       return setError("Notification threshold must be between 0 and 100");
 
+    const normalizedForm = { ...form, scraper_search_keywords: padKeywords(cleanedKeywords) };
+
     setSaving(true);
     try {
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, scraper_search_keywords: cleanedKeywords }),
       });
       if (!res.ok) throw new Error("Failed to save settings");
       const data = await res.json().catch(() => null);
-      setSavedSnapshot(JSON.stringify(form));
+      setForm(normalizedForm);
+      setSavedSnapshot(JSON.stringify(normalizedForm));
       setMessage(data?.demo ? "Demo mode — changes aren't saved" : "Settings saved");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -130,6 +148,11 @@ export default function SettingsPage() {
       setSaving(false);
     }
   }
+
+  const activeKeywordCount = form.scraper_search_keywords.filter((k) => k.trim()).length;
+  const activeBoardCount = Object.values(form.portal_toggles).filter(Boolean).length;
+  const estimatedRuns = activeKeywordCount * activeBoardCount;
+  const estimatedMaxJobs = estimatedRuns * (form.scraper_results_per_scan || 0);
 
   return (
     <main className="py-8 pr-8">
@@ -160,14 +183,35 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <TagInput
-              label="Search keywords"
-              helperText="Combined into one search (e.g. 'A OR B') — not one scan per keyword"
-              tags={form.scraper_search_keywords}
-              onChange={(scraper_search_keywords) =>
-                setForm({ ...form, scraper_search_keywords })
-              }
-            />
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                Search keywords
+              </label>
+              <div className="space-y-2">
+                {form.scraper_search_keywords.map((keyword, i) => (
+                  <input
+                    key={i}
+                    value={keyword}
+                    onChange={(e) => {
+                      const next = form.scraper_search_keywords.map((k, j) =>
+                        j === i ? e.target.value : k
+                      );
+                      setForm({ ...form, scraper_search_keywords: next });
+                    }}
+                    placeholder={
+                      ["Software Entwickler", "Frontend Developer", "React Engineer", "", ""][i] ||
+                      `Keyword ${i + 1}`
+                    }
+                    className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                  />
+                ))}
+              </div>
+              <p className="mt-1.5 text-[12px] text-text-faint">
+                One keyword per field (each may be several words). Every board is scraped once
+                per keyword — most job boards return nothing for &quot;A OR B&quot;. Leave fields
+                blank to use fewer.
+              </p>
+            </div>
 
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
@@ -226,7 +270,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
-                  Results per scan
+                  Results per search
                 </label>
                 <input
                   type="number"
@@ -238,10 +282,24 @@ export default function SettingsPage() {
                   className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
-                  Max jobs fetched per job board (all keywords combined) — with several boards
-                  active, the total across all of them can be higher. All land on the
-                  dashboard, scored by AI, minus any already-seen duplicates
+                  Max jobs fetched per keyword, per board, per scan. A scan runs one search for
+                  every keyword × board combination.
                 </p>
+                <p className="mt-1.5 text-[12px] text-text-muted">
+                  {activeKeywordCount} keyword{activeKeywordCount === 1 ? "" : "s"} ×{" "}
+                  {activeBoardCount} board{activeBoardCount === 1 ? "" : "s"} ×{" "}
+                  {form.scraper_results_per_scan || 0} ={" "}
+                  <span className="font-medium">
+                    up to {estimatedMaxJobs.toLocaleString()} jobs per scan
+                  </span>{" "}
+                  ({estimatedRuns} search{estimatedRuns === 1 ? "" : "es"})
+                </p>
+                {estimatedMaxJobs > 750 && (
+                  <p className="mt-2 rounded-lg border border-amber-300 bg-amber-100 px-3.5 py-2 text-[12px] text-amber-800">
+                    That&apos;s a large scan — every search is a billed Apify run. Consider fewer
+                    keywords or boards, or a lower number here.
+                  </p>
+                )}
               </div>
             </div>
 

@@ -3,38 +3,19 @@
 import { useEffect, useState } from "react";
 import { Target } from "@phosphor-icons/react/dist/ssr";
 import { Checkbox } from "@/components/Checkbox";
-import { Scale } from "@/components/Scale";
 import { Toast } from "@/components/Toast";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
 
 interface PreferencesForm {
   notes: string;
-  preferred_seniority: number;
   preferred_location: string;
   job_type: string[];
 }
 
 const JOB_TYPES = ["remote", "hybrid", "on-site"];
 
-const SENIORITY_LABELS: [number, string][] = [
-  [0, "Entry level"],
-  [3, "Junior"],
-  [5, "Mid-level"],
-  [7, "Senior"],
-  [9, "Lead / Principal"],
-];
-
-function labelFor(labels: [number, string][], value: number): string {
-  let label = labels[0][1];
-  for (const [threshold, text] of labels) {
-    if (value >= threshold) label = text;
-  }
-  return label;
-}
-
 const DEFAULTS: PreferencesForm = {
   notes: "",
-  preferred_seniority: 5,
   preferred_location: "",
   job_type: [],
 };
@@ -42,10 +23,6 @@ const DEFAULTS: PreferencesForm = {
 function toForm(data: Record<string, unknown>): PreferencesForm {
   return {
     notes: (data.notes as string) ?? DEFAULTS.notes,
-    preferred_seniority:
-      data.preferred_seniority != null
-        ? Number(data.preferred_seniority)
-        : DEFAULTS.preferred_seniority,
     preferred_location: (data.preferred_location as string) ?? DEFAULTS.preferred_location,
     job_type: (data.job_type as string[]) ?? DEFAULTS.job_type,
   };
@@ -148,19 +125,10 @@ export default function PreferencesPage() {
               className="w-full resize-y rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-[13px] leading-relaxed text-text outline-none focus:border-[#101828]"
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
-              The AI reads this directly — titles, skills, and anything you want to avoid, all
-              in your own words.
+              The AI reads this directly — titles, seniority, skills, and anything you want to
+              avoid, all in your own words.
             </p>
           </div>
-
-          <Scale
-            label="Preferred seniority"
-            value={form.preferred_seniority}
-            onChange={(preferred_seniority) => setForm({ ...form, preferred_seniority })}
-            labelFor={(v) => labelFor(SENIORITY_LABELS, v)}
-            leftHint="Entry level"
-            rightHint="Lead / Principal"
-          />
 
           <div>
             <label className="mb-1.5 block text-[13px] font-medium text-text-muted">

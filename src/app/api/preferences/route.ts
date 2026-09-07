@@ -13,7 +13,6 @@ export async function GET() {
 
     const defaultPreferences = {
       notes: "",
-      preferred_seniority: 5,
       preferred_location: "",
       job_type: [],
     };

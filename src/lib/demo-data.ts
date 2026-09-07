@@ -324,7 +324,6 @@ export const demoPreferences: Preferences = {
     "writing Node.js APIs on the backend. Open to Vue or Svelte teams. Drawn to product companies " +
     "with a real design culture that ship to users weekly. Not interested in Django/PHP-heavy " +
     "backends, agency/consultancy churn, or gambling/gaming.",
-  preferred_seniority: 6,
   preferred_location: "Berlin, Germany (or remote within the EU)",
   job_type: ["remote", "hybrid"],
   created_at: daysAgoIso(45),

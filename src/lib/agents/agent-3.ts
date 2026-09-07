@@ -20,13 +20,12 @@ ${preferences.notes || "No specific preferences given."}
 """
 
 Structured preferences:
-- Desired seniority (0 = entry level, 10 = lead/principal): ${preferences.preferred_seniority}
 - Location preference: ${preferences.preferred_location || "any"}
 - Job type: ${preferences.job_type.join(", ") || "any"}
 
 For each job below, return four 0-100 scores plus one sentence of reasoning:
 - skill_overlap_pct: how well the job's required skills/tech match what the candidate described wanting to work with
-- seniority_fit: how well the job's seniority matches the desired seniority
+- seniority_fit: how well the job's seniority matches the seniority the candidate describes wanting
 - location_fit: how well the job location/remote policy matches the location and job-type preference
 - match_score: overall fit (weigh skills and seniority most heavily; score near 0 if the job matches something the candidate said to avoid)
 

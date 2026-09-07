@@ -36,7 +36,6 @@ export interface Preferences {
   id: string;
   user_id: string;
   notes: string; // free text: what the candidate wants and doesn't want, read directly by the AI scorer
-  preferred_seniority: number; // 0 (entry level) - 10 (principal/leadership)
   preferred_location: string | null;
   job_type: string[];
   created_at: string;

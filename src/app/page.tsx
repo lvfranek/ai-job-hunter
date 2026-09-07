@@ -98,6 +98,7 @@ export default function DashboardPage() {
           setLastScraped("Just now");
           fetchJobs();
         }}
+        onRefresh={fetchJobs}
         onStatusChange={updateJobStatus}
       />
     </main>

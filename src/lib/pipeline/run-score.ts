@@ -7,6 +7,46 @@ import type { DbJob, Preferences } from "@/lib/types";
 // without hammering the AI provider's rate limits.
 const CONCURRENCY = 3;
 
+// Hard ceiling on a single chunk, independent of the AI client's own timeout —
+// if a chunk somehow neither resolves nor rejects, the run must not hang on it.
+const CHUNK_TIMEOUT_MS = 120_000;
+
+// One retry per chunk soaks up transient provider errors (429s, 5xx, brief
+// network blips) so a whole run doesn't finish with holes in it.
+const CHUNK_RETRIES = 1;
+const RETRY_DELAY_MS = 2_000;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
+async function scoreChunkResilient(
+  jobChunk: DbJob[],
+  preferences: Preferences
+): Promise<Awaited<ReturnType<typeof scoreChunk>>> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= CHUNK_RETRIES; attempt++) {
+    try {
+      return await withTimeout(
+        scoreChunk(jobChunk, preferences),
+        CHUNK_TIMEOUT_MS,
+        "scoreChunk"
+      );
+    } catch (error) {
+      lastError = error;
+      if (attempt < CHUNK_RETRIES) await sleep(RETRY_DELAY_MS);
+    }
+  }
+  throw lastError;
+}
+
 type JobWithMatchInfo = DbJob & { job_matches: { id: string; stale_at: string | null } | null };
 
 // Jobs that have never been scored AND jobs whose score went stale (preferences
@@ -35,6 +75,43 @@ export interface ScorePipelineResult {
   scored: number;
 }
 
+// A 'running' score_run whose heartbeat (updated_at) is older than this has lost
+// its worker — a crashed/frozen serverless invocation, a killed dev process, a
+// hung request that outlived every inner timeout. Flip it to 'failed' so callers
+// stop treating it as in-progress. Generous enough to never trip a slow-but-live
+// run: worst case a round is ~3 chunks of (120s timeout + retry + 120s) ≈ 4min,
+// and the pipeline also heartbeats at the start of every round.
+const STALE_RUN_MS = 8 * 60 * 1000;
+
+/**
+ * Mark any of this user's score_runs that are stuck in 'running' with a stale
+ * heartbeat as 'failed'. Safe to call before starting a new run and on every
+ * status poll. Returns the ids it reaped.
+ */
+export async function failStaleScoreRuns(
+  supabase: ReturnType<typeof getSupabaseServerClient>
+): Promise<string[]> {
+  const cutoff = new Date(Date.now() - STALE_RUN_MS).toISOString();
+  const { data, error } = await supabase
+    .from("score_runs")
+    .update({
+      status: "failed",
+      ended_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      errors: { message: "Run stalled — no progress heartbeat" },
+    })
+    .eq("user_id", CURRENT_USER_ID)
+    .eq("status", "running")
+    .lt("updated_at", cutoff)
+    .select("id");
+
+  if (error) {
+    console.error("failStaleScoreRuns failed:", error);
+    return [];
+  }
+  return (data ?? []).map((r) => r.id as string);
+}
+
 export async function runScorePipeline(
   runId: string,
   jobs: DbJob[],
@@ -44,6 +121,20 @@ export async function runScorePipeline(
   const chunks = chunk(jobs, CHUNK_SIZE);
   const errors: Record<string, string> = {};
   let scored = 0;
+
+  // Heartbeat: any write that means "this run is still alive". /api/score/status
+  // and /api/score treat a 'running' row whose updated_at has gone stale as a
+  // dead run and fail it, so the UI never polls a zombie forever.
+  const heartbeat = async (fields: Record<string, unknown> = {}) => {
+    try {
+      await supabase
+        .from("score_runs")
+        .update({ ...fields, updated_at: new Date().toISOString() })
+        .eq("id", runId);
+    } catch (error) {
+      console.error("score_runs heartbeat failed:", error);
+    }
+  };
 
   try {
     for (let i = 0; i < chunks.length; i += CONCURRENCY) {
@@ -56,11 +147,15 @@ export async function runScorePipeline(
         .single();
       if (current?.status === "cancelled") return { scored };
 
+      // Mark the run alive at the start of each round too, so a healthy run whose
+      // rounds run long never looks stale to the reaper.
+      await heartbeat();
+
       const round = chunks.slice(i, i + CONCURRENCY);
       await Promise.all(
         round.map(async (jobChunk, idx) => {
           try {
-            const results = await scoreChunk(jobChunk, preferences);
+            const results = await scoreChunkResilient(jobChunk, preferences);
             const { error } = await supabase
               .from("job_matches")
               .upsert(
@@ -74,8 +169,10 @@ export async function runScorePipeline(
           } finally {
             // Count the chunk as processed either way so progress still reaches
             // 100% and the run finishes instead of hanging on a failed chunk.
+            // The bookkeeping write is guarded so a transient DB error here can't
+            // reject Promise.all and abort the rounds still to come.
             scored += jobChunk.length;
-            await supabase.from("score_runs").update({ scored }).eq("id", runId);
+            await heartbeat({ scored });
           }
         })
       );
@@ -86,6 +183,7 @@ export async function runScorePipeline(
       .update({
         status: "completed",
         ended_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         errors: Object.keys(errors).length > 0 ? errors : null,
       })
       .eq("id", runId);
@@ -97,6 +195,7 @@ export async function runScorePipeline(
       .update({
         status: "failed",
         ended_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         errors: { message: String(error) },
       })
       .eq("id", runId);

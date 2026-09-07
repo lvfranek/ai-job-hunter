@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,6 +8,7 @@ import {
   CaretDown,
   Lightning,
   Sparkle,
+  Trash,
   X,
 } from "@phosphor-icons/react";
 import type { Job, JobStatus } from "@/lib/mock-data";
@@ -15,6 +16,7 @@ import { jobStatusLabels } from "@/lib/mock-data";
 import { JobCard } from "@/components/JobCard";
 import { AgentStatus } from "@/components/AgentStatus";
 import { CoverLetterModal } from "@/components/CoverLetterModal";
+import { Toast } from "@/components/Toast";
 
 type SortKey = "score" | "date";
 
@@ -38,11 +40,13 @@ export function JobResults({
   jobs,
   lastScraped,
   onScraped,
+  onRefresh,
   onStatusChange,
 }: {
   jobs: Job[];
   lastScraped: string;
   onScraped: () => void;
+  onRefresh: () => void;
   onStatusChange: (jobId: string, status: JobStatus | null) => void;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("score");
@@ -53,9 +57,55 @@ export function JobResults({
   const [progress, setProgress] = useState({ found: 0 });
   const [lastPortalCounts, setLastPortalCounts] = useState<Record<string, number> | null>(null);
   const [isScoring, setIsScoring] = useState(false);
-  const [scoreProgress, setScoreProgress] = useState({ scored: 0, total: 0 });
+  // Always-on status line shown next to the Adjust-score button: what the run is
+  // doing right now, then how it ended. Never left blank while a run is live.
+  const [scoreStatus, setScoreStatus] = useState<string | null>(null);
   const scoreRunId = useRef<string | null>(null);
   const [coverLetterJob, setCoverLetterJob] = useState<Job | null>(null);
+  const [pruneDays, setPruneDays] = useState(30);
+  const [confirmingPrune, setConfirmingPrune] = useState(false);
+  const [pruning, setPruning] = useState(false);
+  const [pruneMessage, setPruneMessage] = useState<string | null>(null);
+
+  const oldJobCount = useMemo(
+    () => jobs.filter((job) => job.daysAgo >= pruneDays).length,
+    [jobs, pruneDays]
+  );
+
+  useEffect(() => {
+    if (!pruneMessage) return;
+    const t = setTimeout(() => setPruneMessage(null), 3000);
+    return () => clearTimeout(t);
+  }, [pruneMessage]);
+
+  // Keep the final outcome on screen briefly after a run ends, then clear it.
+  useEffect(() => {
+    if (isScoring || !scoreStatus) return;
+    const t = setTimeout(() => setScoreStatus(null), 8000);
+    return () => clearTimeout(t);
+  }, [isScoring, scoreStatus]);
+
+  async function handlePrune() {
+    setPruning(true);
+    try {
+      const res = await fetch(`/api/jobs?olderThanDays=${pruneDays}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to remove old jobs");
+      const n = data.deleted ?? 0;
+      setPruneMessage(
+        n === 0
+          ? "No jobs older than that"
+          : `Removed ${n} job${n === 1 ? "" : "s"} older than ${pruneDays} days`
+      );
+      onRefresh();
+    } catch (error) {
+      console.error("Prune failed:", error);
+      setPruneMessage("Failed to remove old jobs");
+    } finally {
+      setPruning(false);
+      setConfirmingPrune(false);
+    }
+  }
 
   // "Needs scoring" covers both never-scored jobs and ones whose score went
   // stale (preferences changed) — one button handles both.
@@ -63,32 +113,78 @@ export function JobResults({
 
   async function handleAdjustScore() {
     setIsScoring(true);
-    setScoreProgress({ scored: 0, total: 0 });
+    setScoreStatus("Starting…");
+    let outcome: string | null = null;
+
     try {
       const res = await fetch("/api/score", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Scoring failed");
-      if (!data.runId) return; // nothing needed scoring
+      if (!data.runId) {
+        outcome = "Scores already up to date";
+        return;
+      }
 
       scoreRunId.current = data.runId;
-      await new Promise<void>((resolve) => {
-        const interval = setInterval(async () => {
-          const statusRes = await fetch(`/api/score/status?runId=${data.runId}`);
-          const status = await statusRes.json();
-          setScoreProgress({ scored: status.scored ?? 0, total: status.total ?? 0 });
 
-          if (status.status !== "running") {
-            clearInterval(interval);
-            resolve();
+      // Poll until the run leaves "running" — but never poll forever. Any of
+      // these ends it: a terminal status from the server, the server's own stall
+      // detector flipping the run to failed, a run of failed status requests, or
+      // an absolute wall-clock cap.
+      const startedAt = Date.now();
+      const MAX_POLL_MS = 30 * 60 * 1000;
+      let consecutiveErrors = 0;
+      let last = { status: "running", scored: 0, total: 0, stalled: false };
+
+      const final = await new Promise<typeof last>((resolve) => {
+        const interval = setInterval(async () => {
+          try {
+            const statusRes = await fetch(`/api/score/status?runId=${data.runId}`);
+            if (!statusRes.ok) throw new Error(`status ${statusRes.status}`);
+            const s = await statusRes.json();
+            consecutiveErrors = 0;
+            last = {
+              status: s.status ?? "running",
+              scored: s.scored ?? 0,
+              total: s.total ?? 0,
+              stalled: Boolean(s.stalled),
+            };
+            setScoreStatus(
+              last.total > 0 ? `${last.scored}/${last.total} scored` : "Preparing…"
+            );
+
+            if (last.status !== "running" || Date.now() - startedAt > MAX_POLL_MS) {
+              clearInterval(interval);
+              resolve(last);
+            }
+          } catch (err) {
+            console.error("Score status poll failed:", err);
+            if (++consecutiveErrors >= 5) {
+              clearInterval(interval);
+              resolve({ ...last, status: "unknown" });
+            }
           }
         }, 1500);
       });
+
+      if (final.status === "completed") {
+        outcome = `Scored ${final.total} job${final.total === 1 ? "" : "s"}`;
+      } else if (final.status === "cancelled") {
+        outcome = `Cancelled at ${final.scored}/${final.total}`;
+      } else {
+        // failed, stalled, unknown, or hit the wall-clock cap — successful chunks
+        // are already saved, so one more click picks up where it left off.
+        outcome = `Stopped at ${final.scored}/${final.total} — progress saved, click Adjust score to finish`;
+      }
     } catch (error) {
       console.error("Scoring failed:", error);
+      outcome = error instanceof Error ? error.message : "Scoring failed";
     } finally {
       scoreRunId.current = null;
       setIsScoring(false);
+      setScoreStatus(outcome);
       onScraped();
+      onRefresh();
     }
   }
 
@@ -151,6 +247,7 @@ export function JobResults({
 
   return (
     <div className="rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)]">
+      <Toast message={pruneMessage} />
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D7E4ED] px-4 py-2.5">
         <div className="flex items-center gap-2">
           <button
@@ -175,22 +272,22 @@ export function JobResults({
                 ? `Adjust score (${needsScoreCount})`
                 : "Scores up to date"}
           </button>
-          {isScoring && (
+          {(isScoring || scoreStatus) && (
             <>
-              <span className="text-[12px] tabular-nums text-[#94A3B8]">
-                {scoreProgress.total > 0
-                  ? `${scoreProgress.scored}/${scoreProgress.total} scored`
-                  : "Starting…"}
+              <span className="max-w-88 text-[12px] tabular-nums text-[#94A3B8]">
+                {scoreStatus ?? (isScoring ? "Working…" : "")}
               </span>
-              <button
-                type="button"
-                onClick={handleCancelScore}
-                aria-label="Cancel scoring"
-                title="Cancel scoring"
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[#94A3B8] transition-colors hover:text-[#1E2A3D]"
-              >
-                <X size={13} weight="bold" />
-              </button>
+              {isScoring && (
+                <button
+                  type="button"
+                  onClick={handleCancelScore}
+                  aria-label="Cancel scoring"
+                  title="Cancel scoring"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[#94A3B8] transition-colors hover:text-[#1E2A3D]"
+                >
+                  <X size={13} weight="bold" />
+                </button>
+              )}
             </>
           )}
           {isScraping ? (
@@ -282,6 +379,58 @@ export function JobResults({
           </div>
         </div>
       </div>
+
+      {jobs.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-[#D7E4ED] px-4 py-2 text-[12px] text-[#94A3B8]">
+          {confirmingPrune ? (
+            <>
+              <span className="text-[#64748B]">
+                Remove {oldJobCount} job{oldJobCount === 1 ? "" : "s"} older than {pruneDays}{" "}
+                days? This can&apos;t be undone.
+              </span>
+              <button
+                type="button"
+                onClick={handlePrune}
+                disabled={pruning}
+                className="flex h-7 items-center gap-1 rounded-lg border border-rose-300 bg-rose-100 px-2.5 text-[12px] font-semibold text-rose-800 transition-colors hover:bg-rose-200 active:scale-[0.98] disabled:opacity-50"
+              >
+                {pruning ? "Removing…" : "Remove"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingPrune(false)}
+                disabled={pruning}
+                className="h-7 rounded-lg border border-[#B9CCDA] bg-white px-2.5 text-[12px] font-semibold text-[#1E2A3D] transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] active:scale-[0.98] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <span>Remove posts older than</span>
+              <input
+                type="number"
+                min={1}
+                value={pruneDays || ""}
+                onChange={(e) =>
+                  setPruneDays(Math.max(1, Math.floor(Number(e.target.value) || 0)))
+                }
+                aria-label="Remove job posts older than this many days"
+                className="h-7 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-[12px] text-[#64748B] outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D]"
+              />
+              <span>days</span>
+              <button
+                type="button"
+                onClick={() => setConfirmingPrune(true)}
+                className="flex h-7 items-center gap-1 rounded-lg border border-[#B9CCDA] bg-white px-2.5 text-[12px] font-semibold text-[#1E2A3D] transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] active:scale-[0.98]"
+              >
+                <Trash size={13} weight="bold" />
+                Remove old{oldJobCount > 0 ? ` (${oldJobCount})` : ""}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {jobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">

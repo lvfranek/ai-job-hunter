@@ -149,6 +149,11 @@ async function handle(request: NextRequest): Promise<NextResponse> {
     });
   }
 
+  if (method === "DELETE" && path === "/jobs") {
+    // Fixtures are never persisted, so nothing is actually removed.
+    return NextResponse.json({ deleted: 0, demo: true });
+  }
+
   if (method === "PATCH" && path.startsWith("/jobs/")) {
     const id = path.slice("/jobs/".length);
     const body = await readJson(request);
@@ -162,3 +167,4 @@ async function handle(request: NextRequest): Promise<NextResponse> {
 export const GET = handle;
 export const POST = handle;
 export const PATCH = handle;
+export const DELETE = handle;

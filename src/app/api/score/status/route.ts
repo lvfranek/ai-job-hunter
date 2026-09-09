@@ -26,11 +26,26 @@ export async function GET(request: NextRequest) {
 
   const stalled = reaped.includes(data.id);
 
+  // The raw errors map is keyed by chunk index and holds full stack-ish strings.
+  // The UI only needs "what went wrong, how often", so collapse it here.
+  const errorSummary = Object.values(
+    (data.errors ?? {}) as Record<string, string>
+  ).reduce<Record<string, number>>((acc, message) => {
+    const key = String(message).slice(0, 160);
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+
   return NextResponse.json({
     runId: data.id,
     status: data.status,
     total: data.total,
     scored: data.scored,
+    failed: data.failed ?? 0,
+    totalChunks: data.total_chunks ?? 0,
+    completedChunks: data.completed_chunks ?? 0,
+    model: data.model ?? null,
+    errorSummary,
     stalled,
     completedAt: data.ended_at,
   });

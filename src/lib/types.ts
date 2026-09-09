@@ -37,7 +37,16 @@ export interface Preferences {
   user_id: string;
   notes: string; // free text: what the candidate wants and doesn't want, read directly by the AI scorer
   preferred_location: string | null;
-  job_type: string[];
+  job_type: string[]; // remote | hybrid | on-site
+  // Contract forms to FILTER OUT (freelance | ausbildung | studium | werkstudent).
+  // An exclusion list, unlike every other preference here.
+  excluded_employment_types: string[];
+  work_time_models: string[]; // wanted: vollzeit | teilzeit | minijob
+  own_skills: string; // free text: skills the candidate actually has
+  preferred_languages: string; // free text: programming languages they'd rather work in
+  // Scoring instruction, not a fact about the candidate: when true the scorer
+  // treats every soft-skill requirement in a posting as fully met.
+  soft_skills_flexible: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -78,7 +87,12 @@ export interface JobMatch {
   skill_overlap_pct: number;
   seniority_fit: number;
   location_fit: number;
+  employment_fit: number;
   reasoning: string | null;
+  // Set only when the job scored low for a nameable hard reason ("Standort
+  // Zürich, kein Remote"). Null means "no blocker — a low score here is just
+  // a weak match, not an impossibility".
+  blocker: string | null;
   stale_at: string | null;
   notified_at: string | null;
   created_at: string;
@@ -104,7 +118,11 @@ export interface ScoreRun {
   user_id: string;
   status: "running" | "completed" | "failed" | "cancelled";
   total: number;
-  scored: number;
+  scored: number; // jobs that actually got a match row
+  failed: number; // jobs the run could not score — they stay "needs scoring"
+  total_chunks: number;
+  completed_chunks: number;
+  model: string | null; // which OpenRouter model ran, for the live detail line
   started_at: string;
   ended_at: string | null;
   errors: Record<string, string> | null;

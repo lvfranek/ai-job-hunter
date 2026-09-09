@@ -35,6 +35,8 @@ interface JobSeed {
   skillOverlap?: number;
   seniorityFit?: number;
   locationFit?: number;
+  employmentFit?: number;
+  blocker?: string;
   reasoning?: string;
 }
 
@@ -261,15 +263,22 @@ const JOB_SEEDS: JobSeed[] = [
   },
 ];
 
+const clampDemoScore = (n: number) => Math.max(15, Math.min(98, Math.round(n)));
+
 function buildMatch(seed: JobSeed): JobMatch {
   return {
     id: `demo-match-${seed.slug}`,
     job_id: `demo-job-${seed.slug}`,
     user_id: DEMO_USER_ID,
     match_score: seed.score,
-    skill_overlap_pct: seed.skillOverlap ?? Math.max(15, Math.min(98, seed.score - 6)),
-    seniority_fit: seed.seniorityFit ?? Math.round(seed.score / 12),
-    location_fit: seed.locationFit ?? Math.round(seed.score / 14),
+    // These are 0-100 like match_score. The old fallbacks divided the score by
+    // 12/14 and produced single digits — harmless while nothing rendered them,
+    // wrong now that JobCard shows the breakdown.
+    skill_overlap_pct: seed.skillOverlap ?? clampDemoScore(seed.score - 6),
+    seniority_fit: seed.seniorityFit ?? clampDemoScore(seed.score + 4),
+    location_fit: seed.locationFit ?? clampDemoScore(seed.score + 12),
+    employment_fit: seed.employmentFit ?? 100,
+    blocker: seed.blocker ?? null,
     reasoning:
       seed.reasoning ??
       "Demo data — the AI scorer does not run in guest mode, so this reasoning is illustrative.",
@@ -324,8 +333,13 @@ export const demoPreferences: Preferences = {
     "writing Node.js APIs on the backend. Open to Vue or Svelte teams. Drawn to product companies " +
     "with a real design culture that ship to users weekly. Not interested in Django/PHP-heavy " +
     "backends, agency/consultancy churn, or gambling/gaming.",
+  own_skills: "React, TypeScript, Next.js, Node.js, Tailwind CSS, Git, PostgreSQL, Figma",
+  preferred_languages: "TypeScript, JavaScript",
+  soft_skills_flexible: true,
   preferred_location: "Berlin, Germany (or remote within the EU)",
   job_type: ["remote", "hybrid"],
+  excluded_employment_types: ["ausbildung", "werkstudent"],
+  work_time_models: ["vollzeit", "teilzeit"],
   created_at: daysAgoIso(45),
   updated_at: daysAgoIso(4),
 };
@@ -476,6 +490,12 @@ export const demoScoreStatus = {
   status: "completed" as const,
   total: 3,
   scored: 3,
+  failed: 0,
+  totalChunks: 1,
+  completedChunks: 1,
+  model: "demo/guest-mode",
+  errorSummary: {},
+  stalled: false,
   completedAt: new Date().toISOString(),
 };
 

@@ -15,6 +15,11 @@ export async function GET() {
       notes: "",
       preferred_location: "",
       job_type: [],
+      excluded_employment_types: [],
+      work_time_models: [],
+      own_skills: "",
+      preferred_languages: "",
+      soft_skills_flexible: false,
     };
 
     return NextResponse.json(data || defaultPreferences);

@@ -1,4 +1,5 @@
 import type { Settings } from "./types";
+import { htmlToMarkdown, markdownFingerprint, normalizeBlockText } from "./text-format";
 
 const apifyBaseUrl = "https://api.apify.com/v2";
 
@@ -97,10 +98,6 @@ export interface ScrapedJob {
 // implementation (in route.ts's PORTAL_SCRAPERS) actually run.
 export type Portal = "indeed" | "linkedin" | "stepstone" | "xing" | "arbeitsagentur";
 
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-}
-
 // Each actor only offers a handful of fixed "posted within" buckets, not an
 // arbitrary day count. Pick the smallest bucket that still covers the requested
 // window; if the window is looser than every bucket, skip the filter (any time)
@@ -148,7 +145,7 @@ export function mapIndeedJob(raw: unknown): ScrapedJob {
     url: job.url,
     title: job.title,
     company: job.employer?.name || "Unknown",
-    description: job.description?.text || "",
+    description: normalizeBlockText(job.description?.text || ""),
     platform: "indeed",
     posted_date: job.datePublished || job.dateOnIndeed || null,
   };
@@ -159,7 +156,8 @@ interface LinkedinRawJob {
   title: string;
   location?: string;
   companyName?: string;
-  description?: string;
+  description?: string; // flat text — no line breaks at all
+  descriptionHtml?: string; // same posting WITH its structure; prefer this
   postedDate?: string;
 }
 
@@ -186,7 +184,9 @@ export function mapLinkedinJob(raw: unknown): ScrapedJob {
     url: job.url,
     title: job.title,
     company: job.companyName || "Unknown",
-    description: job.description || "",
+    description: job.descriptionHtml
+      ? htmlToMarkdown(job.descriptionHtml)
+      : normalizeBlockText(job.description || ""),
     platform: "linkedin",
     posted_date: job.postedDate || null,
   };
@@ -199,7 +199,9 @@ interface StepstoneRawJob {
   location?: { location?: string };
   company?: { name?: string };
   textSnippet?: string;
-  textSections?: { content?: string }[];
+  // `title` is the posting's own German heading ("Deine Aufgaben"); `name` is a
+  // technical slug ("description", "profile") and must never be shown.
+  textSections?: { name?: string; title?: string; content?: string }[];
 }
 
 /** Build inputs for the valig/stepstone-jobs-scraper Apify actor. */
@@ -222,12 +224,32 @@ export function buildStepstoneInputs(settings: Settings, keyword: string): Apify
 /** Map a raw stepstone-jobs-scraper dataset item to our job row shape. */
 export function mapStepstoneJob(raw: unknown): ScrapedJob {
   const job = raw as StepstoneRawJob;
-  const sections = (job.textSections ?? []).map((s) => stripHtml(s.content ?? "")).join("\n\n");
+  const snippet = htmlToMarkdown(job.textSnippet);
+  // Each section has its own heading ("Deine Aufgaben", "Dein Profil") — keeping
+  // it is most of what makes the posting scannable again.
+  const sections = (job.textSections ?? [])
+    .map((section) => {
+      const body = htmlToMarkdown(section.content);
+      if (!body) return "";
+      const heading = (section.title ?? "").trim();
+      return heading ? `## ${heading}\n\n${body}` : body;
+    })
+    .filter(Boolean)
+    .join("\n\n");
   return {
     url: job.url,
     title: job.title,
     company: job.company?.name || "Unknown",
-    description: [job.textSnippet, sections].filter(Boolean).join("\n\n"),
+    // textSnippet is a teaser that usually repeats the first section verbatim —
+    // only prepend it when it actually adds something.
+    description: [
+      snippet && !markdownFingerprint(sections).includes(markdownFingerprint(snippet))
+        ? snippet
+        : "",
+      sections,
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
     platform: "stepstone",
     posted_date: job.datePosted || null,
   };
@@ -237,8 +259,8 @@ interface XingRawJob {
   url: string;
   title: string;
   company?: string;
-  description_text?: string;
-  description_html?: string;
+  description_text?: string; // flat text — no line breaks at all
+  description_html?: string; // same posting WITH its structure; prefer this
   date_posted?: string;
 }
 
@@ -266,7 +288,9 @@ export function mapXingJob(raw: unknown): ScrapedJob {
     url: job.url,
     title: job.title,
     company: job.company || "Unknown",
-    description: job.description_text || stripHtml(job.description_html || ""),
+    description: job.description_html
+      ? htmlToMarkdown(job.description_html)
+      : normalizeBlockText(job.description_text || ""),
     platform: "xing",
     posted_date: job.date_posted || null,
   };
@@ -314,7 +338,7 @@ export function mapArbeitsagenturJob(raw: unknown): ScrapedJob {
     url: job.portalUrl,
     title: job.title,
     company: job.employer || "Unknown",
-    description: job.description || "",
+    description: normalizeBlockText(job.description || ""),
     platform: "arbeitsagentur",
     posted_date: job.publishedDate || job.firstPublishedDate || null,
   };

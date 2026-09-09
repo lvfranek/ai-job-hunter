@@ -8,9 +8,11 @@ import {
   CaretDown,
   FileText,
   LinkedinLogo,
+  Prohibit,
 } from "@phosphor-icons/react/dist/ssr";
-import type { Job, JobStatus } from "@/lib/mock-data";
+import type { Job, JobMatchDetail, JobStatus } from "@/lib/mock-data";
 import { JOB_STATUSES, jobStatusLabels, platformIconSlugs, platformLabels } from "@/lib/mock-data";
+import { JobDescription } from "@/components/JobDescription";
 
 function scoreTier(score: number) {
   if (score >= 80) {
@@ -35,6 +37,49 @@ function scoreTier(score: number) {
     border: "border-rose-300",
     label: "low fit",
   };
+}
+
+function SubScore({ label, value }: { label: string; value: number }) {
+  const tier = scoreTier(value);
+  return (
+    <div className={`rounded-lg border px-2.5 py-1.5 ${tier.bg} ${tier.border}`}>
+      <div className="text-[10px] font-medium uppercase tracking-wide text-[#64748B]">
+        {label}
+      </div>
+      <div className={`text-[15px] font-semibold tabular-nums leading-tight ${tier.text}`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function ScoreBreakdown({ match }: { match: JobMatchDetail }) {
+  return (
+    <div className="mb-4 rounded-xl border border-[#D7E4ED] bg-white p-3.5">
+      <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+        Why this score
+      </div>
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <SubScore label="Skills" value={match.skillOverlap} />
+        <SubScore label="Seniority" value={match.seniorityFit} />
+        <SubScore label="Location" value={match.locationFit} />
+        <SubScore label="Contract" value={match.employmentFit} />
+      </div>
+      {match.blocker && (
+        <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-100 px-2.5 py-1 text-[12px] font-medium text-rose-800">
+          <Prohibit size={13} weight="bold" />
+          {match.blocker}
+        </div>
+      )}
+      {match.reasoning ? (
+        <p className="text-[13px] italic leading-relaxed text-[#1E2A3D]">
+          &ldquo;{match.reasoning}&rdquo;
+        </p>
+      ) : (
+        <p className="text-[12px] text-[#94A3B8]">No reasoning recorded for this job.</p>
+      )}
+    </div>
+  );
 }
 
 const statusTier: Record<JobStatus, { text: string; bg: string; border: string }> = {
@@ -188,13 +233,8 @@ export function JobCard({
 
       {expanded && (
         <div className="border-t border-[#D7E4ED] bg-[#EEF4F9] px-4 py-5">
-          {job.description ? (
-            <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#1E2A3D]">
-              {job.description}
-            </p>
-          ) : (
-            <p className="text-[13px] text-[#94A3B8]">No description available.</p>
-          )}
+          {job.match && <ScoreBreakdown match={job.match} />}
+          <JobDescription text={job.description} />
         </div>
       )}
     </div>

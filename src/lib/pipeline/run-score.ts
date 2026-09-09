@@ -1,15 +1,17 @@
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
-import { CHUNK_SIZE, chunk, scoreChunk } from "@/lib/agents/agent-3";
+import { CHUNK_SIZE, chunk, scoreChunk, getScoringModelName } from "@/lib/agents/agent-3";
+import { OpenRouterError } from "@/lib/gemini";
 import type { DbJob, Preferences } from "@/lib/types";
 
-// Run this many chunks concurrently — cuts wall-clock time roughly proportionally
-// (5 sequential chunks at ~60s each was a 5-minute wait; 3 at a time is ~2 rounds)
-// without hammering the AI provider's rate limits.
-const CONCURRENCY = 3;
+// Run this many chunks concurrently. Chunks are small now (6 condensed jobs, a
+// few seconds each), so more can be in flight without hammering the provider —
+// this is what turns a ~6 minute run into a ~2 minute one.
+const CONCURRENCY = 6;
 
 // Hard ceiling on a single chunk, independent of the AI client's own timeout —
 // if a chunk somehow neither resolves nor rejects, the run must not hang on it.
-const CHUNK_TIMEOUT_MS = 120_000;
+// A healthy small chunk answers in seconds; 60s already means something is wrong.
+const CHUNK_TIMEOUT_MS = 60_000;
 
 // One retry per chunk soaks up transient provider errors (429s, 5xx, brief
 // network blips) so a whole run doesn't finish with holes in it.
@@ -41,6 +43,9 @@ async function scoreChunkResilient(
       );
     } catch (error) {
       lastError = error;
+      // A bad API key or an unknown model slug fails identically every time —
+      // burning a retry (and the whole run) on it just wastes the user's minutes.
+      if (error instanceof OpenRouterError && error.isPermanent) throw error;
       if (attempt < CHUNK_RETRIES) await sleep(RETRY_DELAY_MS);
     }
   }
@@ -73,6 +78,7 @@ export async function getJobsNeedingScoring(
 
 export interface ScorePipelineResult {
   scored: number;
+  failed: number;
 }
 
 // A 'running' score_run whose heartbeat (updated_at) is older than this has lost
@@ -120,7 +126,12 @@ export async function runScorePipeline(
   const supabase = getSupabaseServerClient();
   const chunks = chunk(jobs, CHUNK_SIZE);
   const errors: Record<string, string> = {};
+  // `scored` counts jobs that actually got a match row; `failed` counts the rest.
+  // They used to be conflated — every chunk added its full length to `scored`
+  // even when it errored, so the counter hit 100% while jobs stayed unscored.
   let scored = 0;
+  let failed = 0;
+  let completedChunks = 0;
 
   // Heartbeat: any write that means "this run is still alive". /api/score/status
   // and /api/score treat a 'running' row whose updated_at has gone stale as a
@@ -137,6 +148,19 @@ export async function runScorePipeline(
   };
 
   try {
+    await heartbeat({
+      total_chunks: chunks.length,
+      completed_chunks: 0,
+      scored: 0,
+      failed: 0,
+      model: await getScoringModelName().catch(() => null),
+    });
+
+    // Set by a chunk that failed for a reason no other chunk can survive either
+    // (bad key, unknown model). Checked between rounds so the run aborts in
+    // seconds instead of grinding every chunk against the same wall.
+    let fatalError: unknown = null;
+
     for (let i = 0; i < chunks.length; i += CONCURRENCY) {
       // Cooperative cancellation: check between rounds rather than mid-flight —
       // chunks already launched still finish, but no new ones start.
@@ -145,7 +169,15 @@ export async function runScorePipeline(
         .select("status")
         .eq("id", runId)
         .single();
-      if (current?.status === "cancelled") return { scored };
+      if (current?.status === "cancelled") {
+        await heartbeat({
+          scored,
+          failed,
+          completed_chunks: completedChunks,
+          errors: Object.keys(errors).length > 0 ? errors : null,
+        });
+        return { scored, failed };
+      }
 
       // Mark the run alive at the start of each round too, so a healthy run whose
       // rounds run long never looks stale to the reaper.
@@ -156,26 +188,46 @@ export async function runScorePipeline(
         round.map(async (jobChunk, idx) => {
           try {
             const results = await scoreChunkResilient(jobChunk, preferences);
-            const { error } = await supabase
-              .from("job_matches")
-              .upsert(
-                results.map((r) => ({ ...r, user_id: CURRENT_USER_ID, stale_at: null })),
-                { onConflict: "job_id" }
-              );
-            if (error) throw error;
+            if (results.length > 0) {
+              const { error } = await supabase
+                .from("job_matches")
+                .upsert(
+                  results.map((r) => ({ ...r, user_id: CURRENT_USER_ID, stale_at: null })),
+                  { onConflict: "job_id" }
+                );
+              if (error) throw error;
+            }
+            scored += results.length;
+            // The model skipped some jobs in this chunk (or the salvage parser
+            // could only recover part of the response). They keep no match row,
+            // so the next run picks them up again.
+            const missing = jobChunk.length - results.length;
+            if (missing > 0) {
+              failed += missing;
+              errors[`chunk_${i + idx}`] = `${missing} of ${jobChunk.length} jobs came back without a score`;
+            }
           } catch (error) {
             console.error(`Scoring chunk failed:`, error);
+            failed += jobChunk.length;
             errors[`chunk_${i + idx}`] = String(error);
+            if (error instanceof OpenRouterError && error.isPermanent) fatalError = error;
           } finally {
-            // Count the chunk as processed either way so progress still reaches
-            // 100% and the run finishes instead of hanging on a failed chunk.
             // The bookkeeping write is guarded so a transient DB error here can't
             // reject Promise.all and abort the rounds still to come.
-            scored += jobChunk.length;
-            await heartbeat({ scored });
+            completedChunks += 1;
+            await heartbeat({
+              scored,
+              failed,
+              completed_chunks: completedChunks,
+              // Persist errors as they happen, not just at the end — a cancelled
+              // run used to discard every diagnostic it had collected.
+              errors: Object.keys(errors).length > 0 ? errors : null,
+            });
           }
         })
       );
+
+      if (fatalError) throw fatalError;
     }
 
     await supabase
@@ -184,11 +236,14 @@ export async function runScorePipeline(
         status: "completed",
         ended_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        scored,
+        failed,
+        completed_chunks: completedChunks,
         errors: Object.keys(errors).length > 0 ? errors : null,
       })
       .eq("id", runId);
 
-    return { scored };
+    return { scored, failed };
   } catch (error) {
     await supabase
       .from("score_runs")
@@ -196,7 +251,10 @@ export async function runScorePipeline(
         status: "failed",
         ended_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        errors: { message: String(error) },
+        scored,
+        failed,
+        completed_chunks: completedChunks,
+        errors: { ...errors, message: String(error) },
       })
       .eq("id", runId);
     throw error;

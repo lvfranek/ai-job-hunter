@@ -9,6 +9,7 @@ import {
   Lightning,
   Sparkle,
   Trash,
+  Warning,
   X,
 } from "@phosphor-icons/react";
 import type { Job, JobStatus } from "@/lib/mock-data";
@@ -66,6 +67,14 @@ export function JobResults({
   // Always-on status line shown next to the Adjust-score button: what the run is
   // doing right now, then how it ended. Never left blank while a run is live.
   const [scoreStatus, setScoreStatus] = useState<string | null>(null);
+  // Post-run summary: what actually got scored, what didn't, and why.
+  const [scoreReport, setScoreReport] = useState<{
+    scored: number;
+    failed: number;
+    total: number;
+    errorSummary: Record<string, number>;
+  } | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   const scoreRunId = useRef<string | null>(null);
   const [coverLetterJob, setCoverLetterJob] = useState<Job | null>(null);
   const [pruneDays, setPruneDays] = useState(30);
@@ -113,6 +122,11 @@ export function JobResults({
     }
   }
 
+  function formatEta(ms: number): string {
+    const total = Math.max(0, Math.round(ms / 1000));
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+  }
+
   // "Needs scoring" covers both never-scored jobs and ones whose score went
   // stale (preferences changed) — one button handles both.
   const needsScoreCount = jobs.filter((job) => !job.isScored || job.isStale).length;
@@ -120,6 +134,8 @@ export function JobResults({
   async function handleAdjustScore() {
     setIsScoring(true);
     setScoreStatus("Starting…");
+    setScoreReport(null);
+    setReportOpen(false);
     let outcome: string | null = null;
 
     try {
@@ -140,7 +156,23 @@ export function JobResults({
       const startedAt = Date.now();
       const MAX_POLL_MS = 30 * 60 * 1000;
       let consecutiveErrors = 0;
-      let last = { status: "running", scored: 0, total: 0, stalled: false };
+      // Pull fresh scores into the list while the run is going so the ranking
+      // reorders live. Throttled — chunks land in bursts and a full refetch per
+      // poll would be wasteful.
+      let lastRefreshAt = 0;
+      let lastRefreshedScored = 0;
+      const REFRESH_INTERVAL_MS = 3000;
+      let last = {
+        status: "running",
+        scored: 0,
+        failed: 0,
+        total: 0,
+        totalChunks: 0,
+        completedChunks: 0,
+        model: null as string | null,
+        errorSummary: {} as Record<string, number>,
+        stalled: false,
+      };
 
       const final = await new Promise<typeof last>((resolve) => {
         const interval = setInterval(async () => {
@@ -152,12 +184,38 @@ export function JobResults({
             last = {
               status: s.status ?? "running",
               scored: s.scored ?? 0,
+              failed: s.failed ?? 0,
               total: s.total ?? 0,
+              totalChunks: s.totalChunks ?? 0,
+              completedChunks: s.completedChunks ?? 0,
+              model: s.model ?? null,
+              errorSummary: s.errorSummary ?? {},
               stalled: Boolean(s.stalled),
             };
-            setScoreStatus(
-              last.total > 0 ? `${last.scored}/${last.total} scored` : "Preparing…"
-            );
+
+            // Live detail: what the run is chewing on right now, how much is
+            // done, what it has already lost, and roughly how long is left.
+            const parts: string[] = [];
+            if (last.totalChunks > 0) {
+              parts.push(`Batch ${last.completedChunks}/${last.totalChunks}`);
+            }
+            parts.push(last.total > 0 ? `${last.scored}/${last.total} scored` : "Preparing…");
+            if (last.failed > 0) parts.push(`${last.failed} failed`);
+            if (last.completedChunks > 0 && last.completedChunks < last.totalChunks) {
+              const perChunk = (Date.now() - startedAt) / last.completedChunks;
+              parts.push(`~${formatEta(perChunk * (last.totalChunks - last.completedChunks))} left`);
+            }
+            if (last.model) parts.push(last.model.split("/").pop() as string);
+            setScoreStatus(parts.join(" · "));
+
+            if (
+              last.scored > lastRefreshedScored &&
+              Date.now() - lastRefreshAt > REFRESH_INTERVAL_MS
+            ) {
+              lastRefreshedScored = last.scored;
+              lastRefreshAt = Date.now();
+              onRefresh();
+            }
 
             if (last.status !== "running" || Date.now() - startedAt > MAX_POLL_MS) {
               clearInterval(interval);
@@ -173,8 +231,18 @@ export function JobResults({
         }, 1500);
       });
 
+      setScoreReport({
+        scored: final.scored,
+        failed: final.failed,
+        total: final.total,
+        errorSummary: final.errorSummary,
+      });
+
       if (final.status === "completed") {
-        outcome = `Scored ${final.total} job${final.total === 1 ? "" : "s"}`;
+        outcome =
+          final.failed > 0
+            ? `Scored ${final.scored}/${final.total} — ${final.failed} failed`
+            : `Scored ${final.scored} job${final.scored === 1 ? "" : "s"}`;
       } else if (final.status === "cancelled") {
         outcome = `Cancelled at ${final.scored}/${final.total}`;
       } else {
@@ -329,10 +397,11 @@ export function JobResults({
                   type="button"
                   onClick={handleCancelScore}
                   aria-label="Cancel scoring"
-                  title="Cancel scoring"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[#94A3B8] transition-colors hover:text-[#1E2A3D]"
+                  title="Cancel scoring — finished jobs keep their scores"
+                  className="flex h-8 shrink-0 items-center gap-1.5 rounded-xl border border-rose-300 bg-rose-100 px-3 text-[13px] font-semibold text-rose-800 outline-none transition-colors hover:bg-rose-200 focus-visible:ring-2 focus-visible:ring-rose-400/40 active:scale-[0.98]"
                 >
                   <X size={13} weight="bold" />
+                  Cancel
                 </button>
               )}
             </>
@@ -429,6 +498,55 @@ export function JobResults({
           </div>
         </div>
       </div>
+
+      {scoreReport && scoreReport.total > 0 && (
+        <div className="border-b border-[#D7E4ED] px-4 py-2 text-[12px]">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={scoreReport.failed > 0 ? "text-amber-800" : "text-emerald-700"}>
+              {scoreReport.failed > 0 ? (
+                <>
+                  <Warning size={12} weight="fill" className="mr-1 inline align-[-1px]" />
+                  {scoreReport.scored}/{scoreReport.total} scored · {scoreReport.failed} could
+                  not be scored
+                </>
+              ) : (
+                <>All {scoreReport.scored} jobs scored</>
+              )}
+            </span>
+            {scoreReport.failed > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setReportOpen((o) => !o)}
+                  className="rounded-md px-1.5 py-0.5 text-[12px] font-medium text-[#64748B] underline-offset-2 transition-colors hover:text-[#1E2A3D] hover:underline"
+                >
+                  {reportOpen ? "Hide details" : "Show details"}
+                </button>
+                <span className="text-[#94A3B8]">
+                  Unscored jobs stay in the queue — click Adjust score again to retry them.
+                </span>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => setScoreReport(null)}
+              aria-label="Dismiss scoring report"
+              className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[#94A3B8] transition-colors hover:text-[#1E2A3D]"
+            >
+              <X size={12} weight="bold" />
+            </button>
+          </div>
+          {reportOpen && Object.keys(scoreReport.errorSummary).length > 0 && (
+            <ul className="mt-2 space-y-1 border-t border-[#D7E4ED] pt-2">
+              {Object.entries(scoreReport.errorSummary).map(([message, count]) => (
+                <li key={message} className="text-[12px] text-[#64748B]">
+                  <span className="tabular-nums text-[#94A3B8]">{count}×</span> {message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {jobs.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-b border-[#D7E4ED] px-4 py-2 text-[12px] text-[#94A3B8]">

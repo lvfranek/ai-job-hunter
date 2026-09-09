@@ -11,6 +11,17 @@ export const jobStatusLabels: Record<JobStatus, string> = {
   not_interested: "Not interested",
 };
 
+/** The AI scorer's per-job breakdown, shown when a job card is expanded. */
+export type JobMatchDetail = {
+  skillOverlap: number;
+  seniorityFit: number;
+  locationFit: number;
+  employmentFit: number;
+  reasoning: string | null;
+  /** Named hard reason the job scored low, or null when nothing blocks it. */
+  blocker: string | null;
+};
+
 export type Job = {
   id: string;
   title: string;
@@ -24,6 +35,7 @@ export type Job = {
   status: JobStatus | null;
   isStale?: boolean;
   isScored: boolean;
+  match?: JobMatchDetail;
 };
 
 export type AgentState = "idle" | "scraping" | "scoring";

@@ -8,23 +8,50 @@ import { useDirtyGuard } from "@/lib/unsaved-changes";
 
 interface PreferencesForm {
   notes: string;
+  own_skills: string;
+  preferred_languages: string;
+  soft_skills_flexible: boolean;
   preferred_location: string;
   job_type: string[];
+  excluded_employment_types: string[];
+  work_time_models: string[];
 }
 
 const JOB_TYPES = ["remote", "hybrid", "on-site"];
 
+// German labour-market contract forms. Kept in German because that is exactly
+// how they appear in the postings — "Werkstudent" and "Minijob" have no useful
+// English equivalent to match against.
+//
+// Note the inverted meaning: ticking one EXCLUDES it. German boards are full of
+// Werkstudent/Ausbildung postings, so "filter these out" is the useful control.
+const EXCLUDED_EMPLOYMENT_TYPES = ["freelance", "ausbildung", "studium", "werkstudent"];
+const WORK_TIME_MODELS = ["vollzeit", "teilzeit", "minijob"];
+
 const DEFAULTS: PreferencesForm = {
   notes: "",
+  own_skills: "",
+  preferred_languages: "",
+  soft_skills_flexible: false,
   preferred_location: "",
   job_type: [],
+  excluded_employment_types: [],
+  work_time_models: [],
 };
 
 function toForm(data: Record<string, unknown>): PreferencesForm {
   return {
     notes: (data.notes as string) ?? DEFAULTS.notes,
+    own_skills: (data.own_skills as string) ?? DEFAULTS.own_skills,
+    preferred_languages:
+      (data.preferred_languages as string) ?? DEFAULTS.preferred_languages,
+    soft_skills_flexible:
+      (data.soft_skills_flexible as boolean) ?? DEFAULTS.soft_skills_flexible,
     preferred_location: (data.preferred_location as string) ?? DEFAULTS.preferred_location,
     job_type: (data.job_type as string[]) ?? DEFAULTS.job_type,
+    excluded_employment_types:
+      (data.excluded_employment_types as string[]) ?? DEFAULTS.excluded_employment_types,
+    work_time_models: (data.work_time_models as string[]) ?? DEFAULTS.work_time_models,
   };
 }
 
@@ -132,6 +159,54 @@ export default function PreferencesPage() {
 
           <div>
             <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+              Concrete skills you have
+            </label>
+            <input
+              value={form.own_skills}
+              onChange={(e) => setForm({ ...form, own_skills: e.target.value })}
+              placeholder="React, TypeScript, Git, SQL, Figma"
+              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+            />
+            <p className="mt-1.5 text-[12px] text-text-faint">
+              What you can actually do today, comma-separated. The AI matches job requirements
+              against this — and counts adjacent tech (React ↔ Vue, Node ↔ Python) as
+              transferable rather than missing.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+              Preferred programming languages
+            </label>
+            <input
+              value={form.preferred_languages}
+              onChange={(e) => setForm({ ...form, preferred_languages: e.target.value })}
+              placeholder="TypeScript, Python, Go"
+              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+            />
+            <p className="mt-1.5 text-[12px] text-text-faint">
+              What you would rather work in day to day. A job in another language isn&apos;t
+              excluded — it just scores a little lower.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-border-strong bg-surface px-3.5 py-3">
+            <Checkbox
+              label="Soft skills flexible"
+              checked={form.soft_skills_flexible}
+              onChange={() =>
+                setForm({ ...form, soft_skills_flexible: !form.soft_skills_flexible })
+              }
+            />
+            <p className="mt-1.5 text-[12px] text-text-faint">
+              Treats every soft-skill requirement in a posting (Zuverlässigkeit, Teamfähigkeit,
+              Belastbarkeit, Kommunikationsstärke …) as fully met, so the AI never deducts
+              points for one.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
               Preferred location
             </label>
             <input
@@ -159,6 +234,61 @@ export default function PreferencesPage() {
                 />
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+              Exclude contract forms
+            </label>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-border-strong bg-surface px-3.5 py-3">
+              {EXCLUDED_EMPLOYMENT_TYPES.map((type) => (
+                <Checkbox
+                  key={type}
+                  label={type}
+                  checked={form.excluded_employment_types.includes(type)}
+                  onChange={() =>
+                    setForm({
+                      ...form,
+                      excluded_employment_types: toggleValue(
+                        form.excluded_employment_types,
+                        type
+                      ),
+                    })
+                  }
+                />
+              ))}
+            </div>
+            <p className="mt-1.5 text-[12px] text-text-faint">
+              Tick what you do <strong>not</strong> want — Ausbildung (apprenticeship), Studium
+              (dual study), Werkstudent (working student), Freelance. A ticked form is treated
+              as a hard blocker: those postings score low and say why. Tick nothing to accept
+              every contract form.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+              Working time
+            </label>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-border-strong bg-surface px-3.5 py-3">
+              {WORK_TIME_MODELS.map((type) => (
+                <Checkbox
+                  key={type}
+                  label={type}
+                  checked={form.work_time_models.includes(type)}
+                  onChange={() =>
+                    setForm({
+                      ...form,
+                      work_time_models: toggleValue(form.work_time_models, type),
+                    })
+                  }
+                />
+              ))}
+            </div>
+            <p className="mt-1.5 text-[12px] text-text-faint">
+              Vollzeit (full-time), Teilzeit (part-time), Minijob (marginal employment). Tick
+              none to accept any.
+            </p>
           </div>
 
           <button

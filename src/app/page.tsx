@@ -29,6 +29,16 @@ function toUiJob(row: JobWithMatch): Job {
     status: (row.status as JobStatus | null) ?? null,
     isStale: match?.stale_at != null,
     isScored: match != null,
+    match: match
+      ? {
+          skillOverlap: match.skill_overlap_pct ?? 0,
+          seniorityFit: match.seniority_fit ?? 0,
+          locationFit: match.location_fit ?? 0,
+          employmentFit: match.employment_fit ?? 0,
+          reasoning: match.reasoning,
+          blocker: match.blocker ?? null,
+        }
+      : undefined,
   };
 }
 

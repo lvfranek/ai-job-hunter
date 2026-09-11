@@ -1,4 +1,4 @@
-# AI Job Hunter
+# 🎯 AI Job Hunter
 
 Scrapes job boards (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur), scores matches against your
 profile with an LLM, and helps you generate tailored cover letters. Track each job's application
@@ -7,7 +7,44 @@ Next.js and Supabase.
 
 ![AI Job Hunter](public/aijobhunter.png)
 
-## Setup
+## ⌨️ Tech Stack
+
+| Area        | Choice                                                    |
+| ----------- | --------------------------------------------------------- |
+| Framework   | Next.js 16 (App Router)                                   |
+| UI          | React 19                                                  |
+| Language    | TypeScript                                                |
+| Styling     | Tailwind CSS v4                                           |
+| Database    | [Supabase](https://supabase.com) (Postgres + RLS)         |
+| Scraping    | [Apify](https://apify.com) job-board actors               |
+| AI          | [OpenRouter](https://openrouter.ai) — LLM match scoring   |
+| Documents   | `pdf-parse` / `mammoth` (CV parsing), `docx` (cover-letter export) |
+| Icons       | Phosphor Icons                                            |
+| Hosting     | Vercel                                                    |
+
+## 🚀 Features
+
+- **Multi-board scraping** — Indeed, LinkedIn, Xing, Stepstone and Arbeitsagentur in a single scan.
+- **LLM match scoring** — every job is scored 0–100 against your profile, with written reasoning
+  for why it fits or doesn't.
+- **Tailored cover letters** — generate a cover letter per job, exportable as `.docx`.
+- **CV-aware profile** — upload a PDF or Word CV and the app parses it into your matching profile.
+- **Application tracking** — mark each job interested / applied / interview / not interested, and
+  filter the list by status.
+- **Scheduled scans** — `POST /api/cron/scrape` runs a full scrape + score pass, drivable from any
+  scheduler (cron, n8n, GitHub Actions).
+- **Webhook notifications** — get a JSON summary of new high-fit jobs after each run.
+- **Single-user by design** — one password gate protects the whole deployment, with a read-only
+  demo mode for visitors.
+
+## 🎞️ Live Demo
+
+[ai-job-hunter-rosy.vercel.app](https://ai-job-hunter-rosy.vercel.app/)
+
+The demo runs in guest mode against canned fixtures — you can click through the whole UI, and no
+writes are persisted.
+
+## 🚦 Getting Started
 
 1. **Clone and install**
    ```bash
@@ -50,7 +87,7 @@ Next.js and Supabase.
 7. **Deploying**: always put this behind HTTPS (Vercel and most hosts do this automatically) — the
    login cookie is only meaningful over an encrypted connection.
 
-## Deployment
+## ☁️ Deployment
 
 The reference deployment runs on [Vercel](https://vercel.com), connected directly to this GitHub
 repo — push to your default branch and it redeploys.
@@ -63,7 +100,7 @@ stored in Supabase undecryptable.
 The app is single-user by design: the password gate (`AUTH_PASSWORD_HASH`) is the only account
 there is, there's no public sign-up or multi-user support.
 
-## Automation (optional)
+## ⚙️ Automation (optional)
 
 `POST /api/cron/scrape` runs a full scrape + score pass and waits for it to finish before
 responding — unlike the "Scan now" button in the UI, which fires in the background. Point any
@@ -124,7 +161,7 @@ hours), these starting values in Settings keep it useful without wasting Apify c
 Tune these after a few days based on actual `scrape_runs` data (duplicate rate, jobs found vs.
 stored).
 
-## Security notes
+## 🔒 Security notes
 
 - Row Level Security is enabled on every Supabase table, scoped to the single hardcoded app user —
   see `supabase/migrations/015_enable_rls.sql`.
@@ -133,6 +170,9 @@ stored).
 - `NOTIFICATION_WEBHOOK_URL` has no built-in auth on the receiving end by default — treat the URL
   itself as a secret; anyone who has it can see your job matches.
 
-## Learn More
+## 📚 Additional Resources
 
-Built with [Next.js](https://nextjs.org) and [Supabase](https://supabase.com).
+- [Next.js documentation](https://nextjs.org/docs)
+- [Supabase documentation](https://supabase.com/docs)
+- [Apify documentation](https://docs.apify.com)
+- [OpenRouter documentation](https://openrouter.ai/docs)

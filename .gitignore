@@ -37,8 +37,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files — real values stay local, the placeholder template is committed
-.env*
-!.env.local.example
+.env.local
 
 # vercel
 .vercel

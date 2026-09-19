@@ -18,6 +18,15 @@
   --color-score-low: #dc2626;
 }
 
+@theme {
+  /* The mobile/desktop switch. Tailwind's default `sm` (640px) left the
+     dashboard's one-row job cards — score, title, status select and the
+     cover-letter button — crammed together on tablets and small laptops, so
+     the stacked layout now holds until 950px. Every `sm:` utility in the app
+     means "not mobile", so this one value moves them all together. */
+  --breakpoint-sm: 950px;
+}
+
 @theme inline {
   --color-bg: var(--color-bg);
   --color-surface: var(--color-surface);

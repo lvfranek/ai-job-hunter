@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, CURRENT_USER_ID } from "@/lib/supabase";
+import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
 
 export async function GET() {
+  const supabase = getSupabaseServerClient();
   try {
     const { data, error } = await supabase
       .from("jobs")
@@ -19,11 +20,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = getSupabaseServerClient();
   try {
     const body = await request.json();
     const { data, error } = await supabase
       .from("jobs")
-      .insert({ user_id: CURRENT_USER_ID, ...body })
+      .insert({ ...body, user_id: CURRENT_USER_ID })
       .select();
 
     if (error) throw error;
@@ -37,6 +39,7 @@ export async function POST(request: NextRequest) {
 // posted date (posted_date, falling back to created_at) is older than
 // `olderThanDays` days. Returns the number of jobs removed.
 export async function DELETE(request: NextRequest) {
+  const supabase = getSupabaseServerClient();
   try {
     const olderThanDays = Number(request.nextUrl.searchParams.get("olderThanDays"));
     if (!Number.isInteger(olderThanDays) || olderThanDays < 1) {

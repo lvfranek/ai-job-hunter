@@ -77,19 +77,21 @@ export default function DashboardPage() {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="min-h-screen bg-[#DFE9F0] py-8 pr-8">
+    <main id="main" tabIndex={-1} className="min-h-screen bg-[#DFE9F0] py-6 pr-4 sm:py-8 sm:pr-8">
       <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
         <SquaresFour size={15} />
         Dashboard
       </div>
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight text-[#1E2A3D]">Job matches</h1>
+      <h1 className="mb-4 text-xl font-semibold tracking-tight text-[#1E2A3D] sm:text-2xl">
+        Job matches
+      </h1>
 
-      <div className="mb-4 flex flex-wrap gap-4">
-        <div className="w-44 rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-5 py-4 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)]">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-4">
+        <div className="w-full rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-4 py-3 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)] sm:w-44 sm:px-5 sm:py-4">
           <p className="text-[13px] text-text-faint">Jobs found</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums text-[#1E2A3D]">{jobs.length}</p>
         </div>
-        <div className="w-44 rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-5 py-4 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)]">
+        <div className="w-full rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-4 py-3 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)] sm:w-44 sm:px-5 sm:py-4">
           <p className="text-[13px] text-text-faint">High matches</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums text-emerald-600">{highMatches}</p>
         </div>

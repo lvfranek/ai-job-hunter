@@ -451,7 +451,7 @@ export function JobResults({
                 setPage(1);
               }}
               placeholder="0"
-              className="h-8 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-base text-text-muted outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D] sm:text-[13px]"
+              className="h-8 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-[13px] text-text-muted outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D]"
             />
           </div>
           <span className="text-[12px] text-text-faint">Sort</span>
@@ -463,7 +463,7 @@ export function JobResults({
                 setPage(1);
               }}
               aria-label="Sort jobs by"
-              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-base text-text-muted transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none sm:text-[13px]"
+              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-[13px] text-text-muted transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none"
             >
               {(Object.keys(sortLabels) as SortKey[]).map((key) => (
                 <option key={key} value={key}>
@@ -486,7 +486,7 @@ export function JobResults({
                 setPage(1);
               }}
               aria-label="Filter by status"
-              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-base text-text-muted transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none sm:text-[13px]"
+              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-[13px] text-text-muted transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none"
             >
               {(Object.keys(statusFilterLabels) as StatusFilter[]).map((key) => (
                 <option key={key} value={key}>
@@ -586,7 +586,7 @@ export function JobResults({
                 value={pruneDays || ""}
                 onChange={(e) => setPruneDays(Math.max(1, Math.floor(Number(e.target.value) || 0)))}
                 aria-label="Remove job posts older than this many days"
-                className="h-7 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-base text-text-muted outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D] sm:text-[12px]"
+                className="h-7 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-[12px] text-text-muted outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D]"
               />
               <span>days</span>
               <button

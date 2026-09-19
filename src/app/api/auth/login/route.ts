@@ -7,8 +7,22 @@ import {
   sessionToken,
   verifyPassword,
 } from "@/lib/auth";
+import { clientKey, rateLimit } from "@/lib/rate-limit";
+
+// This route is public (see src/proxy.ts), so it is the one brute-force target
+// in the app — a single password with no account lockout behind it.
+const MAX_ATTEMPTS = 10;
+const WINDOW_MS = 10 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
+  const { allowed, retryAfter } = rateLimit(`login:${clientKey(request)}`, MAX_ATTEMPTS, WINDOW_MS);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many attempts. Try again later." },
+      { status: 429, headers: { "Retry-After": String(retryAfter) } },
+    );
+  }
+
   const { password } = (await request.json()) as { password?: string };
 
   if (!password || !verifyPassword(password)) {

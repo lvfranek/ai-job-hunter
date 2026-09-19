@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, CURRENT_USER_ID } from "@/lib/supabase";
+import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
 
 export async function GET() {
+  const supabase = getSupabaseServerClient();
   try {
     const { data, error } = await supabase
       .from("settings")
@@ -40,11 +41,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = getSupabaseServerClient();
   try {
     const body = await request.json();
     const { data, error } = await supabase
       .from("settings")
-      .upsert({ user_id: CURRENT_USER_ID, ...body }, { onConflict: "user_id" })
+      .upsert({ ...body, user_id: CURRENT_USER_ID }, { onConflict: "user_id" })
       .select();
 
     if (error) throw error;

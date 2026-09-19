@@ -203,7 +203,7 @@ export default function SettingsPage() {
                       `Keyword ${i + 1}`
                     }
                     aria-label={`Keyword ${i + 1}`}
-                    className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
+                    className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
                   />
                 ))}
               </div>
@@ -226,7 +226,7 @@ export default function SettingsPage() {
                 value={form.scraper_location}
                 onChange={(e) => setForm({ ...form, scraper_location: e.target.value })}
                 placeholder="Hamburg, Germany"
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
               />
               <p className="mt-1.5 text-[12px] text-text-faint">
                 Where to search for jobs — still applies with Remote only on, e.g. &quot;remote jobs
@@ -263,7 +263,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setForm({ ...form, scraper_max_posting_age_days: Number(e.target.value) })
                   }
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
                   Only show jobs posted within this many days — each job board only offers a few
@@ -292,7 +292,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setForm({ ...form, scraper_results_per_scan: Number(e.target.value) })
                   }
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
                   Max jobs fetched per keyword, per board, per scan. A scan runs one search for
@@ -372,7 +372,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setForm({ ...form, notification_threshold: Number(e.target.value) })
                 }
-                className="w-full max-w-40 rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
+                className="w-full max-w-40 rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
               />
               <p className="mt-1.5 text-[12px] text-text-faint">
                 Jobs scoring at or above this trigger a webhook notification. Only affects the

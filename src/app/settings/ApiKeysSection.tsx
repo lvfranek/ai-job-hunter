@@ -41,7 +41,7 @@ const EMPTY_CONFIG: ConfigForm = {
 };
 
 const inputClass =
-  "w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]";
+  "w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]";
 
 function statusText(status: SecretStatus | undefined) {
   if (!status || !status.configured) return "Not configured";

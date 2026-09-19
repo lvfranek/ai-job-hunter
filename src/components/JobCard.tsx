@@ -189,7 +189,7 @@ export function JobCard({
                 onStatusChange(job.id, (e.target.value || null) as JobStatus | null);
               }}
               aria-label="Application status"
-              className={`h-8 appearance-none rounded-xl border px-3 pr-7 text-base font-medium outline-none transition-colors sm:text-[13px] ${
+              className={`h-8 appearance-none rounded-xl border px-3 pr-7 text-[13px] font-normal outline-none transition-colors ${
                 job.status
                   ? `${statusTier[job.status].bg} ${statusTier[job.status].border} ${statusTier[job.status].text}`
                   : "border-[#B9CCDA] bg-white text-text-muted"

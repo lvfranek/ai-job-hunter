@@ -149,7 +149,7 @@ export default function PreferencesPage() {
                 "comfortable with Node.js on the backend. Open to Vue or Svelte roles too. " +
                 "Not interested in Django/PHP-heavy roles or anything in gaming."
               }
-              className="w-full resize-y rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-base leading-relaxed text-text outline-none focus:border-[#101828] sm:text-[13px]"
+              className="w-full resize-y rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-[13px] leading-relaxed text-text outline-none focus:border-[#101828]"
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
               The AI reads this directly — titles, seniority, skills, and anything you want to
@@ -169,7 +169,7 @@ export default function PreferencesPage() {
               value={form.own_skills}
               onChange={(e) => setForm({ ...form, own_skills: e.target.value })}
               placeholder="React, TypeScript, Git, SQL, Figma"
-              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
+              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
               What you can actually do today, comma-separated. The AI matches job requirements
@@ -190,7 +190,7 @@ export default function PreferencesPage() {
               value={form.preferred_languages}
               onChange={(e) => setForm({ ...form, preferred_languages: e.target.value })}
               placeholder="TypeScript, Python, Go"
-              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
+              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
               What you would rather work in day to day. A job in another language isn&apos;t
@@ -225,7 +225,7 @@ export default function PreferencesPage() {
               value={form.preferred_location}
               onChange={(e) => setForm({ ...form, preferred_location: e.target.value })}
               placeholder="Berlin, Germany"
-              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
+              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
               Where you want to work (can differ from where you live)

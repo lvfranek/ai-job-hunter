@@ -43,7 +43,7 @@ export function LanguageInput({
                 )
               }
               aria-label={`${lang.name} proficiency level`}
-              className="rounded-md border border-border-strong bg-surface-hover px-2 py-1 text-base text-text capitalize outline-none focus:border-[#101828] sm:text-[12px]"
+              className="rounded-md border border-border-strong bg-surface-hover px-2 py-1 text-[12px] text-text capitalize outline-none focus:border-[#101828]"
             >
               {LEVELS.map((level) => (
                 <option key={level} value={level} className="capitalize">
@@ -73,7 +73,7 @@ export function LanguageInput({
           onBlur={addLanguage}
           placeholder="Type a language and press Enter"
           aria-label="Add a language"
-          className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none placeholder:text-text-faint focus:border-[#101828] sm:text-[13px]"
+          className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none placeholder:text-text-faint focus:border-[#101828]"
         />
       </div>
       <p className="mt-1.5 text-[12px] text-text-faint">

@@ -62,7 +62,7 @@ export function TagInput({
           }}
           onBlur={addTag}
           placeholder="Type and press Enter"
-          className="min-w-35 flex-1 bg-transparent py-1 text-base text-text outline-none placeholder:text-text-faint sm:text-[13px]"
+          className="min-w-35 flex-1 bg-transparent py-1 text-[13px] text-text outline-none placeholder:text-text-faint"
         />
       </div>
       {helperText && <p className="mt-1.5 text-[12px] text-text-faint">{helperText}</p>}

@@ -11,7 +11,7 @@
 export async function runWithConcurrency<T, R>(
   items: T[],
   limit: number,
-  fn: (item: T, index: number) => Promise<R>
+  fn: (item: T, index: number) => Promise<R>,
 ): Promise<PromiseSettledResult<R>[]> {
   const results: PromiseSettledResult<R>[] = new Array(items.length);
   const size = Math.max(1, limit);
@@ -26,7 +26,7 @@ export async function runWithConcurrency<T, R>(
         } catch (reason) {
           results[index] = { status: "rejected", reason };
         }
-      })
+      }),
     );
   }
 

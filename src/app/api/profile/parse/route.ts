@@ -26,8 +26,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 400 });
   }
 
-  const isAllowed =
-    ALLOWED_TYPES.includes(file.type) || /\.(pdf|docx|txt)$/i.test(file.name);
+  const isAllowed = ALLOWED_TYPES.includes(file.type) || /\.(pdf|docx|txt)$/i.test(file.name);
   if (!isAllowed) {
     return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
   }

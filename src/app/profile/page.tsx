@@ -30,7 +30,7 @@ interface ProfileForm {
 function toLanguages(raw: unknown): Language[] {
   if (!Array.isArray(raw)) return [];
   return raw.map((item) =>
-    typeof item === "string" ? { name: item, level: "fluent" } : (item as Language)
+    typeof item === "string" ? { name: item, level: "fluent" } : (item as Language),
   );
 }
 
@@ -65,9 +65,7 @@ export default function ProfilePage() {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useDirtyGuard(
-    form !== null && savedSnapshot !== null && JSON.stringify(form) !== savedSnapshot
-  );
+  useDirtyGuard(form !== null && savedSnapshot !== null && JSON.stringify(form) !== savedSnapshot);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -130,7 +128,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="py-8 pr-8">
+    <main id="main" tabIndex={-1} className="py-8 pr-8">
       <Toast message={message} />
       <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
         <UserCircle size={15} />
@@ -213,66 +211,92 @@ export default function ProfilePage() {
             <h2 className="text-[15px] font-semibold text-text">Personal Information</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                <label
+                  htmlFor="profile-name"
+                  className="mb-1.5 block text-[13px] font-medium text-text-muted"
+                >
                   Name
                 </label>
                 <input
+                  id="profile-name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                <label
+                  htmlFor="profile-email"
+                  className="mb-1.5 block text-[13px] font-medium text-text-muted"
+                >
                   Email
                 </label>
                 <input
+                  id="profile-email"
+                  type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                <label
+                  htmlFor="profile-phone"
+                  className="mb-1.5 block text-[13px] font-medium text-text-muted"
+                >
                   Phone
                 </label>
                 <input
+                  id="profile-phone"
+                  type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                <label
+                  htmlFor="profile-dob"
+                  className="mb-1.5 block text-[13px] font-medium text-text-muted"
+                >
                   Date of birth
                 </label>
                 <input
+                  id="profile-dob"
                   type="date"
                   value={form.date_of_birth}
                   onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                <label
+                  htmlFor="profile-street"
+                  className="mb-1.5 block text-[13px] font-medium text-text-muted"
+                >
                   Street address
                 </label>
                 <input
+                  id="profile-street"
                   value={form.street_address}
                   onChange={(e) => setForm({ ...form, street_address: e.target.value })}
                   placeholder="Musterstraße 12"
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                <label
+                  htmlFor="profile-location"
+                  className="mb-1.5 block text-[13px] font-medium text-text-muted"
+                >
                   Location
                 </label>
                 <input
+                  id="profile-location"
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
                   placeholder="22765 Hamburg"
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
                   Used as the &quot;ZIP City&quot; line in your cover letter header
@@ -288,26 +312,34 @@ export default function ProfilePage() {
           <section className="space-y-5 border-t border-border-strong pt-8">
             <h2 className="text-[15px] font-semibold text-text">Professional Information</h2>
             <div>
-              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+              <label
+                htmlFor="profile-current-situation"
+                className="mb-1.5 block text-[13px] font-medium text-text-muted"
+              >
                 Current situation
               </label>
               <textarea
+                id="profile-current-situation"
                 value={form.current_situation}
                 onChange={(e) => setForm({ ...form, current_situation: e.target.value })}
                 rows={3}
                 placeholder="e.g. Employed as Senior Developer at Acme Corp / Between jobs, studying data science / Freelancing since 2023"
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+              <label
+                htmlFor="profile-cv-text"
+                className="mb-1.5 block text-[13px] font-medium text-text-muted"
+              >
                 Full CV text
               </label>
               <textarea
+                id="profile-cv-text"
                 value={form.cv_text}
                 onChange={(e) => setForm({ ...form, cv_text: e.target.value })}
                 rows={8}
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
               />
             </div>
           </section>
@@ -340,10 +372,14 @@ export default function ProfilePage() {
           <section className="space-y-5 border-t border-border-strong pt-8">
             <h2 className="text-[15px] font-semibold text-text">Cover Letter Content</h2>
             <div>
-              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+              <label
+                htmlFor="profile-personal-story"
+                className="mb-1.5 block text-[13px] font-medium text-text-muted"
+              >
                 Personal intro / opening story
               </label>
               <textarea
+                id="profile-personal-story"
                 value={form.personal_story}
                 onChange={(e) => setForm({ ...form, personal_story: e.target.value })}
                 rows={4}
@@ -351,42 +387,48 @@ export default function ProfilePage() {
                   'e.g. "After making €100k in my first year selling on Amazon, I realized ' +
                   'e-commerce was in my blood..."'
                 }
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
               />
               <p className="mt-1.5 text-[12px] text-text-faint">
-                Your personal hook — your biggest achievement or what drives you. The AI adapts
-                this to each job.
+                Your personal hook — your biggest achievement or what drives you. The AI adapts this
+                to each job.
               </p>
             </div>
             <div>
-              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+              <label
+                htmlFor="profile-key-achievements"
+                className="mb-1.5 block text-[13px] font-medium text-text-muted"
+              >
                 Key achievements
               </label>
               <textarea
+                id="profile-key-achievements"
                 value={form.key_achievements.join("\n")}
-                onChange={(e) =>
-                  setForm({ ...form, key_achievements: e.target.value.split("\n") })
-                }
+                onChange={(e) => setForm({ ...form, key_achievements: e.target.value.split("\n") })}
                 rows={5}
                 placeholder={
                   "One achievement per line, e.g.\nGrew client revenue from €232k to €300k/month through PPC optimization\nShipped a React Native app used by 10k+ daily users"
                 }
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
               />
               <p className="mt-1.5 text-[12px] text-text-faint">
                 One per line. The AI picks the most relevant ones per job.
               </p>
             </div>
             <div>
-              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+              <label
+                htmlFor="profile-motivation"
+                className="mb-1.5 block text-[13px] font-medium text-text-muted"
+              >
                 Motivation / what you&apos;re looking for
               </label>
               <textarea
+                id="profile-motivation"
                 value={form.motivation}
                 onChange={(e) => setForm({ ...form, motivation: e.target.value })}
                 rows={3}
                 placeholder="Why are you looking for a new role? What excites you about this field?"
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
               />
             </div>
           </section>

@@ -24,23 +24,19 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   return Promise.race([
     promise,
     new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
     ),
   ]);
 }
 
 async function scoreChunkResilient(
   jobChunk: DbJob[],
-  preferences: Preferences
+  preferences: Preferences,
 ): Promise<Awaited<ReturnType<typeof scoreChunk>>> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= CHUNK_RETRIES; attempt++) {
     try {
-      return await withTimeout(
-        scoreChunk(jobChunk, preferences),
-        CHUNK_TIMEOUT_MS,
-        "scoreChunk"
-      );
+      return await withTimeout(scoreChunk(jobChunk, preferences), CHUNK_TIMEOUT_MS, "scoreChunk");
     } catch (error) {
       lastError = error;
       // A bad API key or an unknown model slug fails identically every time —
@@ -58,7 +54,7 @@ type JobWithMatchInfo = DbJob & { job_matches: { id: string; stale_at: string | 
 // changed since) — one action, "keep my scores current", shared by /api/score
 // (manual button) and /api/cron/scrape (automated run).
 export async function getJobsNeedingScoring(
-  supabase: ReturnType<typeof getSupabaseServerClient>
+  supabase: ReturnType<typeof getSupabaseServerClient>,
 ): Promise<{ jobs: DbJob[]; preferences: Preferences | null }> {
   const [{ data: preferences }, { data: jobs }] = await Promise.all([
     supabase.from("preferences").select("*").eq("user_id", CURRENT_USER_ID).single(),
@@ -70,7 +66,7 @@ export async function getJobsNeedingScoring(
   ]);
 
   const needsScoring = ((jobs ?? []) as JobWithMatchInfo[]).filter(
-    (job) => job.job_matches === null || job.job_matches.stale_at !== null
+    (job) => job.job_matches === null || job.job_matches.stale_at !== null,
   );
 
   return { jobs: needsScoring, preferences: (preferences as Preferences) ?? null };
@@ -95,7 +91,7 @@ const STALE_RUN_MS = 8 * 60 * 1000;
  * status poll. Returns the ids it reaped.
  */
 export async function failStaleScoreRuns(
-  supabase: ReturnType<typeof getSupabaseServerClient>
+  supabase: ReturnType<typeof getSupabaseServerClient>,
 ): Promise<string[]> {
   const cutoff = new Date(Date.now() - STALE_RUN_MS).toISOString();
   const { data, error } = await supabase
@@ -121,7 +117,7 @@ export async function failStaleScoreRuns(
 export async function runScorePipeline(
   runId: string,
   jobs: DbJob[],
-  preferences: Preferences
+  preferences: Preferences,
 ): Promise<ScorePipelineResult> {
   const supabase = getSupabaseServerClient();
   const chunks = chunk(jobs, CHUNK_SIZE);
@@ -189,12 +185,10 @@ export async function runScorePipeline(
           try {
             const results = await scoreChunkResilient(jobChunk, preferences);
             if (results.length > 0) {
-              const { error } = await supabase
-                .from("job_matches")
-                .upsert(
-                  results.map((r) => ({ ...r, user_id: CURRENT_USER_ID, stale_at: null })),
-                  { onConflict: "job_id" }
-                );
+              const { error } = await supabase.from("job_matches").upsert(
+                results.map((r) => ({ ...r, user_id: CURRENT_USER_ID, stale_at: null })),
+                { onConflict: "job_id" },
+              );
               if (error) throw error;
             }
             scored += results.length;
@@ -204,7 +198,8 @@ export async function runScorePipeline(
             const missing = jobChunk.length - results.length;
             if (missing > 0) {
               failed += missing;
-              errors[`chunk_${i + idx}`] = `${missing} of ${jobChunk.length} jobs came back without a score`;
+              errors[`chunk_${i + idx}`] =
+                `${missing} of ${jobChunk.length} jobs came back without a score`;
             }
           } catch (error) {
             console.error(`Scoring chunk failed:`, error);
@@ -224,7 +219,7 @@ export async function runScorePipeline(
               errors: Object.keys(errors).length > 0 ? errors : null,
             });
           }
-        })
+        }),
       );
 
       if (fatalError) throw fatalError;

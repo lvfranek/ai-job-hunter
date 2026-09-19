@@ -7,8 +7,11 @@
   --color-border: #d7e4ed;
   --color-border-strong: #b9ccda;
   --color-text: #1e2a3d;
-  --color-text-muted: #64748b;
-  --color-text-faint: #94a3b8;
+  /* Darkened from the original #64748b/#94a3b8 to clear WCAG AA's 4.5:1 text
+     contrast requirement against --color-bg (#dfe9f0), the palette's lightest
+     surface these colors sit on. */
+  --color-text-muted: #47576a;
+  --color-text-faint: #586878;
 
   --color-score-high: #059669;
   --color-score-mid: #d97706;

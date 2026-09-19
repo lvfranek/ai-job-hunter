@@ -50,7 +50,7 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
+    <main id="main" tabIndex={-1} className="flex min-h-screen items-center justify-center">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm space-y-5 rounded-[28px] border border-white/60 bg-[#F1FAFF] p-8 shadow-[0_8px_30px_-10px_rgba(30,64,120,0.28)]"
@@ -69,15 +69,20 @@ function LoginForm() {
         )}
 
         <div>
-          <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+          <label
+            htmlFor="password"
+            className="mb-1.5 block text-[13px] font-medium text-text-muted"
+          >
             Password
           </label>
           <input
+            id="password"
             type="password"
+            autoComplete="current-password"
             autoFocus
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+            className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
           />
         </div>
 

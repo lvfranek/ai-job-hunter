@@ -47,7 +47,7 @@ CV Text:
 
 export async function parseProfileFromCV(
   cvText: string,
-  modelName?: string
+  modelName?: string,
 ): Promise<ParsedProfile> {
   const model = await getGeminiModel(modelName);
   const result = await model.generateContent(PROMPT + cvText);

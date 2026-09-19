@@ -3,10 +3,7 @@
 // OpenRouter or the notification webhook — it only serves the fixtures in
 // src/lib/demo-data.ts and runs the local, network-free .docx builder.
 import { NextRequest, NextResponse } from "next/server";
-import {
-  DEMO_SCORED_COOKIE_NAME,
-  DEMO_COOKIE_MAX_AGE,
-} from "@/lib/auth";
+import { DEMO_SCORED_COOKIE_NAME, DEMO_COOKIE_MAX_AGE } from "@/lib/auth";
 import {
   demoJobs,
   demoJobsScored,
@@ -38,9 +35,7 @@ function sanitizeFilenamePart(value: string): string {
  * still the client's original `/api/...` path (not `/api/demo/...`).
  */
 function subPath(request: NextRequest): string {
-  return (
-    request.nextUrl.pathname.replace(/^\/api\/demo/, "").replace(/^\/api/, "") || "/"
-  );
+  return request.nextUrl.pathname.replace(/^\/api\/demo/, "").replace(/^\/api/, "") || "/";
 }
 
 async function readJson(request: NextRequest): Promise<Record<string, unknown>> {
@@ -108,15 +103,14 @@ async function handle(request: NextRequest): Promise<NextResponse> {
       demoProfile as Profile,
       job as DbJob,
       demoCoverLetterParagraphs[language],
-      language
+      language,
     );
     const filename = `${
       language === "de" ? "Anschreiben" : "Cover Letter"
     } ${sanitizeFilenamePart(job.company)}.docx`;
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
-        "Content-Type":
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
@@ -128,7 +122,10 @@ async function handle(request: NextRequest): Promise<NextResponse> {
   }
 
   // ---- writes: accepted, never persisted --------------------------------
-  if (method === "POST" && (path === "/profile" || path === "/preferences" || path === "/settings")) {
+  if (
+    method === "POST" &&
+    (path === "/profile" || path === "/preferences" || path === "/settings")
+  ) {
     const body = await readJson(request);
     return NextResponse.json({ ...body, demo: true });
   }
@@ -158,7 +155,11 @@ async function handle(request: NextRequest): Promise<NextResponse> {
     const id = path.slice("/jobs/".length);
     const body = await readJson(request);
     const job = findDemoJob(id) ?? demoJobs[0];
-    return NextResponse.json({ ...job, status: (body.status as string | null) ?? null, demo: true });
+    return NextResponse.json({
+      ...job,
+      status: (body.status as string | null) ?? null,
+      demo: true,
+    });
   }
 
   return NextResponse.json({ error: `Unknown demo route: ${method} ${path}` }, { status: 404 });

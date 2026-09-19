@@ -1,14 +1,7 @@
 // Fixtures for guest/demo mode. Everything a demo visitor sees comes from here —
 // no Supabase, no Apify, no OpenRouter, no webhook. See src/app/api/demo and
 // src/proxy.ts for how these get served.
-import type {
-  DbJob,
-  JobMatch,
-  JobWithMatch,
-  Preferences,
-  Profile,
-  Settings,
-} from "@/lib/types";
+import type { DbJob, JobMatch, JobWithMatch, Preferences, Profile, Settings } from "@/lib/types";
 import type { ParsedProfile } from "@/lib/agents/agent-1";
 import type { CoverLetterLanguage } from "@/lib/agents/agent-4";
 
@@ -202,8 +195,7 @@ const JOB_SEEDS: JobSeed[] = [
     postedDaysAgo: 0,
     score: 93,
     stale: true,
-    reasoning:
-      "Remote-EU, senior React, product SaaS — ticks every box in the candidate's notes.",
+    reasoning: "Remote-EU, senior React, product SaaS — ticks every box in the candidate's notes.",
   },
   {
     slug: "blaupause-werkstudent",
@@ -215,8 +207,7 @@ const JOB_SEEDS: JobSeed[] = [
     status: null,
     postedDaysAgo: 18,
     score: 47,
-    reasoning:
-      "Working-student position — well below the candidate's experience level and hours.",
+    reasoning: "Working-student position — well below the candidate's experience level and hours.",
   },
   {
     slug: "zeitgeist-cloud-platform",

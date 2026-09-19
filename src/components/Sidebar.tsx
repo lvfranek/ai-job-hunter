@@ -48,12 +48,13 @@ export function Sidebar() {
           href="/"
           onClick={(e) => guardNav(e, "/")}
           title="AI Job Hunter"
+          aria-label="AI Job Hunter — go to dashboard"
           className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-linear-to-b from-white to-[#F3F9FD] text-[#1E2A3D] shadow-[0_2px_8px_rgba(30,64,120,0.15)] outline-none focus-visible:ring-2 focus-visible:ring-[#101828]/30"
         >
           <Lightning size={18} weight="fill" />
         </Link>
 
-        <nav className="flex flex-col items-center gap-2">
+        <nav aria-label="Main" className="flex flex-col items-center gap-2">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
@@ -63,6 +64,7 @@ export function Sidebar() {
                 onClick={(e) => guardNav(e, href)}
                 aria-current={active ? "page" : undefined}
                 title={label}
+                aria-label={label}
                 className={`flex size-11 shrink-0 items-center justify-center rounded-2xl outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#101828]/30 ${
                   active
                     ? "bg-[#101828] text-white shadow-[0_4px_14px_rgba(16,24,40,0.35)]"

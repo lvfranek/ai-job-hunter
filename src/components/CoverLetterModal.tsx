@@ -58,7 +58,7 @@ export function CoverLetterModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-[15px] font-semibold text-[#1E2A3D]">Generate Cover Letter</h2>
-            <p className="mt-1 text-[13px] text-[#64748B]">
+            <p className="mt-1 text-[13px] text-text-muted">
               Applying to: {job.title} at {job.company}
             </p>
           </div>
@@ -66,16 +66,14 @@ export function CoverLetterModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-[#94A3B8] hover:text-[#1E2A3D]"
+            className="text-text-faint hover:text-[#1E2A3D]"
           >
             <X size={16} weight="bold" />
           </button>
         </div>
 
         <div className="mt-4">
-          <label className="mb-1.5 block text-[13px] font-medium text-[#64748B]">
-            Language
-          </label>
+          <label className="mb-1.5 block text-[13px] font-medium text-text-muted">Language</label>
           <div className="flex gap-2">
             {(["de", "en"] as const).map((lang) => (
               <button
@@ -85,7 +83,7 @@ export function CoverLetterModal({
                 className={`flex-1 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors ${
                   language === lang
                     ? "border-[#101828] bg-[#E4EEF5] text-[#1E2A3D]"
-                    : "border-[#B9CCDA] text-[#64748B] hover:border-[#8FA8BD] hover:bg-[#E4EEF5] hover:text-[#1E2A3D]"
+                    : "border-[#B9CCDA] text-text-muted hover:border-[#8FA8BD] hover:bg-[#E4EEF5] hover:text-[#1E2A3D]"
                 }`}
               >
                 {lang === "de" ? "Deutsch" : "English"}
@@ -118,9 +116,7 @@ export function CoverLetterModal({
               disabled={status === "generating"}
               className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-[#101828] px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
             >
-              {status === "generating" && (
-                <CircleNotch size={15} className="animate-spin" />
-              )}
+              {status === "generating" && <CircleNotch size={15} className="animate-spin" />}
               {status === "generating" ? "Generating your cover letter…" : "Generate"}
             </button>
           )}

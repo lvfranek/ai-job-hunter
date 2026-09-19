@@ -41,7 +41,7 @@ const EMPTY_CONFIG: ConfigForm = {
 };
 
 const inputClass =
-  "w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]";
+  "w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]";
 
 function statusText(status: SecretStatus | undefined) {
   if (!status || !status.configured) return "Not configured";
@@ -92,9 +92,7 @@ export function ApiKeysSection({ onDirtyChange }: { onDirtyChange: (dirty: boole
     setError(null);
     setSaving(true);
     try {
-      const secrets = Object.fromEntries(
-        Object.entries(secretInputs).filter(([, value]) => value)
-      );
+      const secrets = Object.fromEntries(Object.entries(secretInputs).filter(([, value]) => value));
       const res = await fetch("/api/credentials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,8 +132,8 @@ export function ApiKeysSection({ onDirtyChange }: { onDirtyChange: (dirty: boole
       <div>
         <h2 className="text-[15px] font-semibold text-text">API Keys</h2>
         <p className="text-[12px] text-text-faint">
-          Your own Apify and OpenRouter credentials — stored encrypted, only used server-side.
-          Leave blank to keep the value already configured via .env.local.
+          Your own Apify and OpenRouter credentials — stored encrypted, only used server-side. Leave
+          blank to keep the value already configured via .env.local.
         </p>
       </div>
 
@@ -148,10 +146,14 @@ export function ApiKeysSection({ onDirtyChange }: { onDirtyChange: (dirty: boole
       <div className="space-y-4">
         {SECRETS.map(({ key, label }) => (
           <div key={key}>
-            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+            <label
+              htmlFor={`secret-${key}`}
+              className="mb-1.5 block text-[13px] font-medium text-text-muted"
+            >
               {label}
             </label>
             <input
+              id={`secret-${key}`}
               type="password"
               autoComplete="off"
               value={secretInputs[key] ?? ""}
@@ -175,10 +177,14 @@ export function ApiKeysSection({ onDirtyChange }: { onDirtyChange: (dirty: boole
       <div className="grid grid-cols-2 gap-4">
         {CONFIG_FIELDS.map(({ key, label }) => (
           <div key={key}>
-            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+            <label
+              htmlFor={`config-${key}`}
+              className="mb-1.5 block text-[13px] font-medium text-text-muted"
+            >
               {label}
             </label>
             <input
+              id={`config-${key}`}
               value={config[key]}
               onChange={(e) => setConfig({ ...config, [key]: e.target.value })}
               className={inputClass}

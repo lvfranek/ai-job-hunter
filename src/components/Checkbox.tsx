@@ -14,12 +14,7 @@ export function Checkbox({
   return (
     <label className="flex cursor-pointer items-center gap-2 text-[13px] text-text">
       <span className="relative inline-flex">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={onChange}
-          className="peer sr-only"
-        />
+        <input type="checkbox" checked={checked} onChange={onChange} className="peer sr-only" />
         <span
           className={`flex size-4 items-center justify-center rounded-[5px] border transition-colors ${
             checked

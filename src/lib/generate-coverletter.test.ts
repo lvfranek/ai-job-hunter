@@ -1,8 +1,8 @@
-import assert from "node:assert";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { describe, expect, it } from "vitest";
 import { generateCoverLetterDocx } from "./generate-coverletter";
 import type { DbJob, Profile } from "./types";
 
@@ -43,37 +43,56 @@ const job: DbJob = {
   deleted_at: null,
 };
 
-async function main() {
-  const buffer = await generateCoverLetterDocx(
-    profile,
-    job,
-    ["Paragraph one.", "Paragraph two.", "Paragraph three.", "Paragraph four."],
-    "de"
-  );
-
-  // .docx is a zip archive — starts with the "PK" magic bytes.
-  assert.strictEqual(buffer.subarray(0, 2).toString("ascii"), "PK");
-  assert.ok(buffer.length > 1000, "docx buffer should be a real, non-trivial file");
-
+function readZipEntry(buffer: Buffer, entry: string): string {
   const dir = mkdtempSync(join(tmpdir(), "coverletter-test-"));
   const docxPath = join(dir, "test.docx");
   writeFileSync(docxPath, buffer);
-  const documentXml = execFileSync("unzip", ["-p", docxPath, "word/document.xml"], {
-    encoding: "utf-8",
-  });
-  const headerXml = execFileSync("unzip", ["-p", docxPath, "word/header1.xml"], {
-    encoding: "utf-8",
-  });
-  assert.ok(documentXml.includes('w:ascii="Calibri"'), "should use Calibri throughout");
-  assert.ok(documentXml.includes('w:val="right"'), "address/date block should be right-aligned");
-  assert.ok(headerXml.includes("Max Mustermann"), "name banner should live in the real Word header");
-  assert.ok(headerXml.includes("FFFFFF"), "banner name should be white text");
-  assert.ok(headerXml.includes(`w:fill="${"262626"}"`), "accent bar should use the grayscale palette");
-
-  const englishBuffer = await generateCoverLetterDocx(profile, job, ["Hi."], "en");
-  assert.strictEqual(englishBuffer.subarray(0, 2).toString("ascii"), "PK");
-
-  console.log("generate-coverletter.test.ts: all assertions passed");
+  return execFileSync("unzip", ["-p", docxPath, entry], { encoding: "utf-8" });
 }
 
-main();
+describe("generateCoverLetterDocx", () => {
+  it("produces a real, non-trivial .docx (zip) file", async () => {
+    const buffer = await generateCoverLetterDocx(
+      profile,
+      job,
+      ["Paragraph one.", "Paragraph two.", "Paragraph three.", "Paragraph four."],
+      "de",
+    );
+
+    // .docx is a zip archive — starts with the "PK" magic bytes.
+    expect(buffer.subarray(0, 2).toString("ascii")).toBe("PK");
+    expect(buffer.length).toBeGreaterThan(1000);
+  });
+
+  it("uses Calibri throughout and right-aligns the address/date block", async () => {
+    const buffer = await generateCoverLetterDocx(
+      profile,
+      job,
+      ["Paragraph one.", "Paragraph two.", "Paragraph three.", "Paragraph four."],
+      "de",
+    );
+    const documentXml = readZipEntry(buffer, "word/document.xml");
+
+    expect(documentXml).toContain('w:ascii="Calibri"');
+    expect(documentXml).toContain('w:val="right"');
+  });
+
+  it("puts the name banner in the real Word header as white text on the accent bar", async () => {
+    const buffer = await generateCoverLetterDocx(
+      profile,
+      job,
+      ["Paragraph one.", "Paragraph two.", "Paragraph three.", "Paragraph four."],
+      "de",
+    );
+    const headerXml = readZipEntry(buffer, "word/header1.xml");
+
+    expect(headerXml).toContain("Max Mustermann");
+    expect(headerXml).toContain("FFFFFF");
+    expect(headerXml).toContain('w:fill="262626"');
+  });
+
+  it("also generates a valid docx for the English variant", async () => {
+    const englishBuffer = await generateCoverLetterDocx(profile, job, ["Hi."], "en");
+    expect(englishBuffer.subarray(0, 2).toString("ascii")).toBe("PK");
+  });
+});

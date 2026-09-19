@@ -43,7 +43,7 @@ No subject line, no greeting, no closing, no signature, no markdown formatting.`
 export async function generateCoverLetterBody(
   profile: Profile,
   job: DbJob,
-  language: CoverLetterLanguage
+  language: CoverLetterLanguage,
 ): Promise<string[]> {
   const model = await getGeminiModel();
   const result = await model.generateContent(buildPrompt(profile, job, language));

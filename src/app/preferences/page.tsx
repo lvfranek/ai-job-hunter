@@ -43,10 +43,8 @@ function toForm(data: Record<string, unknown>): PreferencesForm {
   return {
     notes: (data.notes as string) ?? DEFAULTS.notes,
     own_skills: (data.own_skills as string) ?? DEFAULTS.own_skills,
-    preferred_languages:
-      (data.preferred_languages as string) ?? DEFAULTS.preferred_languages,
-    soft_skills_flexible:
-      (data.soft_skills_flexible as boolean) ?? DEFAULTS.soft_skills_flexible,
+    preferred_languages: (data.preferred_languages as string) ?? DEFAULTS.preferred_languages,
+    soft_skills_flexible: (data.soft_skills_flexible as boolean) ?? DEFAULTS.soft_skills_flexible,
     preferred_location: (data.preferred_location as string) ?? DEFAULTS.preferred_location,
     job_type: (data.job_type as string[]) ?? DEFAULTS.job_type,
     excluded_employment_types:
@@ -109,16 +107,14 @@ export default function PreferencesPage() {
   }
 
   return (
-    <main className="py-8 pr-8">
+    <main id="main" tabIndex={-1} className="py-8 pr-8">
       <Toast message={message} />
       <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
         <Target size={15} />
         AI Scoring Preferences
       </div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-text">
-          AI Scoring Preferences
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-text">AI Scoring Preferences</h1>
       </div>
 
       {error && (
@@ -137,10 +133,14 @@ export default function PreferencesPage() {
           </p>
 
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+            <label
+              htmlFor="prefs-notes"
+              className="mb-1.5 block text-[13px] font-medium text-text-muted"
+            >
               What are you looking for?
             </label>
             <textarea
+              id="prefs-notes"
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={8}
@@ -149,7 +149,7 @@ export default function PreferencesPage() {
                 "comfortable with Node.js on the backend. Open to Vue or Svelte roles too. " +
                 "Not interested in Django/PHP-heavy roles or anything in gaming."
               }
-              className="w-full resize-y rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-[13px] leading-relaxed text-text outline-none focus:border-[#101828]"
+              className="w-full resize-y rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-base leading-relaxed text-text outline-none focus:border-[#101828] sm:text-[13px]"
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
               The AI reads this directly — titles, seniority, skills, and anything you want to
@@ -158,31 +158,39 @@ export default function PreferencesPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+            <label
+              htmlFor="prefs-own-skills"
+              className="mb-1.5 block text-[13px] font-medium text-text-muted"
+            >
               Concrete skills you have
             </label>
             <input
+              id="prefs-own-skills"
               value={form.own_skills}
               onChange={(e) => setForm({ ...form, own_skills: e.target.value })}
               placeholder="React, TypeScript, Git, SQL, Figma"
-              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
               What you can actually do today, comma-separated. The AI matches job requirements
-              against this — and counts adjacent tech (React ↔ Vue, Node ↔ Python) as
-              transferable rather than missing.
+              against this — and counts adjacent tech (React ↔ Vue, Node ↔ Python) as transferable
+              rather than missing.
             </p>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+            <label
+              htmlFor="prefs-preferred-languages"
+              className="mb-1.5 block text-[13px] font-medium text-text-muted"
+            >
               Preferred programming languages
             </label>
             <input
+              id="prefs-preferred-languages"
               value={form.preferred_languages}
               onChange={(e) => setForm({ ...form, preferred_languages: e.target.value })}
               placeholder="TypeScript, Python, Go"
-              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
               What you would rather work in day to day. A job in another language isn&apos;t
@@ -200,30 +208,34 @@ export default function PreferencesPage() {
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
               Treats every soft-skill requirement in a posting (Zuverlässigkeit, Teamfähigkeit,
-              Belastbarkeit, Kommunikationsstärke …) as fully met, so the AI never deducts
-              points for one.
+              Belastbarkeit, Kommunikationsstärke …) as fully met, so the AI never deducts points
+              for one.
             </p>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+            <label
+              htmlFor="prefs-preferred-location"
+              className="mb-1.5 block text-[13px] font-medium text-text-muted"
+            >
               Preferred location
             </label>
             <input
+              id="prefs-preferred-location"
               value={form.preferred_location}
               onChange={(e) => setForm({ ...form, preferred_location: e.target.value })}
               placeholder="Berlin, Germany"
-              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
             />
             <p className="mt-1.5 text-[12px] text-text-faint">
               Where you want to work (can differ from where you live)
             </p>
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+          <fieldset>
+            <legend className="mb-1.5 block text-[13px] font-medium text-text-muted">
               Job type
-            </label>
+            </legend>
             <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-border-strong bg-surface px-3.5 py-3">
               {JOB_TYPES.map((type) => (
                 <Checkbox
@@ -234,12 +246,12 @@ export default function PreferencesPage() {
                 />
               ))}
             </div>
-          </div>
+          </fieldset>
 
-          <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+          <fieldset>
+            <legend className="mb-1.5 block text-[13px] font-medium text-text-muted">
               Exclude contract forms
-            </label>
+            </legend>
             <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-border-strong bg-surface px-3.5 py-3">
               {EXCLUDED_EMPLOYMENT_TYPES.map((type) => (
                 <Checkbox
@@ -249,10 +261,7 @@ export default function PreferencesPage() {
                   onChange={() =>
                     setForm({
                       ...form,
-                      excluded_employment_types: toggleValue(
-                        form.excluded_employment_types,
-                        type
-                      ),
+                      excluded_employment_types: toggleValue(form.excluded_employment_types, type),
                     })
                   }
                 />
@@ -260,16 +269,16 @@ export default function PreferencesPage() {
             </div>
             <p className="mt-1.5 text-[12px] text-text-faint">
               Tick what you do <strong>not</strong> want — Ausbildung (apprenticeship), Studium
-              (dual study), Werkstudent (working student), Freelance. A ticked form is treated
-              as a hard blocker: those postings score low and say why. Tick nothing to accept
-              every contract form.
+              (dual study), Werkstudent (working student), Freelance. A ticked form is treated as a
+              hard blocker: those postings score low and say why. Tick nothing to accept every
+              contract form.
             </p>
-          </div>
+          </fieldset>
 
-          <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+          <fieldset>
+            <legend className="mb-1.5 block text-[13px] font-medium text-text-muted">
               Working time
-            </label>
+            </legend>
             <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-border-strong bg-surface px-3.5 py-3">
               {WORK_TIME_MODELS.map((type) => (
                 <Checkbox
@@ -286,10 +295,10 @@ export default function PreferencesPage() {
               ))}
             </div>
             <p className="mt-1.5 text-[12px] text-text-faint">
-              Vollzeit (full-time), Teilzeit (part-time), Minijob (marginal employment). Tick
-              none to accept any.
+              Vollzeit (full-time), Teilzeit (part-time), Minijob (marginal employment). Tick none
+              to accept any.
             </p>
-          </div>
+          </fieldset>
 
           <button
             type="button"

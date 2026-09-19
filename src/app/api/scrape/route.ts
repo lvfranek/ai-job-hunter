@@ -29,10 +29,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (!settings || !settings.scraper_search_keywords?.length) {
-    return NextResponse.json(
-      { error: "Add search keywords in Settings first" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Add search keywords in Settings first" }, { status: 400 });
   }
 
   const { data: runData, error: runError } = await supabase

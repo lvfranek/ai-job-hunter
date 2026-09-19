@@ -61,7 +61,7 @@ export function JobResults({
   // Set when "Scrape Now" is clicked — holds the run/job estimate for the
   // confirm dialog; scraping starts only once the user confirms.
   const [scrapeConfirm, setScrapeConfirm] = useState<{ runs: number; maxJobs: number } | null>(
-    null
+    null,
   );
   const [isScoring, setIsScoring] = useState(false);
   // Always-on status line shown next to the Adjust-score button: what the run is
@@ -84,7 +84,7 @@ export function JobResults({
 
   const oldJobCount = useMemo(
     () => jobs.filter((job) => job.daysAgo >= pruneDays).length,
-    [jobs, pruneDays]
+    [jobs, pruneDays],
   );
 
   useEffect(() => {
@@ -110,7 +110,7 @@ export function JobResults({
       setPruneMessage(
         n === 0
           ? "No jobs older than that"
-          : `Removed ${n} job${n === 1 ? "" : "s"} older than ${pruneDays} days`
+          : `Removed ${n} job${n === 1 ? "" : "s"} older than ${pruneDays} days`,
       );
       onRefresh();
     } catch (error) {
@@ -203,7 +203,9 @@ export function JobResults({
             if (last.failed > 0) parts.push(`${last.failed} failed`);
             if (last.completedChunks > 0 && last.completedChunks < last.totalChunks) {
               const perChunk = (Date.now() - startedAt) / last.completedChunks;
-              parts.push(`~${formatEta(perChunk * (last.totalChunks - last.completedChunks))} left`);
+              parts.push(
+                `~${formatEta(perChunk * (last.totalChunks - last.completedChunks))} left`,
+              );
             }
             if (last.model) parts.push(last.model.split("/").pop() as string);
             setScoreStatus(parts.join(" · "));
@@ -294,7 +296,7 @@ export function JobResults({
       const res = await fetch("/api/settings");
       const s = await res.json();
       const keywords = ((s.scraper_search_keywords as string[]) ?? []).filter(
-        (k) => k && k.trim()
+        (k) => k && k.trim(),
       ).length;
       const boards = Object.values(s.portal_toggles ?? {}).filter(Boolean).length;
       const perSearch = Number(s.scraper_results_per_scan) || 0;
@@ -364,7 +366,7 @@ export function JobResults({
     <div className="rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)]">
       <Toast message={pruneMessage} />
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D7E4ED] px-4 py-2.5">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={requestScrape}
@@ -389,7 +391,7 @@ export function JobResults({
           </button>
           {(isScoring || scoreStatus) && (
             <>
-              <span className="max-w-88 text-[12px] tabular-nums text-[#94A3B8]">
+              <span className="max-w-88 text-[12px] tabular-nums text-text-faint">
                 {scoreStatus ?? (isScoring ? "Working…" : "")}
               </span>
               {isScoring && (
@@ -418,14 +420,16 @@ export function JobResults({
               }}
             />
           ) : (
-            <span className="text-[12px] text-[#94A3B8]">
+            <span className="text-[12px] text-text-faint">
               Last scraped: {lastScraped}
               {lastPortalCounts && Object.keys(lastPortalCounts).length > 0 && (
                 <>
                   {" "}
                   (
                   {Object.entries(lastPortalCounts)
-                    .map(([portal, count]) => `${portal[0].toUpperCase()}${portal.slice(1)} ${count}`)
+                    .map(
+                      ([portal, count]) => `${portal[0].toUpperCase()}${portal.slice(1)} ${count}`,
+                    )
                     .join(", ")}
                   )
                 </>
@@ -434,9 +438,9 @@ export function JobResults({
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <span className="text-[12px] text-[#94A3B8]">Min score</span>
+            <span className="text-[12px] text-text-faint">Min score</span>
             <input
               type="number"
               min={0}
@@ -447,10 +451,10 @@ export function JobResults({
                 setPage(1);
               }}
               placeholder="0"
-              className="h-8 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-[13px] text-[#64748B] outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D]"
+              className="h-8 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-base text-text-muted outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D] sm:text-[13px]"
             />
           </div>
-          <span className="text-[12px] text-[#94A3B8]">Sort</span>
+          <span className="text-[12px] text-text-faint">Sort</span>
           <div className="relative">
             <select
               value={sortKey}
@@ -459,7 +463,7 @@ export function JobResults({
                 setPage(1);
               }}
               aria-label="Sort jobs by"
-              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-[13px] text-[#64748B] transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none"
+              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-base text-text-muted transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none sm:text-[13px]"
             >
               {(Object.keys(sortLabels) as SortKey[]).map((key) => (
                 <option key={key} value={key}>
@@ -470,10 +474,10 @@ export function JobResults({
             <CaretDown
               size={13}
               weight="bold"
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-faint"
             />
           </div>
-          <span className="text-[12px] text-[#94A3B8]">Status</span>
+          <span className="text-[12px] text-text-faint">Status</span>
           <div className="relative">
             <select
               value={statusFilter}
@@ -482,7 +486,7 @@ export function JobResults({
                 setPage(1);
               }}
               aria-label="Filter by status"
-              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-[13px] text-[#64748B] transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none"
+              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-base text-text-muted transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none sm:text-[13px]"
             >
               {(Object.keys(statusFilterLabels) as StatusFilter[]).map((key) => (
                 <option key={key} value={key}>
@@ -493,7 +497,7 @@ export function JobResults({
             <CaretDown
               size={13}
               weight="bold"
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-faint"
             />
           </div>
         </div>
@@ -506,8 +510,8 @@ export function JobResults({
               {scoreReport.failed > 0 ? (
                 <>
                   <Warning size={12} weight="fill" className="mr-1 inline align-[-1px]" />
-                  {scoreReport.scored}/{scoreReport.total} scored · {scoreReport.failed} could
-                  not be scored
+                  {scoreReport.scored}/{scoreReport.total} scored · {scoreReport.failed} could not
+                  be scored
                 </>
               ) : (
                 <>All {scoreReport.scored} jobs scored</>
@@ -518,11 +522,11 @@ export function JobResults({
                 <button
                   type="button"
                   onClick={() => setReportOpen((o) => !o)}
-                  className="rounded-md px-1.5 py-0.5 text-[12px] font-medium text-[#64748B] underline-offset-2 transition-colors hover:text-[#1E2A3D] hover:underline"
+                  className="rounded-md px-1.5 py-0.5 text-[12px] font-medium text-text-muted underline-offset-2 transition-colors hover:text-[#1E2A3D] hover:underline"
                 >
                   {reportOpen ? "Hide details" : "Show details"}
                 </button>
-                <span className="text-[#94A3B8]">
+                <span className="text-text-faint">
                   Unscored jobs stay in the queue — click Adjust score again to retry them.
                 </span>
               </>
@@ -531,7 +535,7 @@ export function JobResults({
               type="button"
               onClick={() => setScoreReport(null)}
               aria-label="Dismiss scoring report"
-              className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[#94A3B8] transition-colors hover:text-[#1E2A3D]"
+              className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-text-faint transition-colors hover:text-[#1E2A3D]"
             >
               <X size={12} weight="bold" />
             </button>
@@ -539,8 +543,8 @@ export function JobResults({
           {reportOpen && Object.keys(scoreReport.errorSummary).length > 0 && (
             <ul className="mt-2 space-y-1 border-t border-[#D7E4ED] pt-2">
               {Object.entries(scoreReport.errorSummary).map(([message, count]) => (
-                <li key={message} className="text-[12px] text-[#64748B]">
-                  <span className="tabular-nums text-[#94A3B8]">{count}×</span> {message}
+                <li key={message} className="text-[12px] text-text-muted">
+                  <span className="tabular-nums text-text-faint">{count}×</span> {message}
                 </li>
               ))}
             </ul>
@@ -549,12 +553,12 @@ export function JobResults({
       )}
 
       {jobs.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-[#D7E4ED] px-4 py-2 text-[12px] text-[#94A3B8]">
+        <div className="flex flex-wrap items-center gap-2 border-b border-[#D7E4ED] px-4 py-2 text-[12px] text-text-faint">
           {confirmingPrune ? (
             <>
-              <span className="text-[#64748B]">
-                Remove {oldJobCount} job{oldJobCount === 1 ? "" : "s"} older than {pruneDays}{" "}
-                days? This can&apos;t be undone.
+              <span className="text-text-muted">
+                Remove {oldJobCount} job{oldJobCount === 1 ? "" : "s"} older than {pruneDays} days?
+                This can&apos;t be undone.
               </span>
               <button
                 type="button"
@@ -580,11 +584,9 @@ export function JobResults({
                 type="number"
                 min={1}
                 value={pruneDays || ""}
-                onChange={(e) =>
-                  setPruneDays(Math.max(1, Math.floor(Number(e.target.value) || 0)))
-                }
+                onChange={(e) => setPruneDays(Math.max(1, Math.floor(Number(e.target.value) || 0)))}
                 aria-label="Remove job posts older than this many days"
-                className="h-7 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-[12px] text-[#64748B] outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D]"
+                className="h-7 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-base text-text-muted outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D] sm:text-[12px]"
               />
               <span>days</span>
               <button
@@ -603,9 +605,7 @@ export function JobResults({
       {jobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
           <Briefcase size={28} weight="regular" className="text-[#B8C4D1]" />
-          <p className="text-[14px] text-[#64748B]">
-            Click &quot;Scrape Now&quot; to find jobs.
-          </p>
+          <p className="text-[14px] text-text-muted">Click &quot;Scrape Now&quot; to find jobs.</p>
         </div>
       ) : (
         <>
@@ -622,7 +622,7 @@ export function JobResults({
 
           {pageCount > 1 && (
             <div className="flex items-center justify-between border-t border-[#D7E4ED] px-4 py-3">
-              <span className="text-[12px] text-[#94A3B8]">
+              <span className="text-[12px] text-text-faint">
                 {sorted.length} jobs · page {currentPage} of {pageCount}
               </span>
               <div className="flex items-center gap-1.5">

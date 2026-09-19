@@ -51,7 +51,7 @@ function labelList(values: string[], labels: Record<string, string>): string {
 function buildPrompt(jobs: DbJob[], preferences: Preferences): string {
   const excludedEmployment = labelList(
     preferences.excluded_employment_types ?? [],
-    EMPLOYMENT_LABELS
+    EMPLOYMENT_LABELS,
   );
   const workTime = labelList(preferences.work_time_models ?? [], WORK_TIME_LABELS);
   const softSkillRule = preferences.soft_skills_flexible
@@ -164,7 +164,7 @@ ${JSON.stringify(
     title: j.title,
     company: j.company,
     description: condenseDescription(j.description),
-  }))
+  })),
 )}`;
 }
 
@@ -262,7 +262,7 @@ export async function getScoringModelName(): Promise<string> {
 export async function scoreChunk(
   jobs: DbJob[],
   preferences: Preferences,
-  modelName?: string
+  modelName?: string,
 ): Promise<ScoringResult[]> {
   // Low temperature: the same job should not drift between scores across runs.
   const model = await getGeminiModel(modelName, { temperature: 0.2 });

@@ -43,9 +43,7 @@ function SubScore({ label, value }: { label: string; value: number }) {
   const tier = scoreTier(value);
   return (
     <div className={`rounded-lg border px-2.5 py-1.5 ${tier.bg} ${tier.border}`}>
-      <div className="text-[10px] font-medium uppercase tracking-wide text-[#64748B]">
-        {label}
-      </div>
+      <div className="text-[10px] font-medium uppercase tracking-wide text-text-muted">{label}</div>
       <div className={`text-[15px] font-semibold tabular-nums leading-tight ${tier.text}`}>
         {value}
       </div>
@@ -56,7 +54,7 @@ function SubScore({ label, value }: { label: string; value: number }) {
 function ScoreBreakdown({ match }: { match: JobMatchDetail }) {
   return (
     <div className="mb-4 rounded-xl border border-[#D7E4ED] bg-white p-3.5">
-      <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+      <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-text-faint">
         Why this score
       </div>
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -76,7 +74,7 @@ function ScoreBreakdown({ match }: { match: JobMatchDetail }) {
           &ldquo;{match.reasoning}&rdquo;
         </p>
       ) : (
-        <p className="text-[12px] text-[#94A3B8]">No reasoning recorded for this job.</p>
+        <p className="text-[12px] text-text-faint">No reasoning recorded for this job.</p>
       )}
     </div>
   );
@@ -131,7 +129,7 @@ export function JobCard({
               className="flex h-8 w-10 shrink-0 items-center justify-center rounded-xl border border-[#C9D8E3] bg-[#EEF4F9]"
               aria-label="Not scored yet"
             >
-              <span className="text-[11px] font-medium text-[#94A3B8]">—</span>
+              <span className="text-[11px] font-medium text-text-faint">—</span>
             </div>
           )}
 
@@ -142,18 +140,18 @@ export function JobCard({
             onClick={(e) => e.stopPropagation()}
             aria-label="Open posting"
             title="Open posting"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#94A3B8] transition-colors hover:text-[#1E2A3D] active:scale-[0.98]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-text-faint transition-colors hover:text-[#1E2A3D] active:scale-[0.98]"
           >
             <ArrowSquareOut size={17} weight="bold" />
           </a>
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-[16px] font-semibold text-[#1E2A3D]">{job.title}</h3>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-[#64748B]">
+          <h2 className="truncate text-[16px] font-semibold text-[#1E2A3D]">{job.title}</h2>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-text-muted">
             <span>{job.company}</span>
             <span className="text-[#B8C4D1]">·</span>
-            <span className="text-[12px] text-[#94A3B8]">{job.postedDate}</span>
+            <span className="text-[12px] text-text-faint">{job.postedDate}</span>
             {job.isStale && (
               <span className="rounded-md border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">
                 Score outdated
@@ -162,11 +160,11 @@ export function JobCard({
             <span className="ml-1 flex items-center gap-1.5">
               <span className="flex size-6 items-center justify-center rounded-lg border border-[#C9D8E3] bg-[#EEF4F9]">
                 {job.platform === "linkedin" ? (
-                  <LinkedinLogo size={12} weight="fill" className="text-[#94A3B8]" />
+                  <LinkedinLogo size={12} weight="fill" className="text-text-faint" />
                 ) : job.platform === "arbeitsagentur" ? (
-                  <Bank size={12} weight="fill" className="text-[#94A3B8]" />
+                  <Bank size={12} weight="fill" className="text-text-faint" />
                 ) : job.platform === "stepstone" ? (
-                  <Briefcase size={12} weight="fill" className="text-[#94A3B8]" />
+                  <Briefcase size={12} weight="fill" className="text-text-faint" />
                 ) : (
                   <img
                     src={`https://cdn.simpleicons.org/${platformIconSlugs[job.platform]}/94A3B8`}
@@ -176,12 +174,12 @@ export function JobCard({
                   />
                 )}
               </span>
-              <span className="text-[12px] text-[#94A3B8]">{platformLabels[job.platform]}</span>
+              <span className="text-[12px] text-text-faint">{platformLabels[job.platform]}</span>
             </span>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <select
               value={job.status ?? ""}
@@ -191,10 +189,10 @@ export function JobCard({
                 onStatusChange(job.id, (e.target.value || null) as JobStatus | null);
               }}
               aria-label="Application status"
-              className={`h-8 appearance-none rounded-xl border px-3 pr-7 text-[13px] font-medium outline-none transition-colors ${
+              className={`h-8 appearance-none rounded-xl border px-3 pr-7 text-base font-medium outline-none transition-colors sm:text-[13px] ${
                 job.status
                   ? `${statusTier[job.status].bg} ${statusTier[job.status].border} ${statusTier[job.status].text}`
-                  : "border-[#B9CCDA] bg-white text-[#64748B]"
+                  : "border-[#B9CCDA] bg-white text-text-muted"
               }`}
             >
               <option value="">No status</option>
@@ -208,7 +206,7 @@ export function JobCard({
               size={12}
               weight="bold"
               className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${
-                job.status ? statusTier[job.status].text : "text-[#94A3B8]"
+                job.status ? statusTier[job.status].text : "text-text-faint"
               }`}
             />
           </div>
@@ -218,7 +216,7 @@ export function JobCard({
               e.stopPropagation();
               onGenerateCoverLetter(job);
             }}
-            className="flex items-center gap-1.5 rounded-xl border border-[#B9CCDA] bg-white px-3.5 py-2 text-[13px] font-normal text-[#64748B] shadow-[0_1px_2px_rgba(30,64,120,0.06)] transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] hover:text-[#1E2A3D] active:scale-[0.98]"
+            className="flex items-center gap-1.5 rounded-xl border border-[#B9CCDA] bg-white px-3.5 py-2 text-[13px] font-normal text-text-muted shadow-[0_1px_2px_rgba(30,64,120,0.06)] transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] hover:text-[#1E2A3D] active:scale-[0.98]"
           >
             <FileText size={15} weight="bold" />
             Generate cover letter
@@ -226,7 +224,7 @@ export function JobCard({
           <CaretDown
             size={15}
             weight="bold"
-            className={`shrink-0 text-[#94A3B8] transition-transform ${expanded ? "rotate-180" : ""}`}
+            className={`shrink-0 text-text-faint transition-transform ${expanded ? "rotate-180" : ""}`}
           />
         </div>
       </div>

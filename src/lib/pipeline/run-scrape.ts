@@ -56,7 +56,7 @@ async function buildPortalScrapers() {
   ]);
   const portals: Portal[] = ["indeed", "linkedin", "stepstone", "xing", "arbeitsagentur"];
   return Object.fromEntries(
-    portals.map((portal, i) => [portal, { ...PORTAL_DEFS[portal], actorId: actorIds[i] }])
+    portals.map((portal, i) => [portal, { ...PORTAL_DEFS[portal], actorId: actorIds[i] }]),
   ) as Record<Portal, (typeof PORTAL_DEFS)[Portal] & { actorId: string }>;
 }
 
@@ -72,7 +72,7 @@ export interface ScrapePipelineResult {
  * status poll. Returns the ids it reaped.
  */
 export async function failStaleScrapeRuns(
-  supabase: ReturnType<typeof getSupabaseServerClient>
+  supabase: ReturnType<typeof getSupabaseServerClient>,
 ): Promise<string[]> {
   const cutoff = new Date(Date.now() - STALE_RUN_MS).toISOString();
   const { data, error } = await supabase
@@ -98,7 +98,7 @@ export async function failStaleScrapeRuns(
 // Supabase chokes on very large `.in(...)` lists; check known URLs in batches.
 async function findExistingUrls(
   urls: string[],
-  supabase: ReturnType<typeof getSupabaseServerClient>
+  supabase: ReturnType<typeof getSupabaseServerClient>,
 ): Promise<Set<string>> {
   const known = new Set<string>();
   for (let i = 0; i < urls.length; i += 200) {
@@ -117,7 +117,7 @@ async function findExistingUrls(
 // so a scrape failure or a scoring failure never take each other down.
 export async function runScrapePipeline(
   runId: string,
-  settings: Settings
+  settings: Settings,
 ): Promise<ScrapePipelineResult> {
   const supabase = getSupabaseServerClient();
 
@@ -139,17 +139,13 @@ export async function runScrapePipeline(
     ]);
 
     const portals = (Object.keys(portalScrapers) as Portal[]).filter(
-      (portal) => settings.portal_toggles[portal] && portalScrapers[portal].actorId
+      (portal) => settings.portal_toggles[portal] && portalScrapers[portal].actorId,
     );
 
-    const keywords = (settings.scraper_search_keywords ?? [])
-      .map((k) => k.trim())
-      .filter(Boolean);
+    const keywords = (settings.scraper_search_keywords ?? []).map((k) => k.trim()).filter(Boolean);
 
     // One task = one board searched for one keyword = one Apify run.
-    const tasks = portals.flatMap((portal) =>
-      keywords.map((keyword) => ({ portal, keyword }))
-    );
+    const tasks = portals.flatMap((portal) => keywords.map((keyword) => ({ portal, keyword })));
 
     await heartbeat({ total_runs: tasks.length, completed_runs: 0, total_scraped: 0 });
 
@@ -164,7 +160,11 @@ export async function runScrapePipeline(
     await runWithConcurrency(tasks, SCRAPE_CONCURRENCY, async ({ portal, keyword }) => {
       const { actorId, buildInput, mapJob } = portalScrapers[portal];
       try {
-        const apifyRunId = await triggerApifyScraper(actorId, buildInput(settings, keyword), apiKey);
+        const apifyRunId = await triggerApifyScraper(
+          actorId,
+          buildInput(settings, keyword),
+          apiKey,
+        );
         const rawJobs = await pollApifyRun(apifyRunId, apiKey);
         const mapped = rawJobs.map(mapJob);
         scraped.push(...mapped);
@@ -206,7 +206,7 @@ export async function runScrapePipeline(
 
     const knownUrls = await findExistingUrls(
       candidates.map((c) => c.url),
-      supabase
+      supabase,
     );
 
     // Same listing returned by multiple keywords/boards this run + listings we

@@ -13,7 +13,7 @@ export interface ApifyRunInput {
 export async function triggerApifyScraper(
   scraperId: string,
   inputs: ApifyRunInput,
-  apiKey: string
+  apiKey: string,
 ): Promise<string> {
   const res = await fetch(`${apifyBaseUrl}/acts/${scraperId}/runs`, {
     method: "POST",
@@ -35,7 +35,7 @@ export async function triggerApifyScraper(
 /**
  * Get results from a completed Apify run. Returns array of job listings.
  */
-export async function getScraperResults(runId: string, apiKey: string): Promise<unknown[]> {
+async function getScraperResults(runId: string, apiKey: string): Promise<unknown[]> {
   try {
     const res = await fetch(`${apifyBaseUrl}/actor-runs/${runId}/dataset/items`, {
       headers: { Authorization: `Bearer ${apiKey}` },
@@ -51,7 +51,7 @@ export async function getScraperResults(runId: string, apiKey: string): Promise<
 /**
  * Get status of an Apify run.
  */
-export async function getScraperStatus(runId: string, apiKey: string): Promise<string> {
+async function getScraperStatus(runId: string, apiKey: string): Promise<string> {
   try {
     const res = await fetch(`${apifyBaseUrl}/actor-runs/${runId}`, {
       headers: { Authorization: `Bearer ${apiKey}` },
@@ -72,7 +72,7 @@ export async function getScraperStatus(runId: string, apiKey: string): Promise<s
 export async function pollApifyRun(
   runId: string,
   apiKey: string,
-  maxAttempts = 150
+  maxAttempts = 150,
 ): Promise<unknown[]> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const status = await getScraperStatus(runId, apiKey);
@@ -93,10 +93,6 @@ export interface ScrapedJob {
   platform: string;
   posted_date: string | null;
 }
-
-// Only portals with a real actor ID configured (via env) and a scraper
-// implementation (in route.ts's PORTAL_SCRAPERS) actually run.
-export type Portal = "indeed" | "linkedin" | "stepstone" | "xing" | "arbeitsagentur";
 
 // Each actor only offers a handful of fixed "posted within" buckets, not an
 // arbitrary day count. Pick the smallest bucket that still covers the requested

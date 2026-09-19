@@ -3,6 +3,9 @@
 /public/dashboard-screenshot.html
 
 
+# claude code
+.claude/
+
 # dependencies
 /node_modules
 /.pnp

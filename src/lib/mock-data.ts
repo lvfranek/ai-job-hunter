@@ -56,7 +56,10 @@ export const platformLabels: Record<Platform, string> = {
 
 // Arbeitsagentur and Stepstone have no logo on simpleicons.org (stepstone 404s) —
 // JobCard renders a Phosphor icon for both instead of this image-based lookup.
-export const platformIconSlugs: Record<Exclude<Platform, "arbeitsagentur" | "stepstone">, string> = {
+export const platformIconSlugs: Record<
+  Exclude<Platform, "arbeitsagentur" | "stepstone">,
+  string
+> = {
   linkedin: "linkedin",
   indeed: "indeed",
   xing: "xing",

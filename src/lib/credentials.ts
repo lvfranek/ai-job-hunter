@@ -19,7 +19,8 @@ function getEncryptionKey(): Buffer {
   const hex = process.env.CREDENTIALS_ENCRYPTION_KEY;
   if (!hex) throw new Error("CREDENTIALS_ENCRYPTION_KEY is not set");
   const key = Buffer.from(hex, "hex");
-  if (key.length !== 32) throw new Error("CREDENTIALS_ENCRYPTION_KEY must be 32 bytes (64 hex chars)");
+  if (key.length !== 32)
+    throw new Error("CREDENTIALS_ENCRYPTION_KEY must be 32 bytes (64 hex chars)");
   return key;
 }
 
@@ -33,7 +34,11 @@ function encrypt(plaintext: string): string {
 
 function decrypt(stored: string): string {
   const [ivHex, authTagHex, ciphertextHex] = stored.split(":");
-  const decipher = crypto.createDecipheriv("aes-256-gcm", getEncryptionKey(), Buffer.from(ivHex, "hex"));
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    getEncryptionKey(),
+    Buffer.from(ivHex, "hex"),
+  );
   decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
   return Buffer.concat([
     decipher.update(Buffer.from(ciphertextHex, "hex")),
@@ -67,10 +72,17 @@ export async function setCredential(key: CredentialKey, value: string): Promise<
     if (error) throw error;
     return;
   }
-  const { error } = await supabase.from("credentials").upsert(
-    { user_id: CURRENT_USER_ID, key, encrypted_value: encrypt(value), updated_at: new Date().toISOString() },
-    { onConflict: "user_id,key" }
-  );
+  const { error } = await supabase
+    .from("credentials")
+    .upsert(
+      {
+        user_id: CURRENT_USER_ID,
+        key,
+        encrypted_value: encrypt(value),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,key" },
+    );
   if (error) throw error;
 }
 

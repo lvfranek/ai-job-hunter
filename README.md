@@ -9,18 +9,18 @@ Next.js and Supabase.
 
 ## ⌨️ Tech Stack
 
-| Area        | Choice                                                    |
-| ----------- | --------------------------------------------------------- |
-| Framework   | Next.js 16 (App Router)                                   |
-| UI          | React 19                                                  |
-| Language    | TypeScript                                                |
-| Styling     | Tailwind CSS v4                                           |
-| Database    | [Supabase](https://supabase.com) (Postgres + RLS)         |
-| Scraping    | [Apify](https://apify.com) job-board actors               |
-| AI          | [OpenRouter](https://openrouter.ai) — LLM match scoring   |
-| Documents   | `pdf-parse` / `mammoth` (CV parsing), `docx` (cover-letter export) |
-| Icons       | Phosphor Icons                                            |
-| Hosting     | Vercel                                                    |
+| Area      | Choice                                                             |
+| --------- | ------------------------------------------------------------------ |
+| Framework | Next.js 16 (App Router)                                            |
+| UI        | React 19                                                           |
+| Language  | TypeScript                                                         |
+| Styling   | Tailwind CSS v4                                                    |
+| Database  | [Supabase](https://supabase.com) (Postgres + RLS)                  |
+| Scraping  | [Apify](https://apify.com) job-board actors                        |
+| AI        | [OpenRouter](https://openrouter.ai) — LLM match scoring            |
+| Documents | `pdf-parse` / `mammoth` (CV parsing), `docx` (cover-letter export) |
+| Icons     | Phosphor Icons                                                     |
+| Hosting   | Vercel                                                             |
 
 ## 🚀 Features
 
@@ -47,6 +47,7 @@ writes are persisted.
 ## 🚦 Getting Started
 
 1. **Clone and install**
+
    ```bash
    git clone <this-repo>
    cd ai-job-hunter
@@ -59,6 +60,7 @@ writes are persisted.
 
 3. **Copy the env template** and fill in your Supabase project's URL, anon key, and service role
    key (Project Settings → API in the Supabase dashboard):
+
    ```bash
    cp .env.local.example .env.local
    ```
@@ -75,9 +77,11 @@ writes are persisted.
      ```
 
 5. **Start the app** and log in with the password you hashed in step 4:
+
    ```bash
    npm run dev
    ```
+
    Open [http://localhost:3000](http://localhost:3000).
 
 6. **Add your Apify and OpenRouter API keys** via Settings → API Keys in the app itself — no need
@@ -112,10 +116,12 @@ you already use. The app doesn't depend on a specific one.
    openssl rand -hex 32
    ```
 2. Call the endpoint with it as a bearer token, on whatever schedule you like:
+
    ```bash
    curl -X POST https://your-app.vercel.app/api/cron/scrape \
      -H "Authorization: Bearer $CRON_SECRET"
    ```
+
    Response: `{ "runId": "...", "jobsFound": 12, "jobsStored": 9, "jobsScored": 9, "notified": true }`
 
    Returns 401 if the bearer token is missing or doesn't match `CRON_SECRET`.
@@ -129,6 +135,7 @@ even if it gets rescored later. Any receiver that accepts a JSON POST works — 
 webhook relay, [webhook.site](https://webhook.site) for testing, your own endpoint, etc.
 
 Payload shape:
+
 ```json
 {
   "event": "new_jobs",
@@ -152,11 +159,11 @@ Payload shape:
 If you point a scheduler at the cron endpoint on a recurring basis (e.g. every 2 hours during work
 hours), these starting values in Settings keep it useful without wasting Apify credits:
 
-| Setting | Recommended value | Why |
-|---|---|---|
-| Results per scan | 20 | Covers realistic daily posting volume per portal without wasting Apify credits |
-| Max posting age (days) | 2 | Keeps results fresh for time-sensitive applications, avoids re-scraping stale listings |
-| Notification threshold | 75 | Only notifies on genuinely strong matches, avoids notification fatigue |
+| Setting                | Recommended value | Why                                                                                    |
+| ---------------------- | ----------------- | -------------------------------------------------------------------------------------- |
+| Results per scan       | 20                | Covers realistic daily posting volume per portal without wasting Apify credits         |
+| Max posting age (days) | 2                 | Keeps results fresh for time-sensitive applications, avoids re-scraping stale listings |
+| Notification threshold | 75                | Only notifies on genuinely strong matches, avoids notification fatigue                 |
 
 Tune these after a few days based on actual `scrape_runs` data (duplicate rate, jobs found vs.
 stored).

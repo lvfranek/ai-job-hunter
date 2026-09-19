@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   if (!profile) {
     return NextResponse.json(
       { error: "Complete your Cover Letter Profile first" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -42,17 +42,17 @@ export async function POST(request: NextRequest) {
     const bodyParagraphs = await generateCoverLetterBody(
       profile as Profile,
       job as DbJob,
-      language
+      language,
     );
     const docxBuffer = await generateCoverLetterDocx(
       profile as Profile,
       job as DbJob,
       bodyParagraphs,
-      language
+      language,
     );
 
     const filename = `${language === "de" ? "Anschreiben" : "Cover Letter"} ${sanitizeFilenamePart(
-      job.company
+      job.company,
     )}.docx`;
 
     return new NextResponse(new Uint8Array(docxBuffer), {

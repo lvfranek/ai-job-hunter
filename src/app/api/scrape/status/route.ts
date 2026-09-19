@@ -14,11 +14,7 @@ export async function GET(request: NextRequest) {
   // than leaving the client polling 'running' indefinitely.
   const reaped = await failStaleScrapeRuns(supabase);
 
-  const { data, error } = await supabase
-    .from("scrape_runs")
-    .select("*")
-    .eq("id", runId)
-    .single();
+  const { data, error } = await supabase.from("scrape_runs").select("*").eq("id", runId).single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

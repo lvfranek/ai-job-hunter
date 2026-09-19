@@ -62,8 +62,8 @@ function toForm(data: Record<string, unknown>): SettingsForm {
     scraper_search_keywords: padKeywords(
       ((data.scraper_search_keywords as string[]) ?? DEFAULTS.scraper_search_keywords).slice(
         0,
-        KEYWORD_SLOTS
-      )
+        KEYWORD_SLOTS,
+      ),
     ),
     scraper_location: (data.scraper_location as string) ?? DEFAULTS.scraper_location,
     scraper_max_posting_age_days:
@@ -155,7 +155,7 @@ export default function SettingsPage() {
   const estimatedMaxJobs = estimatedRuns * (form.scraper_results_per_scan || 0);
 
   return (
-    <main className="py-8 pr-8">
+    <main id="main" tabIndex={-1} className="py-8 pr-8">
       <Toast message={message} />
       <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
         <GearSix size={15} />
@@ -183,10 +183,10 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+            <fieldset>
+              <legend className="mb-1.5 block text-[13px] font-medium text-text-muted">
                 Search keywords
-              </label>
+              </legend>
               <div className="space-y-2">
                 {form.scraper_search_keywords.map((keyword, i) => (
                   <input
@@ -194,7 +194,7 @@ export default function SettingsPage() {
                     value={keyword}
                     onChange={(e) => {
                       const next = form.scraper_search_keywords.map((k, j) =>
-                        j === i ? e.target.value : k
+                        j === i ? e.target.value : k,
                       );
                       setForm({ ...form, scraper_search_keywords: next });
                     }}
@@ -202,30 +202,35 @@ export default function SettingsPage() {
                       ["Software Entwickler", "Frontend Developer", "React Engineer", "", ""][i] ||
                       `Keyword ${i + 1}`
                     }
-                    className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                    aria-label={`Keyword ${i + 1}`}
+                    className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
                   />
                 ))}
               </div>
               <p className="mt-1.5 text-[12px] text-text-faint">
-                One keyword per field (each may be several words). Every board is scraped once
-                per keyword — most job boards return nothing for &quot;A OR B&quot;. Leave fields
-                blank to use fewer.
+                One keyword per field (each may be several words). Every board is scraped once per
+                keyword — most job boards return nothing for &quot;A OR B&quot;. Leave fields blank
+                to use fewer.
               </p>
-            </div>
+            </fieldset>
 
             <div>
-              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+              <label
+                htmlFor="settings-location"
+                className="mb-1.5 block text-[13px] font-medium text-text-muted"
+              >
                 Location
               </label>
               <input
+                id="settings-location"
                 value={form.scraper_location}
                 onChange={(e) => setForm({ ...form, scraper_location: e.target.value })}
                 placeholder="Hamburg, Germany"
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
               />
               <p className="mt-1.5 text-[12px] text-text-faint">
-                Where to search for jobs — still applies with Remote only on, e.g. &quot;remote
-                jobs based in Germany&quot; rather than remote jobs worldwide
+                Where to search for jobs — still applies with Remote only on, e.g. &quot;remote jobs
+                based in Germany&quot; rather than remote jobs worldwide
               </p>
               <div className="mt-2.5">
                 <Checkbox
@@ -236,50 +241,58 @@ export default function SettingsPage() {
                 <p className="mt-1.5 text-[12px] text-text-faint">
                   Narrows to remote positions, on top of the location above — doesn&apos;t search
                   worldwide. Works on Indeed, LinkedIn, Stepstone, and Arbeitsagentur; on Xing
-                  it&apos;s approximated by adding &quot;remote&quot; to the search keywords,
-                  since that board has no dedicated remote filter.
+                  it&apos;s approximated by adding &quot;remote&quot; to the search keywords, since
+                  that board has no dedicated remote filter.
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                <label
+                  htmlFor="settings-max-age"
+                  className="mb-1.5 block text-[13px] font-medium text-text-muted"
+                >
                   Max posting age (days)
                 </label>
                 <input
+                  id="settings-max-age"
                   type="number"
                   min={1}
                   value={form.scraper_max_posting_age_days}
                   onChange={(e) =>
                     setForm({ ...form, scraper_max_posting_age_days: Number(e.target.value) })
                   }
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
-                  Only show jobs posted within this many days — each job board only offers a
-                  few fixed windows (e.g. 24h/week/month), so this snaps to the closest one
-                  that doesn&apos;t cut out jobs you asked for
+                  Only show jobs posted within this many days — each job board only offers a few
+                  fixed windows (e.g. 24h/week/month), so this snaps to the closest one that
+                  doesn&apos;t cut out jobs you asked for
                 </p>
                 <p className="mt-1 text-[12px] text-text-faint">
-                  This is your main lever for freshness on Indeed, LinkedIn, and Xing — none of
-                  the three let us request &quot;newest first&quot; results, so a tighter window
-                  is what actually keeps old postings out. Stepstone and Arbeitsagentur are
-                  always sorted newest-first automatically.
+                  This is your main lever for freshness on Indeed, LinkedIn, and Xing — none of the
+                  three let us request &quot;newest first&quot; results, so a tighter window is what
+                  actually keeps old postings out. Stepstone and Arbeitsagentur are always sorted
+                  newest-first automatically.
                 </p>
               </div>
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+                <label
+                  htmlFor="settings-results-per-scan"
+                  className="mb-1.5 block text-[13px] font-medium text-text-muted"
+                >
                   Results per search
                 </label>
                 <input
+                  id="settings-results-per-scan"
                   type="number"
                   min={1}
                   value={form.scraper_results_per_scan}
                   onChange={(e) =>
                     setForm({ ...form, scraper_results_per_scan: Number(e.target.value) })
                   }
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
                 />
                 <p className="mt-1.5 text-[12px] text-text-faint">
                   Max jobs fetched per keyword, per board, per scan. A scan runs one search for
@@ -304,16 +317,16 @@ export default function SettingsPage() {
             </div>
 
             <p className="text-[12px] text-text-faint">
-              Indeed, LinkedIn, and Xing results can differ a little between scans a few
-              minutes apart — those sites rank their own search results and that ranking
-              isn&apos;t perfectly stable. Nothing you&apos;ve already seen gets added twice;
-              duplicates are always skipped.
+              Indeed, LinkedIn, and Xing results can differ a little between scans a few minutes
+              apart — those sites rank their own search results and that ranking isn&apos;t
+              perfectly stable. Nothing you&apos;ve already seen gets added twice; duplicates are
+              always skipped.
             </p>
 
-            <div>
-              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+            <fieldset>
+              <legend className="mb-1.5 block text-[13px] font-medium text-text-muted">
                 Which job boards should we search?
-              </label>
+              </legend>
               <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-border-strong bg-surface px-3.5 py-3">
                 {PORTALS.map(({ key, label }) => (
                   <Checkbox
@@ -332,7 +345,7 @@ export default function SettingsPage() {
                   />
                 ))}
               </div>
-            </div>
+            </fieldset>
           </section>
 
           <section className="space-y-4">
@@ -344,10 +357,14 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[13px] font-medium text-text-muted">
+              <label
+                htmlFor="settings-notification-threshold"
+                className="mb-1.5 block text-[13px] font-medium text-text-muted"
+              >
                 Notification threshold
               </label>
               <input
+                id="settings-notification-threshold"
                 type="number"
                 min={0}
                 max={100}
@@ -355,7 +372,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setForm({ ...form, notification_threshold: Number(e.target.value) })
                 }
-                className="w-full max-w-40 rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                className="w-full max-w-40 rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none focus:border-[#101828] sm:text-[13px]"
               />
               <p className="mt-1.5 text-[12px] text-text-faint">
                 Jobs scoring at or above this trigger a webhook notification. Only affects the

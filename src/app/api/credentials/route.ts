@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCredential, getCredentialStatus, setCredential, SECRET_KEYS, type CredentialKey } from "@/lib/credentials";
+import {
+  getCredential,
+  getCredentialStatus,
+  setCredential,
+  SECRET_KEYS,
+  type CredentialKey,
+} from "@/lib/credentials";
 
 const CONFIG_KEYS: CredentialKey[] = [
   "apify_scraper_indeed",
@@ -36,7 +42,9 @@ export async function POST(request: NextRequest) {
     };
 
     const entries = [...Object.entries(body.secrets ?? {}), ...Object.entries(body.config ?? {})];
-    await Promise.all(entries.map(([key, value]) => setCredential(key as CredentialKey, value ?? "")));
+    await Promise.all(
+      entries.map(([key, value]) => setCredential(key as CredentialKey, value ?? "")),
+    );
 
     return NextResponse.json({ ok: true });
   } catch (error) {

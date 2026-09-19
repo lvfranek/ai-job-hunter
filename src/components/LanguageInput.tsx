@@ -30,7 +30,7 @@ export function LanguageInput({
         {languages.map((lang) => (
           <div
             key={lang.name}
-            className="flex items-center gap-2 rounded-lg border border-border-strong bg-surface px-2.5 py-1.5"
+            className="flex flex-wrap items-center gap-2 rounded-lg border border-border-strong bg-surface px-2.5 py-1.5"
           >
             <span className="flex-1 text-[13px] text-text">{lang.name}</span>
             <select
@@ -38,11 +38,12 @@ export function LanguageInput({
               onChange={(e) =>
                 onChange(
                   languages.map((l) =>
-                    l.name === lang.name ? { ...l, level: e.target.value } : l
-                  )
+                    l.name === lang.name ? { ...l, level: e.target.value } : l,
+                  ),
                 )
               }
-              className="rounded-md border border-border-strong bg-surface-hover px-2 py-1 text-[12px] text-text capitalize outline-none focus:border-[#101828]"
+              aria-label={`${lang.name} proficiency level`}
+              className="rounded-md border border-border-strong bg-surface-hover px-2 py-1 text-base text-text capitalize outline-none focus:border-[#101828] sm:text-[12px]"
             >
               {LEVELS.map((level) => (
                 <option key={level} value={level} className="capitalize">
@@ -71,7 +72,8 @@ export function LanguageInput({
           }}
           onBlur={addLanguage}
           placeholder="Type a language and press Enter"
-          className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none placeholder:text-text-faint focus:border-[#101828]"
+          aria-label="Add a language"
+          className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base text-text outline-none placeholder:text-text-faint focus:border-[#101828] sm:text-[13px]"
         />
       </div>
       <p className="mt-1.5 text-[12px] text-text-faint">

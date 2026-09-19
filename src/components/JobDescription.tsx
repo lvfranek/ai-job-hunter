@@ -19,7 +19,7 @@ function renderInline(text: string) {
       </strong>
     ) : (
       <Fragment key={i}>{part}</Fragment>
-    )
+    ),
   );
 }
 
@@ -72,25 +72,25 @@ function toBlocks(text: string): Block[] {
 
 export function JobDescription({ text }: { text: string | null }) {
   if (!text?.trim()) {
-    return <p className="text-[13px] text-[#94A3B8]">No description available.</p>;
+    return <p className="text-[13px] text-text-faint">No description available.</p>;
   }
 
   return (
-    <div className="space-y-3 text-[13px] leading-relaxed text-[#1E2A3D]">
+    <div className="max-w-[75ch] space-y-3 text-[13px] leading-relaxed text-[#1E2A3D]">
       {toBlocks(text).map((block, i) => {
         if (block.kind === "heading") {
           return (
-            <h4
+            <h3
               key={i}
               className="pt-2 text-[13px] font-semibold tracking-wide text-[#101828] first:pt-0"
             >
               {renderInline(block.text)}
-            </h4>
+            </h3>
           );
         }
         if (block.kind === "list") {
           return (
-            <ul key={i} className="list-disc space-y-1 pl-5 marker:text-[#94A3B8]">
+            <ul key={i} className="list-disc space-y-1 pl-5 marker:text-text-faint">
               {block.items.map((item, j) => (
                 <li key={j}>{renderInline(item)}</li>
               ))}

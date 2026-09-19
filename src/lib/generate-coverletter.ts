@@ -24,7 +24,10 @@ const ACCENT_COLOR = "262626";
 const BANNER_COLOR = "000000";
 const TEXT_ON_DARK = "FFFFFF";
 
-const COPY: Record<CoverLetterLanguage, { subject: (title: string) => string; greeting: string; closing: string }> = {
+const COPY: Record<
+  CoverLetterLanguage,
+  { subject: (title: string) => string; greeting: string; closing: string }
+> = {
   de: {
     subject: (title) => `Bewerbung als ${title}, ab sofort`,
     greeting: "Sehr geehrte Damen und Herren,",
@@ -40,14 +43,19 @@ const COPY: Record<CoverLetterLanguage, { subject: (title: string) => string; gr
 // "22765 Hamburg" -> "Hamburg" for the "[City], [Date]" header line.
 function cityOnly(location: string | null): string {
   if (!location) return "";
-  return location.replace(/^\d+\s*/, "").split(",")[0].trim();
+  return location
+    .replace(/^\d+\s*/, "")
+    .split(",")[0]
+    .trim();
 }
 
 function formatDate(language: CoverLetterLanguage): string {
   const locale = language === "de" ? "de-DE" : "en-US";
-  return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", year: "numeric" }).format(
-    new Date()
-  );
+  return new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date());
 }
 
 function run(text: string, extra: { bold?: boolean; size?: number; color?: string } = {}): TextRun {
@@ -63,7 +71,7 @@ function paragraph(
     alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     bold?: boolean;
     spacingAfter?: number;
-  } = {}
+  } = {},
 ): Paragraph {
   return new Paragraph({
     alignment: opts.alignment,
@@ -113,7 +121,7 @@ export async function generateCoverLetterDocx(
   profile: Profile,
   job: DbJob,
   bodyParagraphs: string[],
-  language: CoverLetterLanguage
+  language: CoverLetterLanguage,
 ): Promise<Buffer> {
   const copy = COPY[language];
   const city = cityOnly(profile.location);
@@ -137,7 +145,9 @@ export async function generateCoverLetterDocx(
         children: [
           paragraph(profile.street_address ?? "", { alignment: AlignmentType.RIGHT }),
           paragraph(profile.location ?? "", { alignment: AlignmentType.RIGHT }),
-          paragraph(profile.phone ? `Tel: ${profile.phone}` : "", { alignment: AlignmentType.RIGHT }),
+          paragraph(profile.phone ? `Tel: ${profile.phone}` : "", {
+            alignment: AlignmentType.RIGHT,
+          }),
           paragraph(profile.email ?? "", { alignment: AlignmentType.RIGHT }),
           BLANK,
           BLANK,

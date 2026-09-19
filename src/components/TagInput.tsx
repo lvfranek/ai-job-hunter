@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { X } from "@phosphor-icons/react/dist/ssr";
 
 export function TagInput({
@@ -15,6 +15,7 @@ export function TagInput({
   onChange: (tags: string[]) => void;
 }) {
   const [input, setInput] = useState("");
+  const inputId = useId();
 
   function addTag() {
     const value = input.trim();
@@ -24,7 +25,12 @@ export function TagInput({
 
   return (
     <div>
-      <label className="mb-1.5 block text-[13px] font-medium text-text-muted">{label}</label>
+      <label
+        htmlFor={inputId}
+        className="mb-1.5 block text-[13px] font-medium text-text-muted"
+      >
+        {label}
+      </label>
       <div className="flex flex-wrap gap-1.5 rounded-lg border border-border-strong bg-surface px-2.5 py-2">
         {tags.map((tag) => (
           <span
@@ -43,6 +49,7 @@ export function TagInput({
           </span>
         ))}
         <input
+          id={inputId}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
@@ -55,7 +62,7 @@ export function TagInput({
           }}
           onBlur={addTag}
           placeholder="Type and press Enter"
-          className="min-w-35 flex-1 bg-transparent py-1 text-[13px] text-text outline-none placeholder:text-text-faint"
+          className="min-w-35 flex-1 bg-transparent py-1 text-base text-text outline-none placeholder:text-text-faint sm:text-[13px]"
         />
       </div>
       {helperText && <p className="mt-1.5 text-[12px] text-text-faint">{helperText}</p>}

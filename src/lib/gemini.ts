@@ -50,14 +50,17 @@ export interface GenerateOptions {
 // slug for OpenRouter's alias models — "~deepseek/deepseek-v4-flash-latest" is
 // a valid model ID and removing the tilde turns it into a 400.
 function normalizeModelName(raw: string): string {
-  return raw.trim().replace(/^["']|["']$/g, "").trim();
+  return raw
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .trim();
 }
 
 async function callOpenRouter(
   model: string,
   prompt: string,
   apiKey: string,
-  options: GenerateOptions
+  options: GenerateOptions,
 ): Promise<string> {
   let res: Response;
   try {

@@ -42,7 +42,7 @@ export async function DELETE(request: NextRequest) {
     if (!Number.isInteger(olderThanDays) || olderThanDays < 1) {
       return NextResponse.json(
         { error: "olderThanDays must be a positive integer" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

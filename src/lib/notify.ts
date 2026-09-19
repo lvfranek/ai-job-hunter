@@ -64,7 +64,7 @@ export async function notifyNewJobs(): Promise<boolean> {
       .update({ notified_at: new Date().toISOString() })
       .in(
         "id",
-        qualifying.map((m) => m.id)
+        qualifying.map((m) => m.id),
       );
     return true;
   } catch (error) {

@@ -14,7 +14,7 @@ Next.js and Supabase.
 - [Tech Stack](#tech-stack)
 - [Features](#features)
 - [Live Demo](#live-demo)
-- [⚙️ Installation](#️-installation)
+- [Installation](#️-installation)
 - [Environment Variables](#environment-variables)
 - [Available Scripts](#available-scripts)
 - [Tests](#tests)

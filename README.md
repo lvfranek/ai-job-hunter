@@ -1,4 +1,4 @@
-# 🎯 AI Job Hunter
+# 🔍 AI Job Hunter
 
 [![CI](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml/badge.svg)](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml)
 
@@ -8,6 +8,22 @@ status (interested, applied, interview, not interested) and filter the list by i
 Next.js and Supabase.
 
 ![AI Job Hunter](public/aijobhunter.png)
+
+## Table of Contents
+
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+- [Live Demo](#live-demo)
+- [⚙️ Installation](#️-installation)
+- [Environment Variables](#environment-variables)
+- [Available Scripts](#available-scripts)
+- [Tests](#tests)
+- [Deployment](#deployment)
+- [Automation (optional)](#automation-optional)
+- [Security Considerations](#security-considerations)
+- [Limitations](#limitations)
+- [Learn More](#learn-more)
+- [License](#license)
 
 ## Tech Stack
 

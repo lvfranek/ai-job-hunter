@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/Checkbox";
-import { Toast } from "@/components/Toast";
+import {
+  CheckboxRow,
+  DEMO_SAVE_MESSAGE,
+  ErrorBanner,
+  Field,
+  FieldGroup,
+  PageHeader,
+  SaveBar,
+  SettingsSection,
+  textInputClass,
+} from "@/components/form";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
 import { ApiKeysSection } from "./ApiKeysSection";
 
@@ -140,7 +150,7 @@ export default function SettingsPage() {
       const data = await res.json().catch(() => null);
       setForm(normalizedForm);
       setSavedSnapshot(JSON.stringify(normalizedForm));
-      setMessage(data?.demo ? "Demo mode — changes aren't saved" : "Settings saved");
+      setMessage(data?.demo ? DEMO_SAVE_MESSAGE : "Settings saved");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -153,36 +163,46 @@ export default function SettingsPage() {
   const estimatedRuns = activeKeywordCount * activeBoardCount;
   const estimatedMaxJobs = estimatedRuns * (form.scraper_results_per_scan || 0);
 
-  return (
-    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:py-8 sm:pr-4 sm:pl-0">
-      <Toast message={message} />
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-text">Scraping Settings</h1>
-      </div>
+  const dirty = !loading && JSON.stringify(form) !== savedSnapshot;
 
-      {error && (
-        <div className="mb-4 rounded-lg border border-rose-300 bg-rose-100 px-3.5 py-2.5 text-[13px] text-rose-800">
-          {error}
-        </div>
-      )}
+  return (
+    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0">
+      <PageHeader
+        title="Scraping Settings"
+        description="What to search for, where, and on which job boards."
+      />
+
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       {loading ? (
         <p className="text-[13px] text-text-faint">Loading…</p>
       ) : (
-        <div className="max-w-2xl space-y-10">
-          <section className="space-y-6">
-            <div>
-              <h2 className="text-[15px] font-semibold text-text">Job Board Search Settings</h2>
-              <p className="text-[12px] text-text-faint">
-                What to search for on Indeed, LinkedIn, etc.
-              </p>
-            </div>
-
-            <fieldset>
-              <legend className="mb-1.5 block text-[13px] font-medium text-text-muted">
-                Search keywords
-              </legend>
-              <div className="space-y-2">
+        <div className="space-y-4">
+          <SettingsSection
+            title="Search"
+            description={
+              <>
+                <p>What to look for on Indeed, LinkedIn and the other boards.</p>
+                <p>
+                  Indeed, LinkedIn, and Xing results can differ a little between scans a few minutes
+                  apart — those sites rank their own search results and that ranking isn&apos;t
+                  perfectly stable. Nothing you&apos;ve already seen gets added twice; duplicates
+                  are always skipped.
+                </p>
+              </>
+            }
+          >
+            <FieldGroup
+              legend="Search keywords"
+              hint={
+                <p>
+                  One keyword per field (each may be several words). Every board is scraped once per
+                  keyword — most job boards return nothing for &quot;A OR B&quot;. Leave fields
+                  blank to use fewer.
+                </p>
+              }
+            >
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {form.scraper_search_keywords.map((keyword, i) => (
                   <input
                     key={i}
@@ -198,58 +218,70 @@ export default function SettingsPage() {
                       `Keyword ${i + 1}`
                     }
                     aria-label={`Keyword ${i + 1}`}
-                    className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                    className={textInputClass}
                   />
                 ))}
               </div>
-              <p className="mt-1.5 text-[12px] text-text-faint">
-                One keyword per field (each may be several words). Every board is scraped once per
-                keyword — most job boards return nothing for &quot;A OR B&quot;. Leave fields blank
-                to use fewer.
-              </p>
-            </fieldset>
+            </FieldGroup>
 
-            <div>
-              <label
-                htmlFor="settings-location"
-                className="mb-1.5 block text-[13px] font-medium text-text-muted"
-              >
-                Location
-              </label>
+            <Field
+              label="Location"
+              htmlFor="settings-location"
+              hint={
+                <p>
+                  Where to search for jobs — still applies with Remote only on, e.g. &quot;remote
+                  jobs based in Germany&quot; rather than remote jobs worldwide
+                </p>
+              }
+            >
               <input
                 id="settings-location"
                 value={form.scraper_location}
                 onChange={(e) => setForm({ ...form, scraper_location: e.target.value })}
                 placeholder="Hamburg, Germany"
-                className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                className={textInputClass}
               />
-              <p className="mt-1.5 text-[12px] text-text-faint">
-                Where to search for jobs — still applies with Remote only on, e.g. &quot;remote jobs
-                based in Germany&quot; rather than remote jobs worldwide
-              </p>
-              <div className="mt-2.5">
-                <Checkbox
-                  label="Remote only"
-                  checked={form.remote_only}
-                  onChange={() => setForm({ ...form, remote_only: !form.remote_only })}
-                />
-                <p className="mt-1.5 text-[12px] text-text-faint">
-                  Narrows to remote positions, on top of the location above — doesn&apos;t search
-                  worldwide. Works on Indeed, LinkedIn, Stepstone, and Arbeitsagentur; on Xing
-                  it&apos;s approximated by adding &quot;remote&quot; to the search keywords, since
-                  that board has no dedicated remote filter.
-                </p>
-              </div>
-            </div>
+            </Field>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="settings-max-age"
-                  className="mb-1.5 block text-[13px] font-medium text-text-muted"
-                >
-                  Max posting age (days)
-                </label>
+            <div>
+              <Checkbox
+                label="Remote only"
+                checked={form.remote_only}
+                onChange={() => setForm({ ...form, remote_only: !form.remote_only })}
+              />
+              <p className="mt-1.5 text-[12px] leading-relaxed text-text-faint">
+                Narrows to remote positions, on top of the location above — doesn&apos;t search
+                worldwide. Works on Indeed, LinkedIn, Stepstone, and Arbeitsagentur; on Xing
+                it&apos;s approximated by adding &quot;remote&quot; to the search keywords, since
+                that board has no dedicated remote filter.
+              </p>
+            </div>
+          </SettingsSection>
+
+          <SettingsSection
+            title="Volume & freshness"
+            description={<p>How many jobs each scan fetches, and how old they may be.</p>}
+          >
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <Field
+                label="Max posting age (days)"
+                htmlFor="settings-max-age"
+                hint={
+                  <>
+                    <p>
+                      Only show jobs posted within this many days — each job board only offers a few
+                      fixed windows (e.g. 24h/week/month), so this snaps to the closest one that
+                      doesn&apos;t cut out jobs you asked for
+                    </p>
+                    <p>
+                      This is your main lever for freshness on Indeed, LinkedIn, and Xing — none of
+                      the three let us request &quot;newest first&quot; results, so a tighter window
+                      is what actually keeps old postings out. Stepstone and Arbeitsagentur are
+                      always sorted newest-first automatically.
+                    </p>
+                  </>
+                }
+              >
                 <input
                   id="settings-max-age"
                   type="number"
@@ -258,27 +290,37 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setForm({ ...form, scraper_max_posting_age_days: Number(e.target.value) })
                   }
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                  className={textInputClass}
                 />
-                <p className="mt-1.5 text-[12px] text-text-faint">
-                  Only show jobs posted within this many days — each job board only offers a few
-                  fixed windows (e.g. 24h/week/month), so this snaps to the closest one that
-                  doesn&apos;t cut out jobs you asked for
-                </p>
-                <p className="mt-1 text-[12px] text-text-faint">
-                  This is your main lever for freshness on Indeed, LinkedIn, and Xing — none of the
-                  three let us request &quot;newest first&quot; results, so a tighter window is what
-                  actually keeps old postings out. Stepstone and Arbeitsagentur are always sorted
-                  newest-first automatically.
-                </p>
-              </div>
-              <div>
-                <label
-                  htmlFor="settings-results-per-scan"
-                  className="mb-1.5 block text-[13px] font-medium text-text-muted"
-                >
-                  Results per search
-                </label>
+              </Field>
+
+              <Field
+                label="Results per search"
+                htmlFor="settings-results-per-scan"
+                hint={
+                  <>
+                    <p>
+                      Max jobs fetched per keyword, per board, per scan. A scan runs one search for
+                      every keyword × board combination.
+                    </p>
+                    <p className="text-text-muted">
+                      {activeKeywordCount} keyword{activeKeywordCount === 1 ? "" : "s"} ×{" "}
+                      {activeBoardCount} board{activeBoardCount === 1 ? "" : "s"} ×{" "}
+                      {form.scraper_results_per_scan || 0} ={" "}
+                      <span className="font-medium">
+                        up to {estimatedMaxJobs.toLocaleString()} jobs per scan
+                      </span>{" "}
+                      ({estimatedRuns} search{estimatedRuns === 1 ? "" : "es"})
+                    </p>
+                    {estimatedMaxJobs > 750 && (
+                      <p className="rounded-xl border border-amber-300 bg-amber-100 px-3.5 py-2 text-amber-800">
+                        That&apos;s a large scan — every search is a billed Apify run. Consider
+                        fewer keywords or boards, or a lower number here.
+                      </p>
+                    )}
+                  </>
+                }
+              >
                 <input
                   id="settings-results-per-scan"
                   type="number"
@@ -287,42 +329,18 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setForm({ ...form, scraper_results_per_scan: Number(e.target.value) })
                   }
-                  className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                  className={textInputClass}
                 />
-                <p className="mt-1.5 text-[12px] text-text-faint">
-                  Max jobs fetched per keyword, per board, per scan. A scan runs one search for
-                  every keyword × board combination.
-                </p>
-                <p className="mt-1.5 text-[12px] text-text-muted">
-                  {activeKeywordCount} keyword{activeKeywordCount === 1 ? "" : "s"} ×{" "}
-                  {activeBoardCount} board{activeBoardCount === 1 ? "" : "s"} ×{" "}
-                  {form.scraper_results_per_scan || 0} ={" "}
-                  <span className="font-medium">
-                    up to {estimatedMaxJobs.toLocaleString()} jobs per scan
-                  </span>{" "}
-                  ({estimatedRuns} search{estimatedRuns === 1 ? "" : "es"})
-                </p>
-                {estimatedMaxJobs > 750 && (
-                  <p className="mt-2 rounded-lg border border-amber-300 bg-amber-100 px-3.5 py-2 text-[12px] text-amber-800">
-                    That&apos;s a large scan — every search is a billed Apify run. Consider fewer
-                    keywords or boards, or a lower number here.
-                  </p>
-                )}
-              </div>
+              </Field>
             </div>
+          </SettingsSection>
 
-            <p className="text-[12px] text-text-faint">
-              Indeed, LinkedIn, and Xing results can differ a little between scans a few minutes
-              apart — those sites rank their own search results and that ranking isn&apos;t
-              perfectly stable. Nothing you&apos;ve already seen gets added twice; duplicates are
-              always skipped.
-            </p>
-
-            <fieldset>
-              <legend className="mb-1.5 block text-[13px] font-medium text-text-muted">
-                Which job boards should we search?
-              </legend>
-              <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-border-strong bg-surface px-3.5 py-3">
+          <SettingsSection
+            title="Job boards"
+            description={<p>Every selected board is searched once per keyword.</p>}
+          >
+            <FieldGroup legend="Which job boards should we search?">
+              <CheckboxRow>
                 {PORTALS.map(({ key, label }) => (
                   <Checkbox
                     key={key}
@@ -339,25 +357,36 @@ export default function SettingsPage() {
                     }
                   />
                 ))}
-              </div>
-            </fieldset>
-          </section>
+              </CheckboxRow>
+            </FieldGroup>
+          </SettingsSection>
 
-          <section className="space-y-4">
-            <div>
-              <h2 className="text-[15px] font-semibold text-text">Notifications</h2>
-              <p className="text-[12px] text-text-faint">
-                For automated runs via the cron endpoint — see README for setup.
-              </p>
-            </div>
-
-            <div>
-              <label
-                htmlFor="settings-notification-threshold"
-                className="mb-1.5 block text-[13px] font-medium text-text-muted"
-              >
-                Notification threshold
-              </label>
+          <SettingsSection
+            title="Notifications"
+            description={<p>For automated runs via the cron endpoint — see README for setup.</p>}
+          >
+            <Field
+              label="Notification threshold"
+              htmlFor="settings-notification-threshold"
+              hint={
+                <>
+                  <p>
+                    Jobs scoring at or above this trigger a webhook notification. Only affects the
+                    webhook — the dashboard still shows every job regardless of score. Configure the
+                    webhook URL via the <code>NOTIFICATION_WEBHOOK_URL</code> environment variable.
+                  </p>
+                  <p className="flex items-center gap-1.5 pt-1 text-text-muted">
+                    <span
+                      className={`size-2 rounded-full ${
+                        webhookConfigured ? "bg-emerald-500" : "bg-slate-300"
+                      }`}
+                      aria-hidden="true"
+                    />
+                    {webhookConfigured ? "Webhook configured" : "No webhook configured"}
+                  </p>
+                </>
+              }
+            >
               <input
                 id="settings-notification-threshold"
                 type="number"
@@ -367,30 +396,24 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setForm({ ...form, notification_threshold: Number(e.target.value) })
                 }
-                className="w-full max-w-40 rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+                className={`${textInputClass} max-w-40`}
               />
-              <p className="mt-1.5 text-[12px] text-text-faint">
-                Jobs scoring at or above this trigger a webhook notification. Only affects the
-                webhook — the dashboard still shows every job regardless of score. Configure the
-                webhook URL via the <code>NOTIFICATION_WEBHOOK_URL</code> environment variable.
-              </p>
-              <p className="mt-2 text-[12px] text-text-faint">
-                {webhookConfigured ? "Webhook configured" : "No webhook configured"}
-              </p>
-            </div>
-          </section>
-
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-xl bg-[#101828] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
-          >
-            {saving ? "Saving…" : "Save Settings"}
-          </button>
+            </Field>
+          </SettingsSection>
 
           <ApiKeysSection onDirtyChange={setApiKeysDirty} />
         </div>
+      )}
+
+      {!loading && (
+        <SaveBar
+          dirty={dirty}
+          saving={saving}
+          onSave={handleSave}
+          label="Save settings"
+          error={error}
+          savedMessage={message}
+        />
       )}
     </main>
   );

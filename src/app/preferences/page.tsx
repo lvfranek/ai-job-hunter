@@ -2,7 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/Checkbox";
-import { Toast } from "@/components/Toast";
+import {
+  CheckboxRow,
+  DEMO_SAVE_MESSAGE,
+  ErrorBanner,
+  Field,
+  FieldGroup,
+  PageHeader,
+  SaveBar,
+  SettingsSection,
+  textareaClass,
+  textInputClass,
+} from "@/components/form";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
 
 interface PreferencesForm {
@@ -97,7 +108,7 @@ export default function PreferencesPage() {
       if (!res.ok) throw new Error("Failed to save preferences");
       const data = await res.json().catch(() => null);
       setSavedSnapshot(JSON.stringify(form));
-      setMessage(data?.demo ? "Demo mode — changes aren't saved" : "Preferences saved");
+      setMessage(data?.demo ? DEMO_SAVE_MESSAGE : "Preferences saved");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -105,205 +116,218 @@ export default function PreferencesPage() {
     }
   }
 
-  return (
-    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:py-8 sm:pr-4 sm:pl-0">
-      <Toast message={message} />
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-text">AI Scoring Preferences</h1>
-      </div>
+  const dirty = !loading && JSON.stringify(form) !== savedSnapshot;
 
-      {error && (
-        <div className="mb-4 rounded-lg border border-rose-300 bg-rose-100 px-3.5 py-2.5 text-[13px] text-rose-800">
-          {error}
-        </div>
-      )}
+  return (
+    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0">
+      <PageHeader
+        title="AI Scoring Preferences"
+        description="Changing these preferences marks all job scores as outdated. Rescore anytime from the dashboard."
+      />
+
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       {loading ? (
         <p className="text-[13px] text-text-faint">Loading…</p>
       ) : (
-        <div className="max-w-2xl space-y-6">
-          <p className="rounded-lg border border-amber-300 bg-amber-100 px-3.5 py-2.5 text-[12px] text-amber-800">
-            Changing these preferences marks all job scores as outdated. Rescore anytime from the
-            dashboard.
-          </p>
-
-          <div>
-            <label
-              htmlFor="prefs-notes"
-              className="mb-1.5 block text-[13px] font-medium text-text-muted"
-            >
-              What are you looking for?
-            </label>
-            <textarea
-              id="prefs-notes"
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              rows={8}
-              placeholder={
-                "e.g. Junior-to-mid frontend developer, strong in React and TypeScript, " +
-                "comfortable with Node.js on the backend. Open to Vue or Svelte roles too. " +
-                "Not interested in Django/PHP-heavy roles or anything in gaming."
-              }
-              className="w-full resize-y rounded-lg border border-border-strong bg-surface px-3 py-2.5 text-[13px] leading-relaxed text-text outline-none focus:border-[#101828]"
-            />
-            <p className="mt-1.5 text-[12px] text-text-faint">
-              The AI reads this directly — titles, seniority, skills, and anything you want to
-              avoid, all in your own words.
-            </p>
-          </div>
-
-          <div>
-            <label
-              htmlFor="prefs-own-skills"
-              className="mb-1.5 block text-[13px] font-medium text-text-muted"
-            >
-              Concrete skills you have
-            </label>
-            <input
-              id="prefs-own-skills"
-              value={form.own_skills}
-              onChange={(e) => setForm({ ...form, own_skills: e.target.value })}
-              placeholder="React, TypeScript, Git, SQL, Figma"
-              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
-            />
-            <p className="mt-1.5 text-[12px] text-text-faint">
-              What you can actually do today, comma-separated. The AI matches job requirements
-              against this — and counts adjacent tech (React ↔ Vue, Node ↔ Python) as transferable
-              rather than missing.
-            </p>
-          </div>
-
-          <div>
-            <label
-              htmlFor="prefs-preferred-languages"
-              className="mb-1.5 block text-[13px] font-medium text-text-muted"
-            >
-              Preferred programming languages
-            </label>
-            <input
-              id="prefs-preferred-languages"
-              value={form.preferred_languages}
-              onChange={(e) => setForm({ ...form, preferred_languages: e.target.value })}
-              placeholder="TypeScript, Python, Go"
-              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
-            />
-            <p className="mt-1.5 text-[12px] text-text-faint">
-              What you would rather work in day to day. A job in another language isn&apos;t
-              excluded — it just scores a little lower.
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border-strong bg-surface px-3.5 py-3">
-            <Checkbox
-              label="Soft skills flexible"
-              checked={form.soft_skills_flexible}
-              onChange={() =>
-                setForm({ ...form, soft_skills_flexible: !form.soft_skills_flexible })
-              }
-            />
-            <p className="mt-1.5 text-[12px] text-text-faint">
-              Treats every soft-skill requirement in a posting (Zuverlässigkeit, Teamfähigkeit,
-              Belastbarkeit, Kommunikationsstärke …) as fully met, so the AI never deducts points
-              for one.
-            </p>
-          </div>
-
-          <div>
-            <label
-              htmlFor="prefs-preferred-location"
-              className="mb-1.5 block text-[13px] font-medium text-text-muted"
-            >
-              Preferred location
-            </label>
-            <input
-              id="prefs-preferred-location"
-              value={form.preferred_location}
-              onChange={(e) => setForm({ ...form, preferred_location: e.target.value })}
-              placeholder="Berlin, Germany"
-              className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
-            />
-            <p className="mt-1.5 text-[12px] text-text-faint">
-              Where you want to work (can differ from where you live)
-            </p>
-          </div>
-
-          <fieldset>
-            <legend className="mb-1.5 block text-[13px] font-medium text-text-muted">
-              Job type
-            </legend>
-            <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-border-strong bg-surface px-3.5 py-3">
-              {JOB_TYPES.map((type) => (
-                <Checkbox
-                  key={type}
-                  label={type}
-                  checked={form.job_type.includes(type)}
-                  onChange={() => setForm({ ...form, job_type: toggleValue(form.job_type, type) })}
-                />
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend className="mb-1.5 block text-[13px] font-medium text-text-muted">
-              Exclude contract forms
-            </legend>
-            <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-border-strong bg-surface px-3.5 py-3">
-              {EXCLUDED_EMPLOYMENT_TYPES.map((type) => (
-                <Checkbox
-                  key={type}
-                  label={type}
-                  checked={form.excluded_employment_types.includes(type)}
-                  onChange={() =>
-                    setForm({
-                      ...form,
-                      excluded_employment_types: toggleValue(form.excluded_employment_types, type),
-                    })
-                  }
-                />
-              ))}
-            </div>
-            <p className="mt-1.5 text-[12px] text-text-faint">
-              Tick what you do <strong>not</strong> want — Ausbildung (apprenticeship), Studium
-              (dual study), Werkstudent (working student), Freelance. A ticked form is treated as a
-              hard blocker: those postings score low and say why. Tick nothing to accept every
-              contract form.
-            </p>
-          </fieldset>
-
-          <fieldset>
-            <legend className="mb-1.5 block text-[13px] font-medium text-text-muted">
-              Working time
-            </legend>
-            <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-border-strong bg-surface px-3.5 py-3">
-              {WORK_TIME_MODELS.map((type) => (
-                <Checkbox
-                  key={type}
-                  label={type}
-                  checked={form.work_time_models.includes(type)}
-                  onChange={() =>
-                    setForm({
-                      ...form,
-                      work_time_models: toggleValue(form.work_time_models, type),
-                    })
-                  }
-                />
-              ))}
-            </div>
-            <p className="mt-1.5 text-[12px] text-text-faint">
-              Vollzeit (full-time), Teilzeit (part-time), Minijob (marginal employment). Tick none
-              to accept any.
-            </p>
-          </fieldset>
-
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-xl bg-[#101828] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
+        <div className="space-y-4">
+          <SettingsSection
+            title="Your ideal job"
+            description={
+              <p>
+                The AI reads this directly — titles, seniority, skills, and anything you want to
+                avoid, all in your own words.
+              </p>
+            }
           >
-            {saving ? "Saving…" : "Save Preferences"}
-          </button>
+            <Field label="What are you looking for?" htmlFor="prefs-notes">
+              <textarea
+                id="prefs-notes"
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                rows={8}
+                placeholder={
+                  "e.g. Junior-to-mid frontend developer, strong in React and TypeScript, " +
+                  "comfortable with Node.js on the backend. Open to Vue or Svelte roles too. " +
+                  "Not interested in Django/PHP-heavy roles or anything in gaming."
+                }
+                className={textareaClass}
+              />
+            </Field>
+          </SettingsSection>
+
+          <SettingsSection
+            title="Skills"
+            description={<p>How your abilities are matched against each posting.</p>}
+          >
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <Field
+                label="Concrete skills you have"
+                htmlFor="prefs-own-skills"
+                hint={
+                  <p>
+                    What you can actually do today, comma-separated. The AI matches job requirements
+                    against this — and counts adjacent tech (React ↔ Vue, Node ↔ Python) as
+                    transferable rather than missing.
+                  </p>
+                }
+              >
+                <input
+                  id="prefs-own-skills"
+                  value={form.own_skills}
+                  onChange={(e) => setForm({ ...form, own_skills: e.target.value })}
+                  placeholder="React, TypeScript, Git, SQL, Figma"
+                  className={textInputClass}
+                />
+              </Field>
+
+              <Field
+                label="Preferred programming languages"
+                htmlFor="prefs-preferred-languages"
+                hint={
+                  <p>
+                    What you would rather work in day to day. A job in another language isn&apos;t
+                    excluded — it just scores a little lower.
+                  </p>
+                }
+              >
+                <input
+                  id="prefs-preferred-languages"
+                  value={form.preferred_languages}
+                  onChange={(e) => setForm({ ...form, preferred_languages: e.target.value })}
+                  placeholder="TypeScript, Python, Go"
+                  className={textInputClass}
+                />
+              </Field>
+            </div>
+
+            <div>
+              <Checkbox
+                label="Soft skills flexible"
+                checked={form.soft_skills_flexible}
+                onChange={() =>
+                  setForm({ ...form, soft_skills_flexible: !form.soft_skills_flexible })
+                }
+              />
+              <p className="mt-1.5 text-[12px] leading-relaxed text-text-faint">
+                Treats every soft-skill requirement in a posting (Zuverlässigkeit, Teamfähigkeit,
+                Belastbarkeit, Kommunikationsstärke …) as fully met, so the AI never deducts points
+                for one.
+              </p>
+            </div>
+          </SettingsSection>
+
+          <SettingsSection
+            title="Location & job type"
+            description={<p>Where and how you want to work.</p>}
+          >
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <Field
+                label="Preferred location"
+                htmlFor="prefs-preferred-location"
+                hint={<p>Where you want to work (can differ from where you live)</p>}
+              >
+                <input
+                  id="prefs-preferred-location"
+                  value={form.preferred_location}
+                  onChange={(e) => setForm({ ...form, preferred_location: e.target.value })}
+                  placeholder="Berlin, Germany"
+                  className={textInputClass}
+                />
+              </Field>
+
+              <FieldGroup legend="Job type">
+                <CheckboxRow>
+                  {JOB_TYPES.map((type) => (
+                    <Checkbox
+                      key={type}
+                      label={type}
+                      checked={form.job_type.includes(type)}
+                      onChange={() =>
+                        setForm({ ...form, job_type: toggleValue(form.job_type, type) })
+                      }
+                    />
+                  ))}
+                </CheckboxRow>
+              </FieldGroup>
+            </div>
+          </SettingsSection>
+
+          <SettingsSection
+            title="Contract & working time"
+            description={<p>Filter out contract forms and working hours you don&apos;t want.</p>}
+          >
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <FieldGroup
+                legend="Exclude contract forms"
+                hint={
+                  <p>
+                    Tick what you do <strong>not</strong> want — Ausbildung (apprenticeship),
+                    Studium (dual study), Werkstudent (working student), Freelance. A ticked form is
+                    treated as a hard blocker: those postings score low and say why. Tick nothing to
+                    accept every contract form.
+                  </p>
+                }
+              >
+                <CheckboxRow>
+                  {EXCLUDED_EMPLOYMENT_TYPES.map((type) => (
+                    <Checkbox
+                      key={type}
+                      label={type}
+                      checked={form.excluded_employment_types.includes(type)}
+                      onChange={() =>
+                        setForm({
+                          ...form,
+                          excluded_employment_types: toggleValue(
+                            form.excluded_employment_types,
+                            type,
+                          ),
+                        })
+                      }
+                    />
+                  ))}
+                </CheckboxRow>
+              </FieldGroup>
+
+              <FieldGroup
+                legend="Working time"
+                hint={
+                  <p>
+                    Vollzeit (full-time), Teilzeit (part-time), Minijob (marginal employment). Tick
+                    none to accept any.
+                  </p>
+                }
+              >
+                <CheckboxRow>
+                  {WORK_TIME_MODELS.map((type) => (
+                    <Checkbox
+                      key={type}
+                      label={type}
+                      checked={form.work_time_models.includes(type)}
+                      onChange={() =>
+                        setForm({
+                          ...form,
+                          work_time_models: toggleValue(form.work_time_models, type),
+                        })
+                      }
+                    />
+                  ))}
+                </CheckboxRow>
+              </FieldGroup>
+            </div>
+          </SettingsSection>
         </div>
+      )}
+
+      {!loading && (
+        <SaveBar
+          dirty={dirty}
+          saving={saving}
+          onSave={handleSave}
+          label="Save preferences"
+          error={error}
+          savedMessage={message}
+        />
       )}
     </main>
   );

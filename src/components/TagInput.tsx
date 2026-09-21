@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { X } from "@phosphor-icons/react/dist/ssr";
+import { labelClass } from "@/components/form";
 
 export function TagInput({
   label,
@@ -25,17 +26,14 @@ export function TagInput({
 
   return (
     <div>
-      <label
-        htmlFor={inputId}
-        className="mb-1.5 block text-[13px] font-medium text-text-muted"
-      >
+      <label htmlFor={inputId} className={labelClass}>
         {label}
       </label>
-      <div className="flex flex-wrap gap-1.5 rounded-lg border border-border-strong bg-surface px-2.5 py-2">
+      <div className="flex min-h-9 flex-wrap gap-1.5 rounded-xl border border-[#B9CCDA] bg-white px-2 py-1.5 transition-colors focus-within:border-[#101828] hover:border-[#8FA8BD]">
         {tags.map((tag) => (
           <span
             key={tag}
-            className="flex items-center gap-1 rounded-md border border-border-strong bg-surface-hover px-2 py-1 text-[12px] text-text"
+            className="flex items-center gap-1 rounded-lg border border-[#D7E4ED] bg-[#EEF4F9] px-2 py-0.5 text-[12px] text-[#1E2A3D]"
           >
             {tag}
             <button
@@ -62,10 +60,12 @@ export function TagInput({
           }}
           onBlur={addTag}
           placeholder="Type and press Enter"
-          className="min-w-35 flex-1 bg-transparent py-1 text-[13px] text-text outline-none placeholder:text-text-faint"
+          className="min-w-35 flex-1 bg-transparent px-1 py-0.5 text-[13px] text-text outline-none placeholder:text-text-faint"
         />
       </div>
-      {helperText && <p className="mt-1.5 text-[12px] text-text-faint">{helperText}</p>}
+      {helperText && (
+        <p className="mt-1.5 text-[12px] leading-relaxed text-text-faint">{helperText}</p>
+      )}
     </div>
   );
 }

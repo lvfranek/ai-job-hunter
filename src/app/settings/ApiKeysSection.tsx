@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { buttonPrimary } from "@/components/controls";
+import { ErrorBanner, Field, SettingsSection, textInputClass } from "@/components/form";
 
 interface SecretStatus {
   configured: boolean;
@@ -39,9 +41,6 @@ const EMPTY_CONFIG: ConfigForm = {
   apify_scraper_arbeitsagentur: "",
   openrouter_model: "",
 };
-
-const inputClass =
-  "w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]";
 
 function statusText(status: SecretStatus | undefined) {
   if (!status || !status.configured) return "Not configured";
@@ -125,33 +124,43 @@ export function ApiKeysSection({ onDirtyChange }: { onDirtyChange: (dirty: boole
     }
   }
 
-  if (loading) return <p className="text-[13px] text-text-faint">Loading…</p>;
+  const description = (
+    <p>
+      Your own Apify and OpenRouter credentials — stored encrypted, only used server-side. Leave
+      blank to keep the value already configured via .env.local.
+    </p>
+  );
+
+  if (loading) {
+    return (
+      <SettingsSection title="API keys" description={description}>
+        <p className="text-[13px] text-text-faint">Loading…</p>
+      </SettingsSection>
+    );
+  }
 
   return (
-    <section className="space-y-6">
-      <div>
-        <h2 className="text-[15px] font-semibold text-text">API Keys</h2>
-        <p className="text-[12px] text-text-faint">
-          Your own Apify and OpenRouter credentials — stored encrypted, only used server-side. Leave
-          blank to keep the value already configured via .env.local.
-        </p>
-      </div>
+    <SettingsSection title="API keys" description={description}>
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
-      {error && (
-        <div className="rounded-lg border border-rose-300 bg-rose-100 px-3.5 py-2.5 text-[13px] text-rose-800">
-          {error}
-        </div>
-      )}
-
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         {SECRETS.map(({ key, label }) => (
-          <div key={key}>
-            <label
-              htmlFor={`secret-${key}`}
-              className="mb-1.5 block text-[13px] font-medium text-text-muted"
-            >
-              {label}
-            </label>
+          <Field
+            key={key}
+            label={label}
+            htmlFor={`secret-${key}`}
+            hint={
+              secretStatus[key]?.source === "db" && (
+                <button
+                  type="button"
+                  onClick={() => handleClear(key)}
+                  className="underline underline-offset-2 hover:text-text-muted"
+                >
+                  Clear override, fall back to .env.local
+                </button>
+              )
+            }
+          >
             <input
               id={`secret-${key}`}
               type="password"
@@ -159,51 +168,36 @@ export function ApiKeysSection({ onDirtyChange }: { onDirtyChange: (dirty: boole
               value={secretInputs[key] ?? ""}
               onChange={(e) => setSecretInputs({ ...secretInputs, [key]: e.target.value })}
               placeholder={statusText(secretStatus[key])}
-              className={inputClass}
+              className={textInputClass}
             />
-            {secretStatus[key]?.source === "db" && (
-              <button
-                type="button"
-                onClick={() => handleClear(key)}
-                className="mt-1.5 text-[12px] text-text-faint underline hover:text-text-muted"
-              >
-                Clear override, fall back to .env.local
-              </button>
-            )}
-          </div>
+          </Field>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         {CONFIG_FIELDS.map(({ key, label }) => (
-          <div key={key}>
-            <label
-              htmlFor={`config-${key}`}
-              className="mb-1.5 block text-[13px] font-medium text-text-muted"
-            >
-              {label}
-            </label>
+          <Field key={key} label={label} htmlFor={`config-${key}`}>
             <input
               id={`config-${key}`}
               value={config[key]}
               onChange={(e) => setConfig({ ...config, [key]: e.target.value })}
-              className={inputClass}
+              className={textInputClass}
             />
-          </div>
+          </Field>
         ))}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-end gap-3 border-t border-[#D7E4ED] pt-4">
+        {message && <span className="text-[13px] text-emerald-700">{message}</span>}
         <button
           type="button"
           onClick={handleSave}
-          disabled={saving}
-          className="rounded-xl bg-[#101828] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
+          disabled={saving || !dirty}
+          className={buttonPrimary}
         >
-          {saving ? "Saving…" : "Save API Keys"}
+          {saving ? "Saving…" : "Save API keys"}
         </button>
-        {message && <span className="text-[13px] text-emerald-700">{message}</span>}
       </div>
-    </section>
+    </SettingsSection>
   );
 }

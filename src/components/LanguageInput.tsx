@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X } from "@phosphor-icons/react/dist/ssr";
 import type { Language } from "@/lib/types";
+import { labelClass, textInputClass } from "@/components/form";
 
 const LEVELS = ["basic", "conversational", "fluent", "native"];
 
@@ -25,12 +26,12 @@ export function LanguageInput({
 
   return (
     <div>
-      <label className="mb-1.5 block text-[13px] font-medium text-text-muted">Languages</label>
+      <p className={labelClass}>Languages</p>
       <div className="space-y-1.5">
         {languages.map((lang) => (
           <div
             key={lang.name}
-            className="flex flex-wrap items-center gap-2 rounded-lg border border-border-strong bg-surface px-2.5 py-1.5"
+            className="flex min-h-9 flex-wrap items-center gap-2 rounded-xl border border-[#B9CCDA] bg-white py-1 pr-2 pl-3"
           >
             <span className="flex-1 text-[13px] text-text">{lang.name}</span>
             <select
@@ -43,7 +44,7 @@ export function LanguageInput({
                 )
               }
               aria-label={`${lang.name} proficiency level`}
-              className="rounded-md border border-border-strong bg-surface-hover px-2 py-1 text-[12px] text-text capitalize outline-none focus:border-[#101828]"
+              className="h-7 rounded-lg border border-[#D7E4ED] bg-[#EEF4F9] px-2 text-[12px] text-[#1E2A3D] capitalize outline-none focus:border-[#101828]"
             >
               {LEVELS.map((level) => (
                 <option key={level} value={level} className="capitalize">
@@ -73,10 +74,10 @@ export function LanguageInput({
           onBlur={addLanguage}
           placeholder="Type a language and press Enter"
           aria-label="Add a language"
-          className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none placeholder:text-text-faint focus:border-[#101828]"
+          className={textInputClass}
         />
       </div>
-      <p className="mt-1.5 text-[12px] text-text-faint">
+      <p className="mt-1.5 text-[12px] leading-relaxed text-text-faint">
         Add a language, then set how comfortable you are working in it
       </p>
     </div>

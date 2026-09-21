@@ -76,7 +76,7 @@ export function JobDescription({ text }: { text: string | null }) {
   }
 
   return (
-    <div className="max-w-[75ch] space-y-3 text-[13px] leading-relaxed text-[#1E2A3D]">
+    <div className="space-y-3 text-[13px] leading-relaxed text-[#1E2A3D]">
       {toBlocks(text).map((block, i) => {
         if (block.kind === "heading") {
           return (

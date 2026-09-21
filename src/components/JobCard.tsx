@@ -99,6 +99,13 @@ export function JobCard({
 }) {
   const tier = scoreTier(job.matchScore);
   const [expanded, setExpanded] = useState(false);
+  // The panel is mounted on first open and kept afterwards, so closing can
+  // animate out instead of vanishing.
+  const [hasOpened, setHasOpened] = useState(false);
+  const toggle = () => {
+    setHasOpened(true);
+    setExpanded((e) => !e);
+  };
   // "Not interested" rows fade back so the list reads as what's still in play.
   // The status/cover-letter controls stay at full strength so it's easy to undo.
   const dimmed = job.status === "not_interested";
@@ -109,11 +116,11 @@ export function JobCard({
       <div
         role="button"
         tabIndex={0}
-        onClick={() => setExpanded((e) => !e)}
+        onClick={toggle}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            setExpanded((exp) => !exp);
+            toggle();
           }
         }}
         aria-expanded={expanded}
@@ -154,7 +161,7 @@ export function JobCard({
           <CaretDown
             size={15}
             weight="bold"
-            className={`ml-auto shrink-0 text-text-faint transition-transform sm:hidden ${expanded ? "rotate-180" : ""}`}
+            className={`ml-auto shrink-0 text-text-faint transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)] sm:hidden ${expanded ? "rotate-180" : ""}`}
           />
         </div>
 
@@ -229,17 +236,32 @@ export function JobCard({
           <CaretDown
             size={15}
             weight="bold"
-            className={`hidden shrink-0 text-text-faint transition-transform sm:block ${expanded ? "rotate-180" : ""}`}
+            className={`hidden shrink-0 text-text-faint transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)] sm:block ${expanded ? "rotate-180" : ""}`}
           />
         </div>
       </div>
 
-      {expanded && (
-        <div className="border-t border-[#D7E4ED] bg-[#EEF4F9] px-4 py-5">
-          {job.match && <ScoreBreakdown match={job.match} />}
-          <JobDescription text={job.description} />
+      {/* Height animates via grid-template-rows 0fr -> 1fr, which handles
+          content of unknown height without measuring it. */}
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.2,0,0,1)] ${
+          expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+        inert={!expanded}
+      >
+        <div className="min-h-0 overflow-hidden">
+          {hasOpened && (
+            <div
+              className={`border-t border-[#D7E4ED] bg-[#EEF4F9] px-4 py-5 transition-[opacity,translate] duration-300 ease-[cubic-bezier(0.2,0,0,1)] ${
+                expanded ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
+              }`}
+            >
+              {job.match && <ScoreBreakdown match={job.match} />}
+              <JobDescription text={job.description} />
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

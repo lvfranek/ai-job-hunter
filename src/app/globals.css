@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  /* Height of the demo banner, set by DemoBanner; 0 when there is none. */
+  --banner-h: 0px;
   --color-bg: #dfe9f0;
   --color-surface: #ffffff;
   --color-surface-hover: #e4eef5;

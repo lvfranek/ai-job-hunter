@@ -427,11 +427,20 @@ export function JobResults({
           className={buttonSecondary}
         >
           <Sparkle size={14} weight="fill" />
-          {isScoring
-            ? "Adjusting…"
-            : needsScoreCount > 0
-              ? `Adjust score (${needsScoreCount})`
-              : "Scores up to date"}
+          {isScoring ? (
+            "Adjusting…"
+          ) : needsScoreCount > 0 ? (
+            <>
+              {/* Shorter label on very narrow phones so it stays on one line. */}
+              <span className="max-[360px]:hidden">Adjust score ({needsScoreCount})</span>
+              <span className="hidden max-[360px]:inline">Adjust ({needsScoreCount})</span>
+            </>
+          ) : (
+            <>
+              <span className="max-[360px]:hidden">Scores up to date</span>
+              <span className="hidden max-[360px]:inline">Up to date</span>
+            </>
+          )}
         </button>
 
         <div
@@ -489,7 +498,7 @@ export function JobResults({
         </div>
 
         <div className="contents sm:ml-auto sm:flex sm:items-center sm:gap-2">
-          <div className="col-span-2 row-start-3 grid grid-cols-[1fr_auto_1fr] gap-1.5 sm:flex sm:items-center sm:gap-2">
+          <div className="col-span-2 row-start-3 grid grid-cols-[1fr_auto_1fr] gap-1.5 max-[360px]:grid-cols-2 sm:flex sm:items-center sm:gap-2">
             <Select
               value={minScore}
               onChange={(e) => {
@@ -525,6 +534,7 @@ export function JobResults({
                 setPage(1);
               }}
               aria-label="Filter by status"
+              className="max-[360px]:col-span-2"
             >
               {(Object.keys(statusFilterLabels) as StatusFilter[]).map((key) => (
                 <option key={key} value={key}>

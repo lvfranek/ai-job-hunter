@@ -128,7 +128,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:py-8 sm:pr-8 sm:pl-0">
+    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:py-8 sm:pr-4 sm:pl-0">
       <Toast message={message} />
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-text">Cover Letter Profile</h1>

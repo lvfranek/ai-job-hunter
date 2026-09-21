@@ -79,7 +79,7 @@ export default function DashboardPage() {
     <main
       id="main"
       tabIndex={-1}
-      className="bg-[#DFE9F0] px-4 pt-3 pb-6 sm:min-h-screen sm:py-8 sm:pr-8 sm:pl-0"
+      className="bg-[#DFE9F0] px-4 pt-3 pb-6 sm:min-h-screen sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0"
     >
       <h1 className="mb-4 text-xl font-semibold tracking-tight text-[#1E2A3D] sm:text-2xl">
         Job matches

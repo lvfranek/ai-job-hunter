@@ -21,6 +21,8 @@ const csp = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // The default bottom-left spot covers the sidebar's logout button.
+  devIndicators: { position: "bottom-right" },
   turbopack: {
     root: __dirname,
   },

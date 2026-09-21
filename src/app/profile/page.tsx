@@ -142,7 +142,7 @@ export default function ProfilePage() {
     <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0">
       <PageHeader
         title="Cover Letter Profile"
-        description="Used only for generating cover letters — not for AI job scoring."
+        description="Information used for generating a cover letter."
       />
 
       {error && <ErrorBanner>{error}</ErrorBanner>}

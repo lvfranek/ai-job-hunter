@@ -169,7 +169,7 @@ export default function SettingsPage() {
     <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0">
       <PageHeader
         title="Scraping Settings"
-        description="What to search for, where, and on which job boards."
+        description="Adjust keywords, job boards, notifications and connections."
       />
 
       {error && <ErrorBanner>{error}</ErrorBanner>}

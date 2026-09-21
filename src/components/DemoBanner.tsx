@@ -22,7 +22,7 @@ export function DemoBanner() {
   }
 
   return (
-    <div className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-amber-300 bg-amber-100 px-4 py-2 text-[12px] text-amber-800">
+    <div className="z-50 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-amber-300 bg-amber-100 px-4 py-2 text-[12px] text-amber-800 sm:sticky sm:top-0">
       <p className="min-w-0">
         <span className="font-semibold">Demo mode</span> — you&apos;re viewing sample data. Job
         scraping, AI match scoring and cover-letter generation are simulated: no real scraping and

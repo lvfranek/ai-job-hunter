@@ -50,10 +50,10 @@ function LoginForm() {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="flex min-h-screen items-center justify-center">
+    <main id="main" tabIndex={-1} className="flex min-h-screen items-center justify-center px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-5 rounded-[28px] border border-white/60 bg-[#F1FAFF] p-8 shadow-[0_8px_30px_-10px_rgba(30,64,120,0.28)]"
+        className="w-full max-w-sm space-y-5 rounded-[28px] border border-white/60 bg-[#F1FAFF] p-6 sm:p-8 shadow-[0_8px_30px_-10px_rgba(30,64,120,0.28)]"
       >
         <div className="flex flex-col items-center gap-3">
           <span className="flex size-11 items-center justify-center rounded-2xl bg-linear-to-b from-white to-[#F3F9FD] text-[#1E2A3D] shadow-[0_2px_8px_rgba(30,64,120,0.15)]">

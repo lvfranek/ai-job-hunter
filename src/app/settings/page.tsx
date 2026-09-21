@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GearSix } from "@phosphor-icons/react/dist/ssr";
 import { Checkbox } from "@/components/Checkbox";
 import { Toast } from "@/components/Toast";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
@@ -155,12 +154,8 @@ export default function SettingsPage() {
   const estimatedMaxJobs = estimatedRuns * (form.scraper_results_per_scan || 0);
 
   return (
-    <main id="main" tabIndex={-1} className="py-8 pr-8">
+    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:py-8 sm:pr-8 sm:pl-0">
       <Toast message={message} />
-      <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
-        <GearSix size={15} />
-        Scraping Settings
-      </div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-text">Scraping Settings</h1>
       </div>
@@ -247,7 +242,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label
                   htmlFor="settings-max-age"

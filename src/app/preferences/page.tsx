@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Target } from "@phosphor-icons/react/dist/ssr";
 import { Checkbox } from "@/components/Checkbox";
 import { Toast } from "@/components/Toast";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
@@ -107,12 +106,8 @@ export default function PreferencesPage() {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="py-8 pr-8">
+    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:py-8 sm:pr-8 sm:pl-0">
       <Toast message={message} />
-      <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
-        <Target size={15} />
-        AI Scoring Preferences
-      </div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-text">AI Scoring Preferences</h1>
       </div>

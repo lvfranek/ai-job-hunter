@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { UserCircle, UploadSimple, CircleNotch } from "@phosphor-icons/react/dist/ssr";
+import { UploadSimple, CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import { TagInput } from "@/components/TagInput";
 import { LanguageInput } from "@/components/LanguageInput";
 import { Toast } from "@/components/Toast";
@@ -128,12 +128,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="py-8 pr-8">
+    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:py-8 sm:pr-8 sm:pl-0">
       <Toast message={message} />
-      <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
-        <UserCircle size={15} />
-        Cover Letter Profile
-      </div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-text">Cover Letter Profile</h1>
         <p className="mt-1 text-[13px] text-text-faint">
@@ -209,7 +205,7 @@ export default function ProfilePage() {
         <div className="max-w-2xl space-y-10">
           <section className="space-y-5">
             <h2 className="text-[15px] font-semibold text-text">Personal Information</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label
                   htmlFor="profile-name"

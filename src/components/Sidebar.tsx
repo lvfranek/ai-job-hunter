@@ -42,8 +42,8 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="sticky top-0 flex h-screen w-22 shrink-0 items-stretch bg-[#DFE9F0] p-4">
-      <div className="flex w-full flex-col items-center gap-6 rounded-[28px] border border-white/60 bg-[#F1FAFF] py-4 shadow-[0_8px_30px_-10px_rgba(30,64,120,0.28)]">
+    <aside className="pointer-events-none sticky top-0 z-40 flex w-full shrink-0 px-4 py-3 sm:pointer-events-auto sm:z-auto sm:h-screen sm:w-22 sm:items-stretch sm:bg-[#DFE9F0] sm:p-4">
+      <div className="pointer-events-auto flex w-full items-center gap-2 rounded-[22px] border border-white/60 bg-[#F1FAFF] p-1.5 shadow-[0_8px_30px_-10px_rgba(30,64,120,0.28)] sm:flex-col sm:px-0">
         <Link
           href="/"
           onClick={(e) => guardNav(e, "/")}
@@ -54,7 +54,7 @@ export function Sidebar() {
           <Lightning size={18} weight="fill" />
         </Link>
 
-        <nav aria-label="Main" className="flex flex-col items-center gap-2">
+        <nav aria-label="Main" className="flex items-center gap-2 sm:flex-col">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (

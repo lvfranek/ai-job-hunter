@@ -33,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <IconDefaults>
           <UnsavedChangesProvider>
             <DemoModeBanner />
-            <div className="flex min-h-screen">
+            <div className="flex min-h-screen flex-col sm:flex-row">
               <Sidebar />
               <div className="min-w-0 flex-1">{children}</div>
             </div>

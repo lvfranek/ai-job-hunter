@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { SquaresFour } from "@phosphor-icons/react/dist/ssr";
 import { JobResults } from "@/components/JobResults";
 import type { Job, JobStatus, Platform } from "@/lib/mock-data";
 import type { JobWithMatch } from "@/lib/types";
@@ -77,11 +76,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="min-h-screen bg-[#DFE9F0] py-6 pr-4 sm:py-8 sm:pr-8">
-      <div className="mb-4 flex items-center gap-2 text-[13px] text-text-faint">
-        <SquaresFour size={15} />
-        Dashboard
-      </div>
+    <main
+      id="main"
+      tabIndex={-1}
+      className="bg-[#DFE9F0] px-4 pt-3 pb-6 sm:min-h-screen sm:py-8 sm:pr-8 sm:pl-0"
+    >
       <h1 className="mb-4 text-xl font-semibold tracking-tight text-[#1E2A3D] sm:text-2xl">
         Job matches
       </h1>

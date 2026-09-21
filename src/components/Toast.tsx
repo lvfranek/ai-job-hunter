@@ -4,7 +4,7 @@ export function Toast({ message }: { message: string | null }) {
   if (!message) return null;
 
   return (
-    <div className="pointer-events-none fixed top-6 right-8 z-50">
+    <div className="pointer-events-none fixed top-6 right-4 z-50 sm:right-8">
       <span className="pointer-events-auto rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-[13px] text-emerald-800 shadow-lg backdrop-blur-sm">
         {message}
       </span>

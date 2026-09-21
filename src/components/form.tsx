@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useState, type ReactNode } from "react";
 import { Check, CircleNotch, Info } from "@phosphor-icons/react/dist/ssr";
 
 // Building blocks for the settings-style pages (Scoring Preferences, Scraping
@@ -133,6 +135,10 @@ export function SaveBar({
 }) {
   const state = error ? "error" : saving ? "saving" : dirty ? "dirty" : "saved";
   const visible = state !== "saved" || Boolean(savedMessage);
+  // Keep the last confirmation on screen while the pill fades out, instead of
+  // falling back to a generic "Saved" once the page clears the message.
+  const [shownMessage, setShownMessage] = useState(savedMessage);
+  if (savedMessage && savedMessage !== shownMessage) setShownMessage(savedMessage);
 
   return (
     <>
@@ -152,7 +158,7 @@ export function SaveBar({
         >
           {state === "saving" ? (
             <CircleNotch size={14} weight="bold" className="shrink-0 animate-spin" />
-          ) : state === "saved" && savedMessage === DEMO_SAVE_MESSAGE ? (
+          ) : state === "saved" && shownMessage === DEMO_SAVE_MESSAGE ? (
             <Info size={16} weight="fill" className="shrink-0 text-white/70" />
           ) : state === "saved" ? (
             <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-[#101828]">
@@ -173,7 +179,7 @@ export function SaveBar({
                 ? "Saving…"
                 : state === "dirty"
                   ? "Unsaved changes"
-                  : (savedMessage ?? "Saved")}
+                  : (shownMessage ?? "Saved")}
           </span>
         </p>
         {(state === "dirty" || state === "error") && (

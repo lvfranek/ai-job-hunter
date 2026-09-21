@@ -13,6 +13,7 @@ import {
 import type { Job, JobMatchDetail, JobStatus } from "@/lib/mock-data";
 import { JOB_STATUSES, jobStatusLabels, platformIconSlugs, platformLabels } from "@/lib/mock-data";
 import { JobDescription } from "@/components/JobDescription";
+import { buttonSecondary, Select } from "@/components/controls";
 
 function scoreTier(score: number) {
   if (score >= 80) {
@@ -81,10 +82,10 @@ function ScoreBreakdown({ match }: { match: JobMatchDetail }) {
 }
 
 const statusTier: Record<JobStatus, { text: string; bg: string; border: string }> = {
-  interested: { text: "text-sky-800", bg: "bg-sky-100", border: "border-sky-300" },
-  applied: { text: "text-violet-800", bg: "bg-violet-100", border: "border-violet-300" },
-  interview: { text: "text-blue-800", bg: "bg-blue-100", border: "border-blue-300" },
-  not_interested: { text: "text-slate-600", bg: "bg-slate-100", border: "border-slate-300" },
+  interested: { text: "text-sky-900", bg: "bg-sky-200", border: "border-sky-400" },
+  applied: { text: "text-green-900", bg: "bg-green-200", border: "border-green-500" },
+  interview: { text: "text-violet-900", bg: "bg-violet-200", border: "border-violet-400" },
+  not_interested: { text: "text-slate-700", bg: "bg-slate-200", border: "border-slate-400" },
 };
 
 export function JobCard({
@@ -98,6 +99,10 @@ export function JobCard({
 }) {
   const tier = scoreTier(job.matchScore);
   const [expanded, setExpanded] = useState(false);
+  // "Not interested" rows fade back so the list reads as what's still in play.
+  // The status/cover-letter controls stay at full strength so it's easy to undo.
+  const dimmed = job.status === "not_interested";
+  const dimClass = dimmed ? "opacity-50 grayscale" : "";
 
   return (
     <div>
@@ -112,9 +117,11 @@ export function JobCard({
           }
         }}
         aria-expanded={expanded}
-        className="flex cursor-pointer flex-col gap-3 px-4 py-3 transition-colors hover:bg-[#E9F2F8] sm:flex-row sm:items-center sm:gap-6"
+        className={`flex cursor-pointer flex-col gap-3 px-4 py-3 transition-colors sm:flex-row sm:items-center sm:gap-6 ${
+          dimmed ? "bg-slate-100 hover:bg-slate-200/70" : "hover:bg-[#E9F2F8]"
+        }`}
       >
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className={`flex shrink-0 items-center gap-1.5 ${dimClass}`}>
           {job.isScored ? (
             <div
               className={`flex h-8 w-10 shrink-0 items-center justify-center rounded-xl border ${tier.bg} ${tier.border}`}
@@ -144,9 +151,14 @@ export function JobCard({
           >
             <ArrowSquareOut size={17} weight="bold" />
           </a>
+          <CaretDown
+            size={15}
+            weight="bold"
+            className={`ml-auto shrink-0 text-text-faint transition-transform sm:hidden ${expanded ? "rotate-180" : ""}`}
+          />
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className={`min-w-0 flex-1 ${dimClass}`}>
           <h2 className="truncate text-[16px] font-semibold text-[#1E2A3D]">{job.title}</h2>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-text-muted">
             <span>{job.company}</span>
@@ -179,52 +191,45 @@ export function JobCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <select
-              value={job.status ?? ""}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => {
-                e.stopPropagation();
-                onStatusChange(job.id, (e.target.value || null) as JobStatus | null);
-              }}
-              aria-label="Application status"
-              className={`h-8 appearance-none rounded-xl border px-3 pr-7 text-[13px] font-normal outline-none transition-colors ${
-                job.status
-                  ? `${statusTier[job.status].bg} ${statusTier[job.status].border} ${statusTier[job.status].text}`
-                  : "border-[#B9CCDA] bg-white text-text-muted"
-              }`}
-            >
-              <option value="">No status</option>
-              {JOB_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {jobStatusLabels[s]}
-                </option>
-              ))}
-            </select>
-            <CaretDown
-              size={12}
-              weight="bold"
-              className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${
-                job.status ? statusTier[job.status].text : "text-text-faint"
-              }`}
-            />
-          </div>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+          <Select
+            value={job.status ?? ""}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => {
+              e.stopPropagation();
+              onStatusChange(job.id, (e.target.value || null) as JobStatus | null);
+            }}
+            aria-label="Application status"
+            colorClassName={
+              job.status
+                ? `${statusTier[job.status].bg} ${statusTier[job.status].border} ${statusTier[job.status].text}`
+                : undefined
+            }
+            caretClassName={job.status ? statusTier[job.status].text : undefined}
+          >
+            <option value="">No status</option>
+            {JOB_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {jobStatusLabels[s]}
+              </option>
+            ))}
+          </Select>
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onGenerateCoverLetter(job);
             }}
-            className="flex items-center gap-1.5 rounded-xl border border-[#B9CCDA] bg-white px-3.5 py-2 text-[13px] font-normal text-text-muted shadow-[0_1px_2px_rgba(30,64,120,0.06)] transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] hover:text-[#1E2A3D] active:scale-[0.98]"
+            className={buttonSecondary}
           >
-            <FileText size={15} weight="bold" />
-            Generate cover letter
+            <FileText size={14} weight="bold" />
+            <span className="sm:hidden">Cover letter</span>
+            <span className="hidden sm:inline">Generate cover letter</span>
           </button>
           <CaretDown
             size={15}
             weight="bold"
-            className={`shrink-0 text-text-faint transition-transform ${expanded ? "rotate-180" : ""}`}
+            className={`hidden shrink-0 text-text-faint transition-transform sm:block ${expanded ? "rotate-180" : ""}`}
           />
         </div>
       </div>

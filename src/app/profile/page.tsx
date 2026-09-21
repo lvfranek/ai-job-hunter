@@ -133,8 +133,7 @@ export default function ProfilePage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-text">Cover Letter Profile</h1>
         <p className="mt-1 text-[13px] text-text-faint">
-          Used only for generating cover letters — not for AI job scoring (see AI Scoring
-          Preferences for that).
+          Used only for generating cover letters — not for AI job scoring.
         </p>
       </div>
 

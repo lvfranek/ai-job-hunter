@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Briefcase,
-  CaretDown,
   Lightning,
   Sparkle,
   Trash,
@@ -19,18 +18,33 @@ import { AgentStatus } from "@/components/AgentStatus";
 import { CoverLetterModal } from "@/components/CoverLetterModal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Toast } from "@/components/Toast";
+import {
+  buttonDanger,
+  buttonPrimary,
+  buttonSecondary,
+  iconButton,
+  inputClass,
+  Select,
+} from "@/components/controls";
 
 type SortKey = "score" | "date";
 
 const sortLabels: Record<SortKey, string> = {
-  score: "Match score",
-  date: "Posted date",
+  score: "Best fit",
+  date: "Newest",
 };
+
+const minScoreOptions = [
+  { value: 0, label: "Any score" },
+  { value: 50, label: "50+" },
+  { value: 70, label: "70+" },
+  { value: 80, label: "80+" },
+];
 
 type StatusFilter = JobStatus | "all";
 
 const statusFilterLabels: Record<StatusFilter, string> = {
-  all: "All statuses",
+  all: "Any status",
   ...jobStatusLabels,
 };
 
@@ -81,6 +95,34 @@ export function JobResults({
   const [confirmingPrune, setConfirmingPrune] = useState(false);
   const [pruning, setPruning] = useState(false);
   const [pruneMessage, setPruneMessage] = useState<string | null>(null);
+  // The ⋯ overflow menu holds the rarely used "remove old posts" action.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function close() {
+      setMenuOpen(false);
+      setConfirmingPrune(false);
+    }
+    function onPointerDown(e: MouseEvent) {
+      if (!menuRef.current?.contains(e.target as Node)) close();
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") close();
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
+
+  function closeMenu() {
+    setMenuOpen(false);
+    setConfirmingPrune(false);
+  }
 
   const oldJobCount = useMemo(
     () => jobs.filter((job) => job.daysAgo >= pruneDays).length,
@@ -118,7 +160,7 @@ export function JobResults({
       setPruneMessage("Failed to remove old jobs");
     } finally {
       setPruning(false);
-      setConfirmingPrune(false);
+      closeMenu();
     }
   }
 
@@ -365,30 +407,38 @@ export function JobResults({
   return (
     <div className="rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)]">
       <Toast message={pruneMessage} />
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D7E4ED] px-4 py-2.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={requestScrape}
-            disabled={isScraping}
-            className="flex h-8 shrink-0 items-center gap-1.5 rounded-xl bg-[#101828] px-3 text-[13px] font-semibold text-white outline-none transition-colors hover:bg-[#1E293B] focus-visible:ring-2 focus-visible:ring-[#101828]/30 active:scale-[0.98] disabled:opacity-50"
-          >
-            <Lightning size={14} weight="fill" />
-            {isScraping ? "Scraping…" : "Scrape Now"}
-          </button>
-          <button
-            type="button"
-            onClick={handleAdjustScore}
-            disabled={isScraping || isScoring || needsScoreCount === 0}
-            className="flex h-8 shrink-0 items-center gap-1.5 rounded-xl border border-[#B9CCDA] bg-white px-3 text-[13px] font-semibold text-[#1E2A3D] shadow-[0_1px_2px_rgba(30,64,120,0.06)] outline-none transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] focus-visible:ring-2 focus-visible:ring-[#101828]/20 active:scale-[0.98] disabled:opacity-50 disabled:hover:border-[#B9CCDA] disabled:hover:bg-white"
-          >
-            <Sparkle size={14} weight="fill" />
-            {isScoring
-              ? "Adjusting…"
-              : needsScoreCount > 0
-                ? `Adjust score (${needsScoreCount})`
-                : "Scores up to date"}
-          </button>
+      <div className="grid grid-cols-2 gap-2 border-b border-[#D7E4ED] px-4 py-3 sm:flex sm:flex-wrap sm:items-center">
+        {/* Mobile: a grid — two equal buttons, then the status line with the trash
+            button at its right end, then the filters. Desktop: one row with the
+            filters and trash pushed to the right. */}
+        <button
+          type="button"
+          onClick={requestScrape}
+          disabled={isScraping}
+          className={buttonPrimary}
+        >
+          <Lightning size={14} weight="fill" />
+          {isScraping ? "Scraping…" : "Scrape now"}
+        </button>
+        <button
+          type="button"
+          onClick={handleAdjustScore}
+          disabled={isScraping || isScoring || needsScoreCount === 0}
+          className={buttonSecondary}
+        >
+          <Sparkle size={14} weight="fill" />
+          {isScoring
+            ? "Adjusting…"
+            : needsScoreCount > 0
+              ? `Adjust score (${needsScoreCount})`
+              : "Scores up to date"}
+        </button>
+
+        <div
+          className={`col-span-2 col-start-1 row-start-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 self-center sm:ml-1 sm:pr-0 ${
+            jobs.length > 0 ? "pr-11" : ""
+          }`}
+        >
           {(isScoring || scoreStatus) && (
             <>
               <span className="max-w-88 text-[12px] tabular-nums text-text-faint">
@@ -400,9 +450,9 @@ export function JobResults({
                   onClick={handleCancelScore}
                   aria-label="Cancel scoring"
                   title="Cancel scoring — finished jobs keep their scores"
-                  className="flex h-8 shrink-0 items-center gap-1.5 rounded-xl border border-rose-300 bg-rose-100 px-3 text-[13px] font-semibold text-rose-800 outline-none transition-colors hover:bg-rose-200 focus-visible:ring-2 focus-visible:ring-rose-400/40 active:scale-[0.98]"
+                  className={buttonDanger}
                 >
-                  <X size={13} weight="bold" />
+                  <X size={14} weight="bold" />
                   Cancel
                 </button>
               )}
@@ -438,68 +488,128 @@ export function JobResults({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[12px] text-text-faint">Min score</span>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={minScore || ""}
+        <div className="contents sm:ml-auto sm:flex sm:items-center sm:gap-2">
+          <div className="col-span-2 row-start-3 grid grid-cols-[1fr_auto_1fr] gap-1.5 sm:flex sm:items-center sm:gap-2">
+            <Select
+              value={minScore}
               onChange={(e) => {
-                setMinScore(Number(e.target.value) || 0);
+                setMinScore(Number(e.target.value));
                 setPage(1);
               }}
-              placeholder="0"
-              className="h-8 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-[13px] text-text-muted outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D]"
-            />
-          </div>
-          <span className="text-[12px] text-text-faint">Sort</span>
-          <div className="relative">
-            <select
+              aria-label="Minimum match score"
+            >
+              {minScoreOptions.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+            <Select
               value={sortKey}
               onChange={(e) => {
                 setSortKey(e.target.value as SortKey);
                 setPage(1);
               }}
               aria-label="Sort jobs by"
-              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-[13px] text-text-muted transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none"
             >
               {(Object.keys(sortLabels) as SortKey[]).map((key) => (
                 <option key={key} value={key}>
                   {sortLabels[key]}
                 </option>
               ))}
-            </select>
-            <CaretDown
-              size={13}
-              weight="bold"
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-faint"
-            />
-          </div>
-          <span className="text-[12px] text-text-faint">Status</span>
-          <div className="relative">
-            <select
+            </Select>
+            <Select
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value as StatusFilter);
                 setPage(1);
               }}
               aria-label="Filter by status"
-              className="h-8 appearance-none rounded-lg border border-[#B9CCDA] bg-white pl-3 pr-8 text-[13px] text-text-muted transition-colors hover:border-[#8FA8BD] hover:text-[#1E2A3D] focus:border-[#101828] focus:outline-none"
             >
               {(Object.keys(statusFilterLabels) as StatusFilter[]).map((key) => (
                 <option key={key} value={key}>
                   {statusFilterLabels[key]}
                 </option>
               ))}
-            </select>
-            <CaretDown
-              size={13}
-              weight="bold"
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-faint"
-            />
+            </Select>
           </div>
+          {jobs.length > 0 && (
+            <div
+              ref={menuRef}
+              className="relative z-10 col-start-2 row-start-2 self-center justify-self-end"
+            >
+              <button
+                type="button"
+                onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
+                aria-label="Remove old jobs"
+                aria-haspopup="true"
+                aria-expanded={menuOpen}
+                className={iconButton}
+              >
+                <Trash size={16} weight="bold" />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full z-30 mt-2 w-64 rounded-2xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-3 shadow-[0_16px_40px_-12px_rgba(30,64,120,0.45)]">
+                  {confirmingPrune ? (
+                    <>
+                      <p className="text-[13px] text-text-muted">
+                        Remove {oldJobCount} job{oldJobCount === 1 ? "" : "s"} older than{" "}
+                        {pruneDays} days? This can&apos;t be undone.
+                      </p>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={handlePrune}
+                          disabled={pruning}
+                          className={buttonDanger}
+                        >
+                          {pruning ? "Removing…" : "Remove"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingPrune(false)}
+                          disabled={pruning}
+                          className={buttonSecondary}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <label
+                        htmlFor="prune-days"
+                        className="block text-[12px] font-medium text-text-muted"
+                      >
+                        Remove posts older than
+                      </label>
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <input
+                          id="prune-days"
+                          type="number"
+                          min={1}
+                          value={pruneDays || ""}
+                          onChange={(e) =>
+                            setPruneDays(Math.max(1, Math.floor(Number(e.target.value) || 0)))
+                          }
+                          className={`${inputClass} w-20`}
+                        />
+                        <span className="text-[13px] text-text-muted">days</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingPrune(true)}
+                        className={`${buttonSecondary} mt-3 w-full`}
+                      >
+                        <Trash size={14} weight="bold" />
+                        Remove old jobs{oldJobCount > 0 ? ` (${oldJobCount})` : ""}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -552,56 +662,6 @@ export function JobResults({
         </div>
       )}
 
-      {jobs.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-[#D7E4ED] px-4 py-2 text-[12px] text-text-faint">
-          {confirmingPrune ? (
-            <>
-              <span className="text-text-muted">
-                Remove {oldJobCount} job{oldJobCount === 1 ? "" : "s"} older than {pruneDays} days?
-                This can&apos;t be undone.
-              </span>
-              <button
-                type="button"
-                onClick={handlePrune}
-                disabled={pruning}
-                className="flex h-7 items-center gap-1 rounded-lg border border-rose-300 bg-rose-100 px-2.5 text-[12px] font-semibold text-rose-800 transition-colors hover:bg-rose-200 active:scale-[0.98] disabled:opacity-50"
-              >
-                {pruning ? "Removing…" : "Remove"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmingPrune(false)}
-                disabled={pruning}
-                className="h-7 rounded-lg border border-[#B9CCDA] bg-white px-2.5 text-[12px] font-semibold text-[#1E2A3D] transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] active:scale-[0.98] disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              <span>Remove posts older than</span>
-              <input
-                type="number"
-                min={1}
-                value={pruneDays || ""}
-                onChange={(e) => setPruneDays(Math.max(1, Math.floor(Number(e.target.value) || 0)))}
-                aria-label="Remove job posts older than this many days"
-                className="h-7 w-14 rounded-lg border border-[#B9CCDA] bg-white px-2 text-[12px] text-text-muted outline-none transition-colors hover:border-[#8FA8BD] focus:border-[#101828] focus:text-[#1E2A3D]"
-              />
-              <span>days</span>
-              <button
-                type="button"
-                onClick={() => setConfirmingPrune(true)}
-                className="flex h-7 items-center gap-1 rounded-lg border border-[#B9CCDA] bg-white px-2.5 text-[12px] font-semibold text-[#1E2A3D] transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] active:scale-[0.98]"
-              >
-                <Trash size={13} weight="bold" />
-                Remove old{oldJobCount > 0 ? ` (${oldJobCount})` : ""}
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
       {jobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
           <Briefcase size={28} weight="regular" className="text-[#B8C4D1]" />
@@ -631,7 +691,7 @@ export function JobResults({
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   aria-label="Previous page"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#B9CCDA] bg-white text-[#1E2A3D] transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] disabled:opacity-40 disabled:hover:border-[#B9CCDA] disabled:hover:bg-white"
+                  className={iconButton}
                 >
                   <ArrowLeft size={14} weight="bold" />
                 </button>
@@ -640,7 +700,7 @@ export function JobResults({
                   onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
                   disabled={currentPage === pageCount}
                   aria-label="Next page"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#B9CCDA] bg-white text-[#1E2A3D] transition-colors hover:border-[#8FA8BD] hover:bg-[#E4EEF5] disabled:opacity-40 disabled:hover:border-[#B9CCDA] disabled:hover:bg-white"
+                  className={iconButton}
                 >
                   <ArrowRight size={14} weight="bold" />
                 </button>

@@ -3,7 +3,7 @@
 [![CI](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml/badge.svg)](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml)
 
 Scrapes job boards (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur), scores matches against your
-profile with an LLM, and helps you generate tailored cover letters. Track each job's application
+profile with an LLM, and helps you generate tailored resumes. Track each job's application
 status (interested, applied, interview, not interested) and filter the list by it. Built with
 Next.js and Supabase.
 
@@ -27,26 +27,26 @@ Next.js and Supabase.
 
 ## Tech Stack
 
-| Area      | Choice                                                             |
-| --------- | ------------------------------------------------------------------ |
-| Framework | Next.js 16 (App Router)                                            |
-| UI        | React 19                                                           |
-| Language  | TypeScript                                                         |
-| Styling   | Tailwind CSS v4                                                    |
-| Database  | [Supabase](https://supabase.com) (Postgres + RLS)                  |
-| Scraping  | [Apify](https://apify.com) job-board actors                        |
-| AI        | [OpenRouter](https://openrouter.ai) — LLM match scoring            |
-| Documents | `pdf-parse` / `mammoth` (CV parsing), `docx` (cover-letter export) |
-| Testing   | Vitest                                                             |
-| Icons     | Phosphor Icons                                                     |
-| Hosting   | Vercel                                                             |
+| Area      | Choice                                                       |
+| --------- | ------------------------------------------------------------ |
+| Framework | Next.js 16 (App Router)                                      |
+| UI        | React 19                                                     |
+| Language  | TypeScript                                                   |
+| Styling   | Tailwind CSS v4                                              |
+| Database  | [Supabase](https://supabase.com) (Postgres + RLS)            |
+| Scraping  | [Apify](https://apify.com) job-board actors                  |
+| AI        | [OpenRouter](https://openrouter.ai) — LLM match scoring      |
+| Documents | `pdf-parse` / `mammoth` (CV parsing), `docx` (resume export) |
+| Testing   | Vitest                                                       |
+| Icons     | Phosphor Icons                                               |
+| Hosting   | Vercel                                                       |
 
 ## Features
 
 - **Multi-board scraping** — Indeed, LinkedIn, Xing, Stepstone and Arbeitsagentur in a single scan.
 - **LLM match scoring** — every job is scored 0–100 against your profile, with written reasoning
   for why it fits or doesn't.
-- **Tailored cover letters** — generate a cover letter per job, exportable as `.docx`.
+- **Tailored resumes** — generate a resume per job, exportable as `.docx`.
 - **CV-aware profile** — upload a PDF or Word CV and the app parses it into your matching profile.
 - **Application tracking** — mark each job interested / applied / interview / not interested, and
   filter the list by status.
@@ -142,7 +142,7 @@ writes are persisted.
 
 Unit tests cover the pure logic that is easiest to get subtly wrong: the HTML-to-Markdown
 conversion for scraped postings (`text-format`), the LLM scoring-response parser and chunking
-(`agents/agent-3`), and `.docx` cover-letter generation. They run in CI on every push and pull
+(`agents/agent-3`), and `.docx` resume generation. They run in CI on every push and pull
 request.
 
 ```bash

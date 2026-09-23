@@ -57,7 +57,7 @@ export function CoverLetterModal({
       <div className="w-full max-w-sm rounded-2xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-5 shadow-[0_20px_50px_-20px_rgba(30,64,120,0.4)]">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-[15px] font-semibold text-[#1E2A3D]">Generate Cover Letter</h2>
+            <h2 className="text-[15px] font-semibold text-[#1E2A3D]">Generate Resume</h2>
             <p className="mt-1 text-[13px] text-text-muted">
               Applying to: {job.title} at {job.company}
             </p>
@@ -117,7 +117,7 @@ export function CoverLetterModal({
               className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-[#101828] px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
             >
               {status === "generating" && <CircleNotch size={15} className="animate-spin" />}
-              {status === "generating" ? "Generating your cover letter…" : "Generate"}
+              {status === "generating" ? "Generating your resume…" : "Generate"}
             </button>
           )}
         </div>

@@ -227,11 +227,11 @@ export function JobCard({
               e.stopPropagation();
               onGenerateCoverLetter(job);
             }}
+            aria-label="Generate cover letter"
             className={buttonSecondary}
           >
             <FileText size={14} weight="bold" />
-            <span className="sm:hidden">Cover letter</span>
-            <span className="hidden sm:inline">Generate cover letter</span>
+            Resume
           </button>
           <CaretDown
             size={15}

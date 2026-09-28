@@ -1,4 +1,4 @@
-import { getGeminiModel } from "@/lib/gemini";
+import { generateText } from "@/lib/openrouter";
 import type { DbJob, Profile } from "@/lib/types";
 
 export type CoverLetterLanguage = "de" | "en";
@@ -45,9 +45,7 @@ export async function generateCoverLetterBody(
   job: DbJob,
   language: CoverLetterLanguage,
 ): Promise<string[]> {
-  const model = await getGeminiModel();
-  const result = await model.generateContent(buildPrompt(profile, job, language));
-  const raw = result.response.text().trim();
+  const raw = (await generateText(buildPrompt(profile, job, language))).trim();
 
   return raw
     .split(/\n\s*\n/)

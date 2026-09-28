@@ -9,7 +9,6 @@ const ENV_FALLBACK = {
   apify_scraper_stepstone: process.env.APIFY_SCRAPER_STEPSTONE,
   apify_scraper_arbeitsagentur: process.env.APIFY_SCRAPER_ARBEITSAGENTUR,
   openrouter_api_key: process.env.OPENROUTER_API_KEY,
-  openrouter_model: process.env.OPENROUTER_MODEL,
 } as const;
 
 export type CredentialKey = keyof typeof ENV_FALLBACK;

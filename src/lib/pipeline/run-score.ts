@@ -1,6 +1,6 @@
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
-import { CHUNK_SIZE, chunk, scoreChunk, getScoringModelName } from "@/lib/agents/agent-3";
-import { OpenRouterError } from "@/lib/gemini";
+import { CHUNK_SIZE, chunk, scoreChunk } from "@/lib/agents/agent-3";
+import { AI_MODEL, OpenRouterError } from "@/lib/openrouter";
 import type { DbJob, Preferences } from "@/lib/types";
 
 // Run this many chunks concurrently. Chunks are small now (6 condensed jobs, a
@@ -149,7 +149,7 @@ export async function runScorePipeline(
       completed_chunks: 0,
       scored: 0,
       failed: 0,
-      model: await getScoringModelName().catch(() => null),
+      model: AI_MODEL,
     });
 
     // Set by a chunk that failed for a reason no other chunk can survive either

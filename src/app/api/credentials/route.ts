@@ -13,7 +13,6 @@ const CONFIG_KEYS: CredentialKey[] = [
   "apify_scraper_xing",
   "apify_scraper_stepstone",
   "apify_scraper_arbeitsagentur",
-  "openrouter_model",
 ];
 
 export async function GET() {

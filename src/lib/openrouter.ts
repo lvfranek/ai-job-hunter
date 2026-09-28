@@ -1,5 +1,10 @@
 import { getCredential } from "./credentials";
 
+// The one model every AI call in the app uses (CV parsing, scoring, cover
+// letters). Deliberately not configurable: scoring prompts and the parser are
+// tuned against it. It must stay a fast INSTRUCT model — see DEFAULT_MAX_TOKENS.
+export const AI_MODEL = "qwen/qwen3-next-80b-a3b-instruct";
+
 // A stalled connection with no timeout is what lets a single hung request freeze
 // a whole scoring run (Promise.all never settles, the run stays "running"
 // forever). Abort well before any platform function timeout so the caller can
@@ -42,18 +47,6 @@ export interface GenerateOptions {
   maxTokens?: number;
   /** Low values keep scoring reproducible; leave unset for creative tasks. */
   temperature?: number;
-}
-
-// Only strips what an .env file adds: surrounding quotes and whitespace.
-//
-// Do NOT strip a leading "~". It looks like noise but it is part of the real
-// slug for OpenRouter's alias models — "~deepseek/deepseek-v4-flash-latest" is
-// a valid model ID and removing the tilde turns it into a 400.
-function normalizeModelName(raw: string): string {
-  return raw
-    .trim()
-    .replace(/^["']|["']$/g, "")
-    .trim();
 }
 
 async function callOpenRouter(
@@ -107,20 +100,8 @@ async function callOpenRouter(
   return content;
 }
 
-// Mimics the @google/generative-ai model shape so callers (e.g. agent-1.ts)
-// don't need to change: model.generateContent(prompt) -> { response: { text() } }
-// `name` is additionally exposed so a run can report which model actually ran.
-export async function getGeminiModel(modelName?: string, options: GenerateOptions = {}) {
-  const [apiKey, resolvedModel] = await Promise.all([
-    getCredential("openrouter_api_key"),
-    modelName ? Promise.resolve(modelName) : getCredential("openrouter_model"),
-  ]);
-  const model = normalizeModelName(resolvedModel || "") || "mistralai/mistral-nemo";
-  return {
-    name: model,
-    generateContent: async (prompt: string) => {
-      const text = await callOpenRouter(model, prompt, apiKey, options);
-      return { response: { text: () => text } };
-    },
-  };
+/** Send one prompt to {@link AI_MODEL} and return the text of its reply. */
+export async function generateText(prompt: string, options: GenerateOptions = {}): Promise<string> {
+  const apiKey = await getCredential("openrouter_api_key");
+  return callOpenRouter(AI_MODEL, prompt, apiKey, options);
 }

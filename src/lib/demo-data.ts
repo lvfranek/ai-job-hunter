@@ -457,7 +457,6 @@ export const demoCredentials = {
     apify_scraper_xing: "demo/xing-scraper",
     apify_scraper_stepstone: "demo/stepstone-scraper",
     apify_scraper_arbeitsagentur: "demo/arbeitsagentur-scraper",
-    openrouter_model: "mistralai/mistral-nemo",
   },
 };
 

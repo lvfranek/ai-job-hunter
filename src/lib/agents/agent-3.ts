@@ -1,4 +1,4 @@
-import { getGeminiModel } from "@/lib/gemini";
+import { generateText } from "@/lib/openrouter";
 import { normalizeBlockText } from "@/lib/text-format";
 import type { DbJob, Preferences } from "@/lib/types";
 
@@ -253,21 +253,14 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-/** The OpenRouter model the scorer will actually use, for progress reporting. */
-export async function getScoringModelName(): Promise<string> {
-  return (await getGeminiModel()).name;
-}
-
 /** Score a single bounded chunk of jobs (<= CHUNK_SIZE) in one AI call. */
 export async function scoreChunk(
   jobs: DbJob[],
   preferences: Preferences,
-  modelName?: string,
 ): Promise<ScoringResult[]> {
   // Low temperature: the same job should not drift between scores across runs.
-  const model = await getGeminiModel(modelName, { temperature: 0.2 });
-  const result = await model.generateContent(buildPrompt(jobs, preferences));
-  const parsed = parseScoringResponse(result.response.text());
+  const text = await generateText(buildPrompt(jobs, preferences), { temperature: 0.2 });
+  const parsed = parseScoringResponse(text);
 
   const validIds = new Set(jobs.map((j) => j.id));
   const seen = new Set<string>();

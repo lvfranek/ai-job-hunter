@@ -1,4 +1,4 @@
-import { getGeminiModel } from "@/lib/gemini";
+import { generateText } from "@/lib/openrouter";
 
 export interface ParsedProfile {
   name: string | null;
@@ -45,13 +45,8 @@ Return ONLY valid JSON, no markdown, no explanations:
 CV Text:
 `;
 
-export async function parseProfileFromCV(
-  cvText: string,
-  modelName?: string,
-): Promise<ParsedProfile> {
-  const model = await getGeminiModel(modelName);
-  const result = await model.generateContent(PROMPT + cvText);
-  const raw = result.response.text().trim();
+export async function parseProfileFromCV(cvText: string): Promise<ParsedProfile> {
+  const raw = (await generateText(PROMPT + cvText)).trim();
   const json = raw.replace(/^```(?:json)?\s*|\s*```$/g, "");
   return JSON.parse(json);
 }

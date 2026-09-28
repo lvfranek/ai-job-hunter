@@ -16,7 +16,6 @@ interface ConfigForm {
   apify_scraper_xing: string;
   apify_scraper_stepstone: string;
   apify_scraper_arbeitsagentur: string;
-  openrouter_model: string;
 }
 
 const SECRETS: { key: "apify_api_key" | "openrouter_api_key"; label: string }[] = [
@@ -30,7 +29,6 @@ const CONFIG_FIELDS: { key: keyof ConfigForm; label: string }[] = [
   { key: "apify_scraper_xing", label: "Xing actor ID" },
   { key: "apify_scraper_stepstone", label: "Stepstone actor ID" },
   { key: "apify_scraper_arbeitsagentur", label: "Arbeitsagentur actor ID" },
-  { key: "openrouter_model", label: "OpenRouter model" },
 ];
 
 const EMPTY_CONFIG: ConfigForm = {
@@ -39,7 +37,6 @@ const EMPTY_CONFIG: ConfigForm = {
   apify_scraper_xing: "",
   apify_scraper_stepstone: "",
   apify_scraper_arbeitsagentur: "",
-  openrouter_model: "",
 };
 
 function statusText(status: SecretStatus | undefined) {

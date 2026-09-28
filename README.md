@@ -120,7 +120,6 @@ writes are persisted.
 | `AUTH_PASSWORD_HASH`         | `salt:hash` of your app password (see Installation step 4)             | Yes                 |
 | `CREDENTIALS_ENCRYPTION_KEY` | 32-byte hex key encrypting API keys stored in the database             | Yes                 |
 | `OPENROUTER_API_KEY`         | OpenRouter key for match scoring                                       | Or set in Settings  |
-| `OPENROUTER_MODEL`           | Model id — use a fast **instruct** model, not a reasoning one          | Or set in Settings  |
 | `APIFY_API_KEY`              | Apify token for the scraper actors                                     | Or set in Settings  |
 | `APIFY_SCRAPER_*`            | Actor id per board (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur) | Or set in Settings  |
 | `CRON_SECRET`                | Bearer token for `POST /api/cron/scrape`                               | Only for automation |

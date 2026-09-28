@@ -11,6 +11,16 @@ function formatDaysAgo(days: number) {
   return `${days} days ago`;
 }
 
+function formatLastScraped(iso: string | null) {
+  if (!iso) return "Never";
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} h ago`;
+  return formatDaysAgo(Math.floor(hours / 24));
+}
+
 function toUiJob(row: JobWithMatch): Job {
   const match = row.job_matches;
   const posted = row.posted_date || row.created_at;
@@ -43,7 +53,7 @@ function toUiJob(row: JobWithMatch): Job {
 
 export default function DashboardPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [lastScraped, setLastScraped] = useState("Never");
+  const [lastScrapedAt, setLastScrapedAt] = useState<string | null>(null);
 
   const fetchJobs = useCallback(async () => {
     const res = await fetch("/api/jobs");
@@ -51,10 +61,25 @@ export default function DashboardPage() {
     setJobs(Array.isArray(data) ? data.map(toUiJob) : []);
   }, []);
 
+  const fetchLastScraped = useCallback(async () => {
+    try {
+      const res = await fetch("/api/scrape/status");
+      if (!res.ok) return;
+      const data = await res.json();
+      setLastScrapedAt(data.completedAt ?? null);
+    } catch (error) {
+      console.error("Loading last scrape time failed:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetch("/api/jobs")
       .then((res) => res.json())
       .then((data) => setJobs(Array.isArray(data) ? data.map(toUiJob) : []));
+    fetch("/api/scrape/status")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setLastScrapedAt(data?.completedAt ?? null))
+      .catch((error) => console.error("Loading last scrape time failed:", error));
   }, []);
 
   const highMatches = jobs.filter((job) => job.matchScore >= 80).length;
@@ -98,9 +123,9 @@ export default function DashboardPage() {
 
       <JobResults
         jobs={jobs}
-        lastScraped={lastScraped}
+        lastScraped={formatLastScraped(lastScrapedAt)}
         onScraped={() => {
-          setLastScraped("Just now");
+          fetchLastScraped();
           fetchJobs();
         }}
         onRefresh={fetchJobs}

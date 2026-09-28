@@ -70,10 +70,15 @@ opportunity is far more damaging than surfacing a mediocre one. When you are tor
 between two scores, GIVE THE HIGHER ONE. A posting that is merely imperfect must
 never end up in the same band as one that is genuinely impossible.
 
+This bias NEVER overrides something the candidate explicitly ruled out in their own
+words below. "Recall over precision" is about imperfect fits, not about postings
+they said they don't want.
+
 ## The candidate
 
-What they want, in their own words — this is your PRIMARY signal, including
-anything they explicitly say to avoid:
+What they want, in their own words — this is your PRIMARY signal. Anything they
+explicitly say they do NOT want is a hard blocker (see below), exactly like the
+exclusion lists:
 """
 ${preferences.notes || "No specific preferences given."}
 """
@@ -114,11 +119,14 @@ Score below 35 only if one of these is true, and then you MUST name it in the
   (e.g. it is a Werkstudentenstelle and they excluded Werkstudent).
 - The posting is explicitly senior-only ("mindestens 5 Jahre Berufserfahrung
   zwingend", "nur für erfahrene …").
+- "ruled_out" is not null (see "Step 1" below).
 If none of these apply, "blocker" MUST be null and the score MUST be 35 or above.
 
 ## What must NOT sink a score
 - "2-3 Jahre Berufserfahrung" for an early-career candidate: moderate deduction
-  only, never a blocker. German employers routinely hire under specification.
+  only, never a blocker — UNLESS the candidate stated their own experience or an
+  experience limit that the posting exceeds, or ruled out this posting's level
+  (see "Step 1"). The candidate's own words always win over this rule. German employers routinely hire under specification.
 - A stack the candidate hasn't used but that is adjacent to what they know
   (React ↔ Vue ↔ Angular, Node ↔ Python ↔ PHP, MySQL ↔ Postgres): small
   deduction only — these transfer.
@@ -126,12 +134,49 @@ If none of these apply, "blocker" MUST be null and the score MUST be 35 or above
   deduction at all.
 - A long wish list of technologies: judge the CORE requirements, not the wish list.
 
+## Step 1 — classify each posting BEFORE you score it
+These two fields are plain classification. The recall bias does NOT apply here:
+answer what the posting says, not what would be kind to the candidate.
+
+- posting_level: "junior", "mid" or "senior" — the level the posting ASKS FOR.
+  "senior" if ANY of these hold, even under a neutral title like "Full-Stack
+  Developer":
+    - the title says Senior, Lead, Principal, Staff, Head of, Architekt
+    - the requirements use senior wording: "Senior-Level", "Senior-Erfahrung",
+      "auf Senior-Niveau", "langjährige Berufserfahrung", "Expertenwissen",
+      "Experte in …", "beherrschst … blind", "tiefgreifende Expertise"
+    - 5 or more years of professional experience are required
+    - it asks for technical or disciplinary leadership of a team
+  NOT senior on their own — these are "mid" at most:
+    - 2, 3 or 4 years of experience ("3+ years", "mehrjährige Erfahrung")
+    - "Ownership", "Verantwortung für …", "you own the feature / the interface"
+      — that is owning work, not leading people
+    - "eigenständig", "selbstständig arbeiten"
+  "mid" for roughly 2-4 years without senior wording. "junior" for entry level,
+  Berufseinsteiger, 0-1 years, or no experience requirement at all.
+- ruled_out: go through everything the candidate says they do NOT want in their
+  own words above. If this posting matches one of those things, a short German
+  phrase naming it (e.g. "Senior-Stelle – du suchst keine Senior-Positionen"),
+  otherwise null.
+  The candidate's own definitions beat the general ones above. If they state how
+  much experience they have or accept (e.g. "ich habe 1 Jahr Erfahrung", "keine
+  Stellen ab 3 Jahren"), apply it literally: a posting that REQUIRES more years
+  than that is ruled_out ("3 Jahre gefordert – du hast 1 Jahr"), whatever
+  posting_level says. Years under "Nice to have" / "von Vorteil" don't count. If they ruled out senior positions and posting_level is
+  "senior", ruled_out MUST be set. Missing years of experience are NOT a reason
+  to relax this — "Senior-Level" alone is enough.
+
+A job with ruled_out set is a hard blocker: score under 35 and repeat the phrase
+in "blocker".
+
 ## Output
-For every job return these fields:
+For every job return these fields, in this order:
+- posting_level and ruled_out (Step 1).
 - skill_overlap_pct (0-100): how well the required tech matches the candidate's
   skills and the stack they described wanting.
 - seniority_fit (0-100): how well the required experience level matches. Apply
-  the "must not sink a score" rule above.
+  the "must not sink a score" rule above. 0 if the candidate ruled out this
+  posting's level.
 - location_fit (0-100): location and remote policy vs. the candidate's preference.
 - employment_fit (0-100): 0 if the posting's contract form is on the exclusion
   list above — that is a blocker. Otherwise judge the working-time model against
@@ -147,6 +192,8 @@ Return ONLY a valid JSON array — no markdown fences, no commentary:
 [
   {
     "job_id": "uuid",
+    "posting_level": "mid",
+    "ruled_out": null,
     "match_score": 78,
     "skill_overlap_pct": 88,
     "seniority_fit": 60,
@@ -172,6 +219,36 @@ function clampScore(value: unknown): number {
   const num = Number(value);
   if (!Number.isFinite(num)) return 0;
   return Math.max(0, Math.min(100, Math.round(num)));
+}
+
+// Highest score a job can keep once it hits a hard blocker — the prompt's 0-34 band.
+const BLOCKED_MAX_SCORE = 30;
+
+function textOrNull(value: unknown): string | null {
+  const text = typeof value === "string" ? value.trim() : "";
+  return text && text.toLowerCase() !== "null" ? text : null;
+}
+
+/**
+ * Turn one raw model entry into a ScoringResult. A posting the candidate ruled
+ * out in their own words is forced into the blocked band here rather than
+ * trusted to the model: in practice it classifies "this is senior" correctly
+ * and then talks itself back into a 90 because of the recall bias.
+ */
+export function toScoringResult(entry: Record<string, unknown>): ScoringResult {
+  const ruledOut = textOrNull(entry.ruled_out);
+  const blocker = textOrNull(entry.blocker) ?? ruledOut;
+  const matchScore = clampScore(entry.match_score);
+  return {
+    job_id: String(entry.job_id),
+    match_score: ruledOut ? Math.min(matchScore, BLOCKED_MAX_SCORE) : matchScore,
+    skill_overlap_pct: clampScore(entry.skill_overlap_pct),
+    seniority_fit: clampScore(entry.seniority_fit),
+    location_fit: clampScore(entry.location_fit),
+    employment_fit: clampScore(entry.employment_fit),
+    blocker,
+    reasoning: String(entry.reasoning ?? ""),
+  };
 }
 
 /**
@@ -272,17 +349,5 @@ export async function scoreChunk(
       seen.add(id);
       return true;
     })
-    .map((entry) => {
-      const blocker = typeof entry.blocker === "string" ? entry.blocker.trim() : "";
-      return {
-        job_id: String(entry.job_id),
-        match_score: clampScore(entry.match_score),
-        skill_overlap_pct: clampScore(entry.skill_overlap_pct),
-        seniority_fit: clampScore(entry.seniority_fit),
-        location_fit: clampScore(entry.location_fit),
-        employment_fit: clampScore(entry.employment_fit),
-        blocker: blocker && blocker.toLowerCase() !== "null" ? blocker : null,
-        reasoning: String(entry.reasoning ?? ""),
-      };
-    });
+    .map(toScoringResult);
 }

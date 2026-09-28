@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chunk, condenseDescription, parseScoringResponse } from "./agent-3";
+import { chunk, condenseDescription, parseScoringResponse, toScoringResult } from "./agent-3";
 
 describe("condenseDescription", () => {
   it("returns a placeholder for null input", () => {
@@ -55,5 +55,46 @@ describe("parseScoringResponse", () => {
 
   it("returns an empty array when nothing can be salvaged", () => {
     expect(parseScoringResponse("not json at all")).toEqual([]);
+  });
+});
+
+describe("toScoringResult", () => {
+  const base = {
+    job_id: "1",
+    match_score: 92,
+    skill_overlap_pct: 95,
+    seniority_fit: 80,
+    location_fit: 100,
+    employment_fit: 100,
+    reasoning: "Stack passt.",
+  };
+
+  it("keeps the model's score when nothing is ruled out", () => {
+    const result = toScoringResult({ ...base, ruled_out: null, blocker: null });
+    expect(result.match_score).toBe(92);
+    expect(result.blocker).toBeNull();
+  });
+
+  it("forces a ruled-out posting into the blocked band and names the blocker", () => {
+    const result = toScoringResult({ ...base, ruled_out: "Senior-Stelle", blocker: null });
+    expect(result.match_score).toBe(30);
+    expect(result.blocker).toBe("Senior-Stelle");
+  });
+
+  it("prefers the model's own blocker text when both are given", () => {
+    const result = toScoringResult({
+      ...base,
+      match_score: 20,
+      ruled_out: "Senior",
+      blocker: "Nur Senior",
+    });
+    expect(result.match_score).toBe(20);
+    expect(result.blocker).toBe("Nur Senior");
+  });
+
+  it('treats the string "null" as no value', () => {
+    const result = toScoringResult({ ...base, ruled_out: "null", blocker: "null" });
+    expect(result.match_score).toBe(92);
+    expect(result.blocker).toBeNull();
   });
 });

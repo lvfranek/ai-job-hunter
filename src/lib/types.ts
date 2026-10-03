@@ -94,6 +94,7 @@ export interface JobMatch {
   // a weak match, not an impossibility".
   blocker: string | null;
   stale_at: string | null;
+  scoring_version: number; // SCORING_VERSION that produced this row — older means re-score
   notified_at: string | null;
   created_at: string;
 }

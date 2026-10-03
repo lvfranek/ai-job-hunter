@@ -10,6 +10,15 @@ describe("condenseDescription", () => {
     expect(condenseDescription("Kurze Beschreibung")).toBe("Kurze Beschreibung");
   });
 
+  it("keeps workplace details from the cut-off part", () => {
+    const long = `${"x".repeat(3500)} Benefits: 2 Tage Home-Office pro Woche, Rest im Büro. ${"y".repeat(500)}`;
+    const result = condenseDescription(long);
+    expect(result).toContain("…[gekürzt]");
+    expect(result).toContain("Angaben zum Arbeitsort aus dem gekürzten Teil");
+    expect(result).toContain("2 Tage Home-Office pro Woche, Rest im Büro.");
+    expect(result.length).toBeLessThan(3000 + 1000);
+  });
+
   it("truncates long text and marks it as shortened", () => {
     const long = "x".repeat(4000);
     const result = condenseDescription(long);
@@ -90,6 +99,12 @@ describe("toScoringResult", () => {
     });
     expect(result.match_score).toBe(20);
     expect(result.blocker).toBe("Nur Senior");
+  });
+
+  it("does not cap the score on the model's own blocker alone", () => {
+    const result = toScoringResult({ ...base, ruled_out: null, blocker: "Werkstudentenjob" });
+    expect(result.match_score).toBe(92);
+    expect(result.blocker).toBe("Werkstudentenjob");
   });
 
   it('treats the string "null" as no value', () => {

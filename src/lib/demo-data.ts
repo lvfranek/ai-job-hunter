@@ -1,6 +1,7 @@
 // Fixtures for guest/demo mode. Everything a demo visitor sees comes from here —
 // no Supabase, no Apify, no OpenRouter, no webhook. See src/app/api/demo and
 // src/proxy.ts for how these get served.
+import { SCORING_VERSION } from "@/lib/scoring-rules";
 import type { DbJob, JobMatch, JobWithMatch, Preferences, Profile, Settings } from "@/lib/types";
 import type { ParsedProfile } from "@/lib/agents/agent-1";
 import type { CoverLetterLanguage } from "@/lib/agents/agent-4";
@@ -274,6 +275,7 @@ function buildMatch(seed: JobSeed): JobMatch {
       seed.reasoning ??
       "Demo data — the AI scorer does not run in guest mode, so this reasoning is illustrative.",
     stale_at: null,
+    scoring_version: SCORING_VERSION,
     notified_at: null,
     created_at: daysAgoIso(Math.max(0, seed.postedDaysAgo - 1)),
   };

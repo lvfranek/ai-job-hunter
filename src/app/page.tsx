@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { JobResults } from "@/components/JobResults";
 import type { Job, JobStatus, Platform } from "@/lib/mock-data";
+import { SCORING_VERSION } from "@/lib/scoring-rules";
 import type { JobWithMatch } from "@/lib/types";
 
 function formatDaysAgo(days: number) {
@@ -36,7 +37,7 @@ function toUiJob(row: JobWithMatch): Job {
     url: row.url,
     description: row.description,
     status: (row.status as JobStatus | null) ?? null,
-    isStale: match?.stale_at != null,
+    isStale: match != null && (match.stale_at != null || match.scoring_version < SCORING_VERSION),
     isScored: match != null,
     match: match
       ? {

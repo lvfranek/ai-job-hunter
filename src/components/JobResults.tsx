@@ -41,10 +41,11 @@ const minScoreOptions = [
   { value: 80, label: "80+" },
 ];
 
-type StatusFilter = JobStatus | "all";
+type StatusFilter = JobStatus | "all" | "none";
 
 const statusFilterLabels: Record<StatusFilter, string> = {
   all: "Any status",
+  none: "No status",
   ...jobStatusLabels,
 };
 
@@ -322,7 +323,11 @@ export function JobResults({
   const sorted = useMemo(() => {
     const copy = jobs
       .filter((job) => job.matchScore >= minScore)
-      .filter((job) => statusFilter === "all" || job.status === statusFilter);
+      .filter(
+        (job) =>
+          statusFilter === "all" ||
+          (statusFilter === "none" ? job.status === null : job.status === statusFilter),
+      );
     if (sortKey === "score") return copy.sort((a, b) => b.matchScore - a.matchScore);
     return copy.sort((a, b) => a.daysAgo - b.daysAgo);
   }, [jobs, sortKey, minScore, statusFilter]);

@@ -1,6 +1,7 @@
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
-import { CHUNK_SIZE, chunk, scoreChunk } from "@/lib/agents/agent-3";
+import { CHUNK_SIZE, chunk, extractCandidateLimits, scoreChunk } from "@/lib/agents/agent-3";
 import { AI_MODEL, OpenRouterError } from "@/lib/openrouter";
+import { SCORING_VERSION, type CandidateLimits } from "@/lib/scoring-rules";
 import type { DbJob, Preferences } from "@/lib/types";
 
 // Run this many chunks concurrently. Chunks are small now (6 condensed jobs, a
@@ -32,11 +33,16 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 async function scoreChunkResilient(
   jobChunk: DbJob[],
   preferences: Preferences,
+  limits: CandidateLimits,
 ): Promise<Awaited<ReturnType<typeof scoreChunk>>> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= CHUNK_RETRIES; attempt++) {
     try {
-      return await withTimeout(scoreChunk(jobChunk, preferences), CHUNK_TIMEOUT_MS, "scoreChunk");
+      return await withTimeout(
+        scoreChunk(jobChunk, preferences, limits),
+        CHUNK_TIMEOUT_MS,
+        "scoreChunk",
+      );
     } catch (error) {
       lastError = error;
       // A bad API key or an unknown model slug fails identically every time —
@@ -48,11 +54,14 @@ async function scoreChunkResilient(
   throw lastError;
 }
 
-type JobWithMatchInfo = DbJob & { job_matches: { id: string; stale_at: string | null } | null };
+type JobWithMatchInfo = DbJob & {
+  job_matches: { id: string; stale_at: string | null; scoring_version: number } | null;
+};
 
 // Jobs that have never been scored AND jobs whose score went stale (preferences
-// changed since) — one action, "keep my scores current", shared by /api/score
-// (manual button) and /api/cron/scrape (automated run).
+// changed since, or scored by an older version of the scoring logic) — one
+// action, "keep my scores current", shared by /api/score (manual button) and
+// /api/cron/scrape (automated run).
 export async function getJobsNeedingScoring(
   supabase: ReturnType<typeof getSupabaseServerClient>,
 ): Promise<{ jobs: DbJob[]; preferences: Preferences | null }> {
@@ -60,13 +69,16 @@ export async function getJobsNeedingScoring(
     supabase.from("preferences").select("*").eq("user_id", CURRENT_USER_ID).single(),
     supabase
       .from("jobs")
-      .select("*, job_matches(id, stale_at)")
+      .select("*, job_matches(id, stale_at, scoring_version)")
       .eq("user_id", CURRENT_USER_ID)
       .is("deleted_at", null),
   ]);
 
   const needsScoring = ((jobs ?? []) as JobWithMatchInfo[]).filter(
-    (job) => job.job_matches === null || job.job_matches.stale_at !== null,
+    (job) =>
+      job.job_matches === null ||
+      job.job_matches.stale_at !== null ||
+      job.job_matches.scoring_version < SCORING_VERSION,
   );
 
   return { jobs: needsScoring, preferences: (preferences as Preferences) ?? null };
@@ -152,6 +164,8 @@ export async function runScorePipeline(
       model: AI_MODEL,
     });
 
+    const limits = await extractCandidateLimits(preferences.notes);
+
     // Set by a chunk that failed for a reason no other chunk can survive either
     // (bad key, unknown model). Checked between rounds so the run aborts in
     // seconds instead of grinding every chunk against the same wall.
@@ -183,10 +197,15 @@ export async function runScorePipeline(
       await Promise.all(
         round.map(async (jobChunk, idx) => {
           try {
-            const results = await scoreChunkResilient(jobChunk, preferences);
+            const results = await scoreChunkResilient(jobChunk, preferences, limits);
             if (results.length > 0) {
               const { error } = await supabase.from("job_matches").upsert(
-                results.map((r) => ({ ...r, user_id: CURRENT_USER_ID, stale_at: null })),
+                results.map((r) => ({
+                  ...r,
+                  user_id: CURRENT_USER_ID,
+                  stale_at: null,
+                  scoring_version: SCORING_VERSION,
+                })),
                 { onConflict: "job_id" },
               );
               if (error) throw error;

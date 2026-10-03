@@ -65,7 +65,7 @@ type JobWithMatchInfo = DbJob & {
 export async function getJobsNeedingScoring(
   supabase: ReturnType<typeof getSupabaseServerClient>,
 ): Promise<{ jobs: DbJob[]; preferences: Preferences | null }> {
-  const [{ data: preferences }, { data: jobs }] = await Promise.all([
+  const [{ data: preferences }, { data: jobs, error }] = await Promise.all([
     supabase.from("preferences").select("*").eq("user_id", CURRENT_USER_ID).single(),
     supabase
       .from("jobs")
@@ -73,6 +73,11 @@ export async function getJobsNeedingScoring(
       .eq("user_id", CURRENT_USER_ID)
       .is("deleted_at", null),
   ]);
+
+  // A failed query must not read as "nothing to score" — that is how a missing
+  // migration (job_matches.scoring_version) silently turned the Adjust score
+  // button into a no-op.
+  if (error) throw new Error(`Loading jobs to score failed: ${error.message}`);
 
   const needsScoring = ((jobs ?? []) as JobWithMatchInfo[]).filter(
     (job) =>

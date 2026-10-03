@@ -25,7 +25,16 @@ export async function POST(request: NextRequest) {
   // Clear out any zombie run (dead worker) so it can't linger as 'running'.
   await failStaleScoreRuns(supabase);
 
-  const { jobs: needsScoring, preferences } = await getJobsNeedingScoring(supabase);
+  let needsScoring: Awaited<ReturnType<typeof getJobsNeedingScoring>>["jobs"];
+  let preferences: Awaited<ReturnType<typeof getJobsNeedingScoring>>["preferences"];
+  try {
+    ({ jobs: needsScoring, preferences } = await getJobsNeedingScoring(supabase));
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : String(error) },
+      { status: 500 },
+    );
+  }
 
   if (!preferences) {
     return NextResponse.json({ error: "Complete your preferences first" }, { status: 400 });

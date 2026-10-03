@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { JobResults } from "@/components/JobResults";
+import { parseDbTimestamp } from "@/lib/db-time";
 import type { Job, JobStatus, Platform } from "@/lib/mock-data";
 import { SCORING_VERSION } from "@/lib/scoring-rules";
 import type { JobWithMatch } from "@/lib/types";
@@ -14,7 +15,7 @@ function formatDaysAgo(days: number) {
 
 function formatLastScraped(iso: string | null) {
   if (!iso) return "Never";
-  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  const minutes = Math.floor((Date.now() - parseDbTimestamp(iso).getTime()) / 60000);
   if (minutes < 1) return "Just now";
   if (minutes < 60) return `${minutes} min ago`;
   const hours = Math.floor(minutes / 60);
@@ -25,7 +26,10 @@ function formatLastScraped(iso: string | null) {
 function toUiJob(row: JobWithMatch): Job {
   const match = row.job_matches;
   const posted = row.posted_date || row.created_at;
-  const daysAgo = Math.max(0, Math.floor((Date.now() - new Date(posted).getTime()) / 86400000));
+  const daysAgo = Math.max(
+    0,
+    Math.floor((Date.now() - parseDbTimestamp(posted).getTime()) / 86400000),
+  );
   return {
     id: row.id,
     title: row.title,

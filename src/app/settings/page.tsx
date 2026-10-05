@@ -14,11 +14,11 @@ import {
   textInputClass,
 } from "@/components/form";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
+import { KEYWORD_SLOTS } from "@/lib/keyword-stats";
 import { ApiKeysSection } from "./ApiKeysSection";
 
 // Each portal is scraped once per keyword (most job boards return nothing for
 // "kw1 OR kw2"), so keywords are a small fixed set, not a free list.
-const KEYWORD_SLOTS = 5;
 
 function padKeywords(list: string[]): string[] {
   return Array.from({ length: KEYWORD_SLOTS }, (_, i) => list[i] ?? "");

@@ -5,6 +5,14 @@ import { SCORING_VERSION } from "@/lib/scoring-rules";
 import type { DbJob, JobMatch, JobWithMatch, Preferences, Profile, Settings } from "@/lib/types";
 import type { ParsedProfile } from "@/lib/agents/agent-1";
 import type { CoverLetterLanguage } from "@/lib/agents/agent-4";
+import {
+  computeStats,
+  suggestKeywords,
+  type StatsJob,
+  type StatsJobKeyword,
+  type StatsResponse,
+  type StatsSearch,
+} from "@/lib/keyword-stats";
 
 const DEMO_USER_ID = "demo";
 
@@ -506,3 +514,168 @@ export const demoCoverLetterParagraphs: Record<CoverLetterLanguage, string[]> = 
     "I would welcome the chance to introduce myself properly and talk through how I could support your team. I am happy to answer any questions in the meantime.",
   ],
 };
+
+// ---- Statistics page --------------------------------------------------------
+// Synthetic scrape history, run through the real aggregation so the demo shows
+// exactly what the page computes. A fixed-seed generator keeps it identical on
+// every load.
+
+interface KeywordProfile {
+  keyword: string;
+  /** Searched in the last `runs` scrape runs only. */
+  runs: number;
+  perSearch: number;
+  goodRate: number;
+  titles: string[];
+  /** Another keyword that tends to find the same jobs, and how often it does. */
+  overlapsWith?: string;
+  overlapRate?: number;
+}
+
+const STATS_PROFILES: KeywordProfile[] = [
+  {
+    keyword: "react developer",
+    runs: 8,
+    perSearch: 7,
+    goodRate: 0.32,
+    titles: ["React Developer (m/w/d)", "Frontend Engineer React", "UI Engineer (m/w/d)"],
+    overlapsWith: "frontend developer",
+    overlapRate: 0.5,
+  },
+  {
+    keyword: "frontend developer",
+    runs: 8,
+    perSearch: 9,
+    goodRate: 0.22,
+    titles: ["Frontend Developer (m/w/d)", "Frontend-Entwickler Vue", "UI Engineer (m/w/d)"],
+  },
+  {
+    keyword: "typescript engineer",
+    runs: 8,
+    perSearch: 4,
+    goodRate: 0.3,
+    titles: ["TypeScript Engineer", "Product Engineer (m/w/d)", "Node.js Developer"],
+  },
+  {
+    keyword: "full-stack developer",
+    runs: 2,
+    perSearch: 8,
+    goodRate: 0.15,
+    titles: ["Full-Stack Developer (m/w/d)", "Product Engineer (m/w/d)"],
+  },
+  {
+    keyword: "javascript developer",
+    runs: 5,
+    perSearch: 8,
+    goodRate: 0.06,
+    titles: ["JavaScript Developer", "Senior JavaScript Engineer", "Web Developer PHP/JS"],
+    // Nearly everything it finds, "frontend developer" finds too → redundant.
+    overlapsWith: "frontend developer",
+    overlapRate: 0.92,
+  },
+  {
+    keyword: "web entwickler",
+    runs: 4,
+    perSearch: 6,
+    goodRate: 0.03,
+    titles: ["Webentwickler TYPO3 (m/w/d)", "Web-Entwickler WordPress", "Ausbildung Webentwickler"],
+  },
+];
+
+const STATS_PORTALS = ["linkedin", "indeed", "stepstone", "xing"];
+const STATS_RUNS = 10;
+const LOW_SCORE_BLOCKERS = [
+  "Vor Ort, kein Home-Office – du suchst nur Remote oder Hybrid",
+  "Senior-Stelle – du suchst keine Senior-Positionen",
+  "PHP als Kernsprache – nicht in deinen Skills",
+  "Ausbildung – du schließt Ausbildung und Werkstudent aus",
+  null,
+];
+
+function buildDemoStats(): StatsResponse {
+  let seed = 42;
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const pick = <T>(list: T[]) => list[Math.floor(rand() * list.length)];
+
+  const jobs: StatsJob[] = [];
+  const links: StatsJobKeyword[] = [];
+  const searches: StatsSearch[] = [];
+
+  for (let run = 0; run < STATS_RUNS; run++) {
+    const runId = `demo-run-${run}`;
+    const runAt = daysAgoIso((STATS_RUNS - run) * 3);
+    // Later runs re-find more of what earlier ones already brought in.
+    const freshShare = Math.max(0.2, 0.85 - run * 0.07);
+    for (const profile of STATS_PROFILES) {
+      // Paused keywords ran early; recently added ones only ran lately.
+      const searched =
+        profile.keyword === "web entwickler" || profile.keyword === "javascript developer"
+          ? run < profile.runs
+          : run >= STATS_RUNS - profile.runs;
+      if (!searched) continue;
+      for (const portal of STATS_PORTALS) {
+        const returned = Math.round(profile.perSearch * (0.5 + rand()));
+        const fresh = Math.round(returned * freshShare);
+        searches.push({
+          scrape_run_id: runId,
+          run_at: runAt,
+          keyword: profile.keyword,
+          portal,
+          returned,
+          new_jobs: fresh,
+          result_cap: 25,
+          error: null,
+        });
+        for (let i = 0; i < fresh; i++) {
+          const id = `demo-stat-job-${jobs.length}`;
+          const good = rand() < profile.goodRate;
+          const score = good ? 80 + Math.floor(rand() * 16) : 12 + Math.floor(rand() * 60);
+          jobs.push({
+            id,
+            title: pick(profile.titles),
+            platform: portal,
+            status:
+              good && rand() < 0.25 ? "applied" : !good && rand() < 0.08 ? "not_interested" : null,
+            score,
+            blocker: score < 35 ? pick(LOW_SCORE_BLOCKERS) : null,
+          });
+          links.push({ job_id: id, keyword: profile.keyword, discovered: true });
+          if (profile.overlapsWith && rand() < (profile.overlapRate ?? 0)) {
+            links.push({ job_id: id, keyword: profile.overlapsWith, discovered: false });
+          }
+        }
+      }
+    }
+  }
+
+  // Scraped before keyword tracking existed — no keyword attached.
+  for (let i = 0; i < 37; i++) {
+    jobs.push({
+      id: `demo-stat-old-${i}`,
+      title: "Frontend Developer (m/w/d)",
+      platform: pick(STATS_PORTALS),
+      status: null,
+      score: 20 + Math.floor(rand() * 70),
+      blocker: null,
+    });
+  }
+
+  const stats = computeStats({
+    jobs,
+    jobKeywords: links,
+    searches,
+    activeKeywords: demoSettings.scraper_search_keywords,
+    scrapeRuns: STATS_RUNS + 3,
+  });
+  return {
+    ...stats,
+    trackingReady: true,
+    suggestions: suggestKeywords(
+      jobs,
+      stats.keywords.map((k) => k.keyword),
+    ),
+  };
+}
+
+/** Response shape of GET /api/stats. */
+export const demoStats: StatsResponse = buildDemoStats();

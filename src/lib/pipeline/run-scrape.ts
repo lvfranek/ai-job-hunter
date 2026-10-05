@@ -16,6 +16,11 @@ import {
   type ScrapedJob,
 } from "@/lib/apify";
 import { runWithConcurrency } from "@/lib/pipeline/concurrency";
+import {
+  buildTrackingRows,
+  saveTrackingRows,
+  type SearchResult,
+} from "@/lib/pipeline/keyword-tracking";
 import { getCredential } from "@/lib/credentials";
 import type { DbJob, Settings } from "@/lib/types";
 
@@ -95,20 +100,21 @@ export async function failStaleScrapeRuns(
   return (data ?? []).map((r) => r.id as string);
 }
 
-// Supabase chokes on very large `.in(...)` lists; check known URLs in batches.
-async function findExistingUrls(
+// Supabase chokes on very large `.in(...)` lists; look up known URLs in batches.
+// Returns url → job id for every URL that already has a job row.
+async function findExistingJobIds(
   urls: string[],
   supabase: ReturnType<typeof getSupabaseServerClient>,
-): Promise<Set<string>> {
-  const known = new Set<string>();
+): Promise<Map<string, string>> {
+  const known = new Map<string, string>();
   for (let i = 0; i < urls.length; i += 200) {
     const batch = urls.slice(i, i + 200);
-    const { data, error } = await supabase.from("jobs").select("url").in("url", batch);
+    const { data, error } = await supabase.from("jobs").select("id, url").in("url", batch);
     if (error) {
-      console.error("findExistingUrls batch failed:", error);
+      console.error("findExistingJobIds batch failed:", error);
       continue;
     }
-    for (const row of data ?? []) known.add((row as { url: string }).url);
+    for (const row of (data ?? []) as { id: string; url: string }[]) known.set(row.url, row.id);
   }
   return known;
 }
@@ -156,6 +162,9 @@ export async function runScrapePipeline(
     const portalCounts: Record<string, number> = {};
     const scraped: ScrapedJob[] = [];
     const taskErrors: Record<string, string> = {};
+    // Per-search results for the Statistics page — which keyword found what.
+    const searchResults: SearchResult[] = [];
+    const resultCap = Number(settings.scraper_results_per_scan) || null;
 
     await runWithConcurrency(tasks, SCRAPE_CONCURRENCY, async ({ portal, keyword }) => {
       const { actorId, buildInput, mapJob } = portalScrapers[portal];
@@ -168,10 +177,18 @@ export async function runScrapePipeline(
         const rawJobs = await pollApifyRun(apifyRunId, apiKey);
         const mapped = rawJobs.map(mapJob);
         scraped.push(...mapped);
+        searchResults.push({
+          portal,
+          keyword,
+          urls: mapped.map((job) => job.url),
+          resultCap,
+          error: null,
+        });
         portalCounts[portal] = (portalCounts[portal] ?? 0) + mapped.length;
         totalFound += mapped.length;
       } catch (reason) {
         taskErrors[`${portal}:${keyword}`] = String(reason);
+        searchResults.push({ portal, keyword, urls: [], resultCap, error: String(reason) });
         console.error(`Scraping ${portal} for "${keyword}" failed:`, reason);
       } finally {
         // Count the task as done either way so "board N of M" always completes.
@@ -204,33 +221,57 @@ export async function runScrapePipeline(
 
     await heartbeat({ passed_prefilter: candidates.length });
 
-    const knownUrls = await findExistingUrls(
+    // url → job id: listings we already have, plus every one inserted below.
+    const jobIds = await findExistingJobIds(
       candidates.map((c) => c.url),
       supabase,
     );
+    const newUrls = new Set<string>();
 
     // Same listing returned by multiple keywords/boards this run + listings we
     // already have from a previous run.
     let duplicates = scraped.length - uniqueJobs.length;
     let stored = 0;
     for (const job of candidates) {
-      if (knownUrls.has(job.url)) {
+      if (jobIds.has(job.url)) {
         duplicates++;
         continue;
       }
-      const { error } = await supabase.from("jobs").insert({
-        user_id: CURRENT_USER_ID,
-        url: job.url,
-        title: job.title,
-        company: job.company,
-        description: job.description,
-        platform: job.platform,
-        posted_date: job.posted_date,
-      });
-      if (!error) {
+      const { data: inserted, error } = await supabase
+        .from("jobs")
+        .insert({
+          user_id: CURRENT_USER_ID,
+          url: job.url,
+          title: job.title,
+          company: job.company,
+          description: job.description,
+          platform: job.platform,
+          posted_date: job.posted_date,
+        })
+        .select("id")
+        .single();
+      if (!error && inserted) {
         stored++;
-        knownUrls.add(job.url); // guard against a dup within this same batch
+        jobIds.set(job.url, inserted.id as string); // guard against a dup within this same batch
+        newUrls.add(job.url);
       }
+    }
+
+    // Keyword statistics are a nice-to-have — a failure here (e.g. migration
+    // 028 not applied yet) must never fail the scrape itself.
+    try {
+      await saveTrackingRows(
+        supabase,
+        buildTrackingRows({
+          runId,
+          searches: searchResults,
+          jobIdByUrl: jobIds,
+          newUrls,
+          seenAt: new Date().toISOString(),
+        }),
+      );
+    } catch (error) {
+      console.error("Saving keyword statistics failed:", error);
     }
 
     await supabase

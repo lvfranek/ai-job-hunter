@@ -14,6 +14,7 @@ import {
   demoCredentials,
   demoScrapeStatus,
   demoScoreStatus,
+  demoStats,
   demoCoverLetterParagraphs,
   findDemoJob,
 } from "@/lib/demo-data";
@@ -68,6 +69,8 @@ async function handle(request: NextRequest): Promise<NextResponse> {
         return NextResponse.json(demoScrapeStatus);
       case "/score/status":
         return NextResponse.json(demoScoreStatus);
+      case "/stats":
+        return NextResponse.json(demoStats);
     }
   }
 

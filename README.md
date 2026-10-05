@@ -52,6 +52,10 @@ Next.js and Supabase.
 - **CV-aware profile** — upload a PDF or Word CV and the app parses it into your matching profile.
 - **Application tracking** — mark each job interested / applied / interview / not interested, and
   filter the list by status.
+- **Keyword statistics** — all-time numbers per search keyword (jobs found, average score, 80+
+  matches, applications, overlap with other keywords, why its jobs get blocked, which board works
+  best for it), a verdict per keyword, title-based keyword suggestions, and one-click swapping so
+  you can rotate keywords without losing their history.
 - **Scheduled scans** — `POST /api/cron/scrape` runs a full scrape + score pass, drivable from any
   scheduler (cron, n8n, GitHub Actions).
 - **Webhook notifications** — get a JSON summary of new high-fit jobs after each run.

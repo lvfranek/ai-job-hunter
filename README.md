@@ -8,6 +8,7 @@ status (interested, applied, interview, not interested) and filter the list by i
 Next.js and Supabase.
 
 ![AI Job Hunter](public/aijobhunter.jpeg)
+![AI Job Hunter](public/aijobhunter-2.jpeg)
 
 ## Table of Contents
 

@@ -5,6 +5,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { DemoModeBanner } from "@/components/DemoModeBanner";
 import { IconDefaults } from "@/components/IconDefaults";
 import { UnsavedChangesProvider } from "@/lib/unsaved-changes";
+import { BackgroundRunsProvider } from "@/lib/background-runs";
+import { BackgroundRunsIndicator } from "@/components/BackgroundRunsIndicator";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,11 +34,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <IconDefaults>
           <UnsavedChangesProvider>
-            <DemoModeBanner />
-            <div className="flex min-h-screen flex-col sm:flex-row">
-              <Sidebar />
-              <div className="min-w-0 flex-1">{children}</div>
-            </div>
+            {/* Lives above the pages so a scrape or scoring run keeps being
+                followed while you navigate between them. */}
+            <BackgroundRunsProvider>
+              <DemoModeBanner />
+              <div className="flex min-h-screen flex-col sm:flex-row">
+                <Sidebar />
+                <div className="min-w-0 flex-1">{children}</div>
+              </div>
+              <BackgroundRunsIndicator />
+            </BackgroundRunsProvider>
           </UnsavedChangesProvider>
         </IconDefaults>
       </body>

@@ -1,18 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient } from "@/lib/supabase";
+import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
 import { failStaleScoreRuns } from "@/lib/pipeline/run-score";
 
 export async function GET(request: NextRequest) {
   const runId = request.nextUrl.searchParams.get("runId");
-  if (!runId) {
-    return NextResponse.json({ error: "runId is required" }, { status: 400 });
-  }
-
   const supabase = getSupabaseServerClient();
 
   // Reap dead runs first so a stalled worker surfaces as 'failed' here rather
   // than leaving the client polling 'running' indefinitely.
   const reaped = await failStaleScoreRuns(supabase);
+
+  // Without a runId: is a scoring run live right now? Lets the UI pick it back
+  // up after a reload instead of showing an idle Adjust-score button.
+  if (!runId) {
+    const { data, error } = await supabase
+      .from("score_runs")
+      .select("id")
+      .eq("user_id", CURRENT_USER_ID)
+      .eq("status", "running")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ activeRunId: data?.id ?? null });
+  }
 
   const { data, error } = await supabase.from("score_runs").select("*").eq("id", runId).single();
 

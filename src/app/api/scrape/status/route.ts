@@ -6,22 +6,40 @@ export async function GET(request: NextRequest) {
   const runId = request.nextUrl.searchParams.get("runId");
   const supabase = getSupabaseServerClient();
 
-  // Without a runId: when did the last scrape finish? Powers "Last scraped" on
-  // the dashboard, which would otherwise reset to "Never" on every page load.
+  // Without a runId: when did the last scrape finish, and is one running right
+  // now? Powers "Last scraped" on the dashboard (which would otherwise reset to
+  // "Never" on every page load) and lets the UI pick a live run back up after a
+  // reload instead of offering to start a second one.
   if (!runId) {
-    const { data, error } = await supabase
-      .from("scrape_runs")
-      .select("ended_at")
-      .eq("user_id", CURRENT_USER_ID)
-      .eq("status", "completed")
-      .order("ended_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    await failStaleScrapeRuns(supabase);
 
+    const [last, active] = await Promise.all([
+      supabase
+        .from("scrape_runs")
+        .select("ended_at")
+        .eq("user_id", CURRENT_USER_ID)
+        .eq("status", "completed")
+        .order("ended_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("scrape_runs")
+        .select("id")
+        .eq("user_id", CURRENT_USER_ID)
+        .eq("status", "running")
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    const error = last.error ?? active.error;
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return NextResponse.json({ completedAt: data?.ended_at ?? null });
+    return NextResponse.json({
+      completedAt: last.data?.ended_at ?? null,
+      activeRunId: active.data?.id ?? null,
+    });
   }
 
   // Reap dead runs first so a stalled worker surfaces as 'failed' here rather

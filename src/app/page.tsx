@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { JobResults } from "@/components/JobResults";
+import { useBackgroundRuns } from "@/lib/background-runs";
 import { parseDbTimestamp } from "@/lib/db-time";
 import type { Job, JobStatus, Platform } from "@/lib/mock-data";
 import { SCORING_VERSION } from "@/lib/scoring-rules";
@@ -59,6 +60,9 @@ function toUiJob(row: JobWithMatch): Job {
 export default function DashboardPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [lastScrapedAt, setLastScrapedAt] = useState<string | null>(null);
+  // Bumped by the app-wide scrape/score runner whenever a run brings in new jobs
+  // or scores — including runs that finished while you were on another page.
+  const { jobsVersion } = useBackgroundRuns();
 
   const fetchJobs = useCallback(async () => {
     const res = await fetch("/api/jobs");
@@ -66,26 +70,24 @@ export default function DashboardPage() {
     setJobs(Array.isArray(data) ? data.map(toUiJob) : []);
   }, []);
 
-  const fetchLastScraped = useCallback(async () => {
-    try {
-      const res = await fetch("/api/scrape/status");
-      if (!res.ok) return;
-      const data = await res.json();
-      setLastScrapedAt(data.completedAt ?? null);
-    } catch (error) {
-      console.error("Loading last scrape time failed:", error);
-    }
-  }, []);
-
   useEffect(() => {
+    // Refreshes overlap while scoring is live; drop answers that arrive late.
+    let ignore = false;
     fetch("/api/jobs")
       .then((res) => res.json())
-      .then((data) => setJobs(Array.isArray(data) ? data.map(toUiJob) : []));
+      .then((data) => {
+        if (!ignore) setJobs(Array.isArray(data) ? data.map(toUiJob) : []);
+      });
     fetch("/api/scrape/status")
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setLastScrapedAt(data?.completedAt ?? null))
+      .then((data) => {
+        if (!ignore) setLastScrapedAt(data?.completedAt ?? null);
+      })
       .catch((error) => console.error("Loading last scrape time failed:", error));
-  }, []);
+    return () => {
+      ignore = true;
+    };
+  }, [jobsVersion]);
 
   const highMatches = jobs.filter((job) => job.matchScore >= 80).length;
 
@@ -129,10 +131,6 @@ export default function DashboardPage() {
       <JobResults
         jobs={jobs}
         lastScraped={formatLastScraped(lastScrapedAt)}
-        onScraped={() => {
-          fetchLastScraped();
-          fetchJobs();
-        }}
         onRefresh={fetchJobs}
         onStatusChange={updateJobStatus}
       />

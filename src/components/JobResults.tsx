@@ -18,6 +18,7 @@ import { AgentStatus } from "@/components/AgentStatus";
 import { CoverLetterModal } from "@/components/CoverLetterModal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Toast } from "@/components/Toast";
+import { useBackgroundRuns } from "@/lib/background-runs";
 import {
   buttonDanger,
   buttonPrimary,
@@ -51,18 +52,14 @@ const statusFilterLabels: Record<StatusFilter, string> = {
 
 const PAGE_SIZE = 25;
 
-type ScrapeState = "idle" | "scraping";
-
 export function JobResults({
   jobs,
   lastScraped,
-  onScraped,
   onRefresh,
   onStatusChange,
 }: {
   jobs: Job[];
   lastScraped: string;
-  onScraped: () => void;
   onRefresh: () => void;
   onStatusChange: (jobId: string, status: JobStatus | null) => void;
 }) {
@@ -70,27 +67,28 @@ export function JobResults({
   const [minScore, setMinScore] = useState(0);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
-  const [scrapeState, setScrapeState] = useState<ScrapeState>("idle");
-  const [progress, setProgress] = useState({ found: 0, completedRuns: 0, totalRuns: 0 });
-  const [lastPortalCounts, setLastPortalCounts] = useState<Record<string, number> | null>(null);
+  // Scrape and scoring runs are owned by the app-wide provider, not this
+  // component, so they keep going (and keep reporting) across page changes.
+  // scoreStatus is the always-on line next to the Adjust-score button: what the
+  // run is doing right now, then how it ended.
+  const {
+    isScraping,
+    scrapeProgress: progress,
+    lastPortalCounts,
+    startScrape,
+    isScoring,
+    scoreStatus,
+    scoreReport,
+    dismissScoreReport,
+    startScore,
+    cancelScore,
+  } = useBackgroundRuns();
   // Set when "Scrape Now" is clicked — holds the run/job estimate for the
   // confirm dialog; scraping starts only once the user confirms.
   const [scrapeConfirm, setScrapeConfirm] = useState<{ runs: number; maxJobs: number } | null>(
     null,
   );
-  const [isScoring, setIsScoring] = useState(false);
-  // Always-on status line shown next to the Adjust-score button: what the run is
-  // doing right now, then how it ended. Never left blank while a run is live.
-  const [scoreStatus, setScoreStatus] = useState<string | null>(null);
-  // Post-run summary: what actually got scored, what didn't, and why.
-  const [scoreReport, setScoreReport] = useState<{
-    scored: number;
-    failed: number;
-    total: number;
-    errorSummary: Record<string, number>;
-  } | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
-  const scoreRunId = useRef<string | null>(null);
   const [coverLetterJob, setCoverLetterJob] = useState<Job | null>(null);
   const [pruneDays, setPruneDays] = useState(30);
   const [confirmingPrune, setConfirmingPrune] = useState(false);
@@ -136,13 +134,6 @@ export function JobResults({
     return () => clearTimeout(t);
   }, [pruneMessage]);
 
-  // Keep the final outcome on screen briefly after a run ends, then clear it.
-  useEffect(() => {
-    if (isScoring || !scoreStatus) return;
-    const t = setTimeout(() => setScoreStatus(null), 8000);
-    return () => clearTimeout(t);
-  }, [isScoring, scoreStatus]);
-
   async function handlePrune() {
     setPruning(true);
     try {
@@ -165,159 +156,13 @@ export function JobResults({
     }
   }
 
-  function formatEta(ms: number): string {
-    const total = Math.max(0, Math.round(ms / 1000));
-    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-  }
-
   // "Needs scoring" covers both never-scored jobs and ones whose score went
   // stale (preferences changed) — one button handles both.
   const needsScoreCount = jobs.filter((job) => !job.isScored || job.isStale).length;
 
-  async function handleAdjustScore() {
-    setIsScoring(true);
-    setScoreStatus("Starting…");
-    setScoreReport(null);
+  function handleAdjustScore() {
     setReportOpen(false);
-    let outcome: string | null = null;
-
-    try {
-      const res = await fetch("/api/score", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Scoring failed");
-      if (!data.runId) {
-        outcome = "Scores already up to date";
-        return;
-      }
-
-      scoreRunId.current = data.runId;
-
-      // Poll until the run leaves "running" — but never poll forever. Any of
-      // these ends it: a terminal status from the server, the server's own stall
-      // detector flipping the run to failed, a run of failed status requests, or
-      // an absolute wall-clock cap.
-      const startedAt = Date.now();
-      const MAX_POLL_MS = 30 * 60 * 1000;
-      let consecutiveErrors = 0;
-      // Pull fresh scores into the list while the run is going so the ranking
-      // reorders live. Throttled — chunks land in bursts and a full refetch per
-      // poll would be wasteful.
-      let lastRefreshAt = 0;
-      let lastRefreshedScored = 0;
-      const REFRESH_INTERVAL_MS = 3000;
-      let last = {
-        status: "running",
-        scored: 0,
-        failed: 0,
-        total: 0,
-        totalChunks: 0,
-        completedChunks: 0,
-        model: null as string | null,
-        errorSummary: {} as Record<string, number>,
-        stalled: false,
-      };
-
-      const final = await new Promise<typeof last>((resolve) => {
-        const interval = setInterval(async () => {
-          try {
-            const statusRes = await fetch(`/api/score/status?runId=${data.runId}`);
-            if (!statusRes.ok) throw new Error(`status ${statusRes.status}`);
-            const s = await statusRes.json();
-            consecutiveErrors = 0;
-            last = {
-              status: s.status ?? "running",
-              scored: s.scored ?? 0,
-              failed: s.failed ?? 0,
-              total: s.total ?? 0,
-              totalChunks: s.totalChunks ?? 0,
-              completedChunks: s.completedChunks ?? 0,
-              model: s.model ?? null,
-              errorSummary: s.errorSummary ?? {},
-              stalled: Boolean(s.stalled),
-            };
-
-            // Live detail: what the run is chewing on right now, how much is
-            // done, what it has already lost, and roughly how long is left.
-            const parts: string[] = [];
-            if (last.totalChunks > 0) {
-              parts.push(`Batch ${last.completedChunks}/${last.totalChunks}`);
-            }
-            parts.push(last.total > 0 ? `${last.scored}/${last.total} scored` : "Preparing…");
-            if (last.failed > 0) parts.push(`${last.failed} failed`);
-            if (last.completedChunks > 0 && last.completedChunks < last.totalChunks) {
-              const perChunk = (Date.now() - startedAt) / last.completedChunks;
-              parts.push(
-                `~${formatEta(perChunk * (last.totalChunks - last.completedChunks))} left`,
-              );
-            }
-            if (last.model) parts.push(last.model.split("/").pop() as string);
-            setScoreStatus(parts.join(" · "));
-
-            if (
-              last.scored > lastRefreshedScored &&
-              Date.now() - lastRefreshAt > REFRESH_INTERVAL_MS
-            ) {
-              lastRefreshedScored = last.scored;
-              lastRefreshAt = Date.now();
-              onRefresh();
-            }
-
-            if (last.status !== "running" || Date.now() - startedAt > MAX_POLL_MS) {
-              clearInterval(interval);
-              resolve(last);
-            }
-          } catch (err) {
-            console.error("Score status poll failed:", err);
-            if (++consecutiveErrors >= 5) {
-              clearInterval(interval);
-              resolve({ ...last, status: "unknown" });
-            }
-          }
-        }, 1500);
-      });
-
-      setScoreReport({
-        scored: final.scored,
-        failed: final.failed,
-        total: final.total,
-        errorSummary: final.errorSummary,
-      });
-
-      if (final.status === "completed") {
-        outcome =
-          final.failed > 0
-            ? `Scored ${final.scored}/${final.total} — ${final.failed} failed`
-            : `Scored ${final.scored} job${final.scored === 1 ? "" : "s"}`;
-      } else if (final.status === "cancelled") {
-        outcome = `Cancelled at ${final.scored}/${final.total}`;
-      } else {
-        // failed, stalled, unknown, or hit the wall-clock cap — successful chunks
-        // are already saved, so one more click picks up where it left off.
-        outcome = `Stopped at ${final.scored}/${final.total} — progress saved, click Adjust score to finish`;
-      }
-    } catch (error) {
-      console.error("Scoring failed:", error);
-      outcome = error instanceof Error ? error.message : "Scoring failed";
-    } finally {
-      scoreRunId.current = null;
-      setIsScoring(false);
-      setScoreStatus(outcome);
-      onScraped();
-      onRefresh();
-    }
-  }
-
-  async function handleCancelScore() {
-    if (!scoreRunId.current) return;
-    try {
-      await fetch("/api/score/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ runId: scoreRunId.current }),
-      });
-    } catch (error) {
-      console.error("Cancel failed:", error);
-    }
+    startScore();
   }
 
   const sorted = useMemo(() => {
@@ -353,61 +198,6 @@ export function JobResults({
       setScrapeConfirm({ runs: 0, maxJobs: 0 }); // still let them confirm; the API validates
     }
   }
-
-  async function startScrape() {
-    setScrapeState("scraping");
-    setProgress({ found: 0, completedRuns: 0, totalRuns: 0 });
-    try {
-      const res = await fetch("/api/scrape", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Scrape failed");
-
-      const runId = data.runId;
-      const startedAt = Date.now();
-      const MAX_POLL_MS = 40 * 60 * 1000;
-      let consecutiveErrors = 0;
-
-      await new Promise<void>((resolve) => {
-        const interval = setInterval(async () => {
-          try {
-            const statusRes = await fetch(`/api/scrape/status?runId=${runId}`);
-            if (!statusRes.ok) throw new Error(`status ${statusRes.status}`);
-            const status = await statusRes.json();
-            consecutiveErrors = 0;
-            setProgress({
-              found: status.jobsFound ?? 0,
-              completedRuns: status.completedRuns ?? 0,
-              totalRuns: status.totalRuns ?? 0,
-            });
-
-            const done =
-              status.status === "completed" ||
-              status.status === "failed" ||
-              status.stalled === true ||
-              Date.now() - startedAt > MAX_POLL_MS;
-            if (done) {
-              setLastPortalCounts(status.portalCounts ?? null);
-              clearInterval(interval);
-              resolve();
-            }
-          } catch (err) {
-            console.error("Scrape status poll failed:", err);
-            if (++consecutiveErrors >= 5) {
-              clearInterval(interval);
-              resolve();
-            }
-          }
-        }, 1500);
-      });
-    } catch (error) {
-      console.error("Scrape failed:", error);
-    } finally {
-      setScrapeState("idle");
-      onScraped();
-    }
-  }
-
-  const isScraping = scrapeState !== "idle";
 
   return (
     <div className="rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)]">
@@ -461,7 +251,7 @@ export function JobResults({
               {isScoring && (
                 <button
                   type="button"
-                  onClick={handleCancelScore}
+                  onClick={cancelScore}
                   aria-label="Cancel scoring"
                   title="Cancel scoring — finished jobs keep their scores"
                   className={buttonDanger}
@@ -475,7 +265,7 @@ export function JobResults({
           {isScraping ? (
             <AgentStatus
               status={{
-                state: scrapeState,
+                state: "scraping",
                 action: "Scraping job boards",
                 detail:
                   progress.totalRuns > 0
@@ -658,7 +448,7 @@ export function JobResults({
             )}
             <button
               type="button"
-              onClick={() => setScoreReport(null)}
+              onClick={dismissScoreReport}
               aria-label="Dismiss scoring report"
               className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-text-faint transition-colors hover:text-[#1E2A3D]"
             >

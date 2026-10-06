@@ -48,9 +48,9 @@ imported from a spreadsheet. Built with Next.js and Supabase.
 
 - **Multi-board scraping** — Indeed, LinkedIn, Xing, Stepstone and Arbeitsagentur in a single scan.
 - **LLM match scoring** — every job is scored 0–100 against your profile, with written reasoning
-  for why it fits or doesn't. Hard constraints (work arrangement, core programming languages,
-  seniority limits from your notes) are enforced in code on top of the model's facts, so a
-  posting that breaks one can't score high.
+  for why it fits or doesn't. Hard constraints come only from your preferences (accepted work
+  arrangements, the programming languages in your skills, seniority limits from your notes) and
+  are enforced in code on top of the model's facts, so a posting that breaks one can't score high.
 - **Rescoring on demand** — score only new and outdated jobs or rescore everything, skipping
   jobs by status (e.g. not interested, applied) or age. Since every job costs AI credits, a run
   only starts after a second confirmation that unlocks after 3 seconds. Preferences can be
@@ -215,7 +215,8 @@ writes are persisted.
 Unit tests cover the pure logic that is easiest to get subtly wrong: the HTML-to-Markdown
 conversion for scraped postings (`text-format`), the LLM scoring-response parser and chunking
 (`agents/agent-3`), the hard scoring rules (`scoring-rules`), the keyword statistics
-(`keyword-stats`), the tracker's CSV import (`csv-import`), and `.docx` resume generation. They run
+(`keyword-stats`), the tracker's CSV import (`csv-import`), the rescoring filters (`rescore`), and
+`.docx` resume generation. They run
 in CI on every push and pull request.
 
 ```bash

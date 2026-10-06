@@ -196,14 +196,14 @@ export function parseApplicationsCsv(text: string): ImportResult {
 }
 
 /**
- * A ready-to-fill CSV for the import: German headers, ";" separators and a BOM
- * so Excel opens it with columns and umlauts intact. The example row shows the
+ * A ready-to-fill CSV for the import: ";" separators and a BOM so Excel (in
+ * German locales too) opens it with columns and umlauts intact. The example row shows the
  * formats — delete it before importing.
  */
 export const CSV_TEMPLATE =
   "\uFEFF" +
   [
-    "Bewerbungsdatum;Titel der Stellenanzeige;Arbeitgeber;Status;Link;Gehalt",
-    "01.09.2026;Frontend Developer (m/w/d);Beispiel GmbH;Beworben;https://example.com/stellenanzeige;55–60k",
+    "Date;Job title;Employer;Status;Link;Salary",
+    "2026-09-01;Frontend Developer;Example Ltd;Applied;https://example.com/job-posting;55–60k",
   ].join("\r\n") +
   "\r\n";

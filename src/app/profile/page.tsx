@@ -261,7 +261,7 @@ export default function ProfilePage() {
                     id="profile-street"
                     value={form.street_address}
                     onChange={(e) => setForm({ ...form, street_address: e.target.value })}
-                    placeholder="Musterstraße 12"
+                    placeholder="12 Example Street"
                     className={textInputClass}
                   />
                 </Field>

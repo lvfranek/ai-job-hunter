@@ -12,11 +12,13 @@ import {
   X,
 } from "@phosphor-icons/react";
 import type { Job, JobStatus } from "@/lib/mock-data";
+import type { ScoreOptions } from "@/lib/rescore";
 import { jobStatusLabels } from "@/lib/mock-data";
 import { JobCard } from "@/components/JobCard";
 import { AgentStatus } from "@/components/AgentStatus";
 import { CoverLetterModal } from "@/components/CoverLetterModal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ScoreDialog } from "@/components/ScoreDialog";
 import { Toast } from "@/components/Toast";
 import { useBackgroundRuns } from "@/lib/background-runs";
 import {
@@ -89,6 +91,7 @@ export function JobResults({
     null,
   );
   const [reportOpen, setReportOpen] = useState(false);
+  const [scoreDialogOpen, setScoreDialogOpen] = useState(false);
   const [coverLetterJob, setCoverLetterJob] = useState<Job | null>(null);
   const [pruneDays, setPruneDays] = useState(30);
   const [confirmingPrune, setConfirmingPrune] = useState(false);
@@ -160,9 +163,12 @@ export function JobResults({
   // stale (preferences changed) — one button handles both.
   const needsScoreCount = jobs.filter((job) => !job.isScored || job.isStale).length;
 
-  function handleAdjustScore() {
+  // Scoring always goes through the dialog: pick the jobs, then confirm twice —
+  // every scored job costs AI credits.
+  function handleStartScore(options: ScoreOptions) {
+    setScoreDialogOpen(false);
     setReportOpen(false);
-    startScore();
+    startScore(options);
   }
 
   const sorted = useMemo(() => {
@@ -217,8 +223,8 @@ export function JobResults({
         </button>
         <button
           type="button"
-          onClick={handleAdjustScore}
-          disabled={isScraping || isScoring || needsScoreCount === 0}
+          onClick={() => setScoreDialogOpen(true)}
+          disabled={isScraping || isScoring || jobs.length === 0}
           className={buttonSecondary}
         >
           <Sparkle size={14} weight="fill" />
@@ -232,8 +238,8 @@ export function JobResults({
             </>
           ) : (
             <>
-              <span className="max-[360px]:hidden">Scores up to date</span>
-              <span className="hidden max-[360px]:inline">Up to date</span>
+              <span className="max-[360px]:hidden">Rescore jobs</span>
+              <span className="hidden max-[360px]:inline">Rescore</span>
             </>
           )}
         </button>
@@ -517,6 +523,14 @@ export function JobResults({
 
       {coverLetterJob && (
         <CoverLetterModal job={coverLetterJob} onClose={() => setCoverLetterJob(null)} />
+      )}
+
+      {scoreDialogOpen && (
+        <ScoreDialog
+          jobs={jobs}
+          onClose={() => setScoreDialogOpen(false)}
+          onConfirm={handleStartScore}
+        />
       )}
 
       <ConfirmDialog

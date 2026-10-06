@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { DEMO_SAVE_MESSAGE, Field, textInputClass } from "@/components/form";
 import { buttonPrimary, buttonSecondary, Select } from "@/components/controls";
-import { Modal } from "@/components/applications/Modal";
+import { Modal } from "@/components/Modal";
 import { todayIso, type ApplicationRow } from "@/lib/applications";
 import { JOB_STATUSES, jobStatusLabels, MANUAL_PLATFORM, type JobStatus } from "@/lib/mock-data";
 

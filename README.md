@@ -51,6 +51,10 @@ imported from a spreadsheet. Built with Next.js and Supabase.
   for why it fits or doesn't. Hard constraints (work arrangement, core programming languages,
   seniority limits from your notes) are enforced in code on top of the model's facts, so a
   posting that breaks one can't score high.
+- **Rescoring on demand** — score only new and outdated jobs or rescore everything, skipping
+  jobs by status (e.g. not interested, applied) or age. Since every job costs AI credits, a run
+  only starts after a second confirmation that unlocks after 3 seconds. Preferences can be
+  written in English or German.
 - **Tailored resumes** — generate a resume per job, exportable as `.docx`.
 - **CV-aware profile** — upload a PDF or Word CV and the app parses it into your matching profile.
 - **Application tracker** — one list of everything you applied to, with date, status, link and

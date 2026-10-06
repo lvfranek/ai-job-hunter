@@ -1,6 +1,8 @@
-import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
+import { getSupabaseServerClient, CURRENT_USER_ID, selectAll } from "@/lib/supabase";
 import { CHUNK_SIZE, chunk, extractCandidateLimits, scoreChunk } from "@/lib/agents/agent-3";
+import { parseDbTimestamp } from "@/lib/db-time";
 import { MANUAL_PLATFORM } from "@/lib/mock-data";
+import { scoreFilterIncludes, type ScoreOptions } from "@/lib/rescore";
 import { AI_MODEL, OpenRouterError } from "@/lib/openrouter";
 import { SCORING_VERSION, type CandidateLimits } from "@/lib/scoring-rules";
 import type { DbJob, Preferences } from "@/lib/types";
@@ -89,6 +91,45 @@ export async function getJobsNeedingScoring(
   );
 
   return { jobs: needsScoring, preferences: (preferences as Preferences) ?? null };
+}
+
+/** Days since the job was posted (or scraped, without a posting date) — as the dashboard shows it. */
+export function jobAgeDays(job: Pick<DbJob, "posted_date" | "created_at">): number {
+  const posted = parseDbTimestamp(job.posted_date || job.created_at).getTime();
+  return Math.max(0, Math.floor((Date.now() - posted) / 86400000));
+}
+
+/**
+ * "Rescore all": marks the scores of every job the filters allow as outdated,
+ * so the normal needs-scoring run picks them up — and a run that is cancelled
+ * or cut off halfway resumes with Adjust score instead of starting over.
+ */
+export async function markJobsForRescore(
+  supabase: ReturnType<typeof getSupabaseServerClient>,
+  options: ScoreOptions,
+): Promise<void> {
+  type Row = Pick<DbJob, "id" | "status" | "posted_date" | "created_at">;
+  const rows = await selectAll<Row>((from, to) =>
+    supabase
+      .from("jobs")
+      .select("id, status, posted_date, created_at")
+      .eq("user_id", CURRENT_USER_ID)
+      .is("deleted_at", null)
+      .neq("platform", MANUAL_PLATFORM)
+      .order("id")
+      .range(from, to),
+  );
+  const ids = rows
+    .filter((row) => scoreFilterIncludes({ status: row.status, ageDays: jobAgeDays(row) }, options))
+    .map((row) => row.id);
+  const now = new Date().toISOString();
+  for (let i = 0; i < ids.length; i += 200) {
+    const { error } = await supabase
+      .from("job_matches")
+      .update({ stale_at: now })
+      .in("job_id", ids.slice(i, i + 200));
+    if (error) throw new Error(`Marking jobs for rescoring failed: ${error.message}`);
+  }
 }
 
 export interface ScorePipelineResult {

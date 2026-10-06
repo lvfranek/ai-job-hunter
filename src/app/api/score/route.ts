@@ -4,8 +4,11 @@ import { isDemoRequest } from "@/lib/auth";
 import {
   failStaleScoreRuns,
   getJobsNeedingScoring,
+  jobAgeDays,
+  markJobsForRescore,
   runScorePipeline,
 } from "@/lib/pipeline/run-score";
+import { parseScoreOptions, scoreFilterIncludes } from "@/lib/rescore";
 
 // Let the scoring run keep going after the response is sent. On a Node.js server
 // this just runs; on serverless, `after` extends the invocation via waitUntil so
@@ -20,6 +23,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Not available in demo" }, { status: 403 });
   }
 
+  // Which jobs to cover: new/outdated only or everything, minus the statuses
+  // and ages the dashboard dialog said to skip. No body = new/outdated, all of them.
+  const options = parseScoreOptions(await request.json().catch(() => null));
+
   const supabase = getSupabaseServerClient();
 
   // Clear out any zombie run (dead worker) so it can't linger as 'running'.
@@ -28,7 +35,11 @@ export async function POST(request: NextRequest) {
   let needsScoring: Awaited<ReturnType<typeof getJobsNeedingScoring>>["jobs"];
   let preferences: Awaited<ReturnType<typeof getJobsNeedingScoring>>["preferences"];
   try {
+    if (options.scope === "all") await markJobsForRescore(supabase, options);
     ({ jobs: needsScoring, preferences } = await getJobsNeedingScoring(supabase));
+    needsScoring = needsScoring.filter((job) =>
+      scoreFilterIncludes({ status: job.status, ageDays: jobAgeDays(job) }, options),
+    );
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : String(error) },

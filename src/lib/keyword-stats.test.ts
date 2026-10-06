@@ -57,6 +57,19 @@ describe("categorizeBlocker", () => {
     ).toEqual(["location", "seniority", "stack"]);
   });
 
+  it("sorts English blockers like the older German ones", () => {
+    expect(
+      categorizeBlocker(
+        "Hybrid with office days – you only want 100% remote; Senior role – you're not looking for senior positions; Java, C# as core language – not in your skills",
+      ).sort(),
+    ).toEqual(["location", "seniority", "stack"]);
+    expect(categorizeBlocker("3 years of experience required – you accept up to 2")).toEqual([
+      "seniority",
+    ]);
+    expect(categorizeBlocker("Working student position – you excluded it")).toEqual(["contract"]);
+    expect(categorizeBlocker("Munich office only, no remote option")).toEqual(["location"]);
+  });
+
   it("files experience limits under seniority and contract forms under contract", () => {
     expect(
       categorizeBlocker("5 Jahre Erfahrung gefordert – du suchst Stellen bis 2 Jahre"),

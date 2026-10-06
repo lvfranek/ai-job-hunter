@@ -30,7 +30,7 @@ export interface PostingFacts {
   requiredYears: number | null;
   /** null when the posting says nothing about where the work happens. */
   arrangement: WorkArrangement | null;
-  /** Core programming languages; one entry may list alternatives ("Java oder Kotlin"). */
+  /** Core programming languages; one entry may list alternatives ("Java or Kotlin"). */
   coreLanguages: string[];
 }
 
@@ -157,7 +157,7 @@ export function candidateLanguages(...skillTexts: (string | null | undefined)[])
 
 /**
  * Core language requirements the candidate can't meet. An entry with
- * alternatives ("Java oder Python") is met by any one of them. Names the model
+ * alternatives ("Java or Python"; German "oder" works too) is met by any one of them. Names the model
  * returns that aren't programming languages (SQL, HTML, "Cloud") are ignored.
  */
 export function missingCoreLanguages(core: string[], candidate: Set<string>): string[] {
@@ -169,7 +169,7 @@ export function missingCoreLanguages(core: string[], candidate: Set<string>): st
       .filter((option) => toLanguage(option) !== null);
     if (options.length === 0 || options.some((o) => candidate.has(toLanguage(o)!))) continue;
     const key = options.map((o) => toLanguage(o)).join("|");
-    if (!missing.has(key)) missing.set(key, options.join(" oder "));
+    if (!missing.has(key)) missing.set(key, options.join(" or "));
   }
   return [...missing.values()];
 }
@@ -188,21 +188,21 @@ export function titleLanguageRequirement(title: string): string | null {
     const language = toLanguage(word);
     return language !== null && !NOT_IN_TITLES.has(word.toLowerCase());
   });
-  return named.length > 0 ? named.join(" oder ") : null;
+  return named.length > 0 ? named.join(" or ") : null;
 }
 
 // ---- the rules ----------------------------------------------------------------
 
 const ARRANGEMENT_BLOCKED_LABEL: Record<WorkArrangement, string> = {
   remote: "Remote",
-  hybrid: "Hybrid mit Büro-Tagen",
-  onsite: "Vor Ort, kein Home-Office",
+  hybrid: "Hybrid with office days",
+  onsite: "On-site, no home office",
 };
 
 const ARRANGEMENT_WANTED_LABEL: Record<WorkArrangement, string> = {
-  remote: "100% Remote",
-  hybrid: "Hybrid",
-  onsite: "Vor Ort",
+  remote: "100% remote",
+  hybrid: "hybrid",
+  onsite: "on-site",
 };
 
 /** Preferences page stores "on-site"; the scorer says "onsite". */
@@ -221,7 +221,7 @@ function isSeniorTitle(title: string): boolean {
   return SENIOR_TITLE.test(title);
 }
 
-/** Every hard constraint this posting breaks, as short German phrases for the UI. */
+/** Every hard constraint this posting breaks, as short phrases for the UI. */
 export function hardBlockers(
   facts: PostingFacts,
   preferences: Pick<Preferences, "job_type" | "own_skills" | "preferred_languages">,
@@ -233,8 +233,8 @@ export function hardBlockers(
   const arrangement =
     accepted.length > 0 && facts.arrangement !== null && !accepted.includes(facts.arrangement);
   if (arrangement) {
-    const wanted = accepted.map((a) => ARRANGEMENT_WANTED_LABEL[a]).join(" oder ");
-    blockers.push(`${ARRANGEMENT_BLOCKED_LABEL[facts.arrangement!]} – du suchst nur ${wanted}`);
+    const wanted = accepted.map((a) => ARRANGEMENT_WANTED_LABEL[a]).join(" or ");
+    blockers.push(`${ARRANGEMENT_BLOCKED_LABEL[facts.arrangement!]} – you only want ${wanted}`);
   }
 
   const senior = facts.level === "senior" || isSeniorTitle(facts.title);
@@ -243,10 +243,10 @@ export function hardBlockers(
     facts.requiredYears !== null &&
     facts.requiredYears > limits.maxRequiredYears;
   if (limits.excludeSenior && senior) {
-    blockers.push("Senior-Stelle – du suchst keine Senior-Positionen");
+    blockers.push("Senior role – you're not looking for senior positions");
   } else if (tooManyYears) {
     blockers.push(
-      `${facts.requiredYears} Jahre Erfahrung gefordert – du suchst Stellen bis ${limits.maxRequiredYears} Jahre`,
+      `${facts.requiredYears} years of experience required – you accept up to ${limits.maxRequiredYears}`,
     );
   }
 
@@ -256,7 +256,7 @@ export function hardBlockers(
   const core = titleRequirement ? [...facts.coreLanguages, titleRequirement] : facts.coreLanguages;
   const missing = known.size > 0 ? missingCoreLanguages(core, known) : [];
   if (missing.length > 0) {
-    blockers.push(`${missing.join(", ")} als Kernsprache – nicht in deinen Skills`);
+    blockers.push(`${missing.join(", ")} as core language – not in your skills`);
   }
 
   return {

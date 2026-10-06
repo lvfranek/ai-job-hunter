@@ -3,7 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { X } from "@phosphor-icons/react/dist/ssr";
 
-/** Dialog shell for the tracker's add/edit and import dialogs; Escape closes it. */
+/** Dialog shell (tracker dialogs, scoring options); Escape and a backdrop click close it. */
 export function Modal({
   title,
   description,

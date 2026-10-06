@@ -29,14 +29,23 @@ interface PreferencesForm {
 
 const JOB_TYPES = ["remote", "hybrid", "on-site"];
 
-// German labour-market contract forms. Kept in German because that is exactly
-// how they appear in the postings — "Werkstudent" and "Minijob" have no useful
-// English equivalent to match against.
+// German labour-market contract forms. The stored values stay German (existing
+// rows use them); the UI shows English labels and the scorer is told both names.
 //
 // Note the inverted meaning: ticking one EXCLUDES it. German boards are full of
 // Werkstudent/Ausbildung postings, so "filter these out" is the useful control.
 const EXCLUDED_EMPLOYMENT_TYPES = ["freelance", "ausbildung", "studium", "werkstudent"];
 const WORK_TIME_MODELS = ["vollzeit", "teilzeit", "minijob"];
+
+const OPTION_LABELS: Record<string, string> = {
+  freelance: "Freelance",
+  ausbildung: "Apprenticeship",
+  studium: "Dual study",
+  werkstudent: "Working student",
+  vollzeit: "Full-time",
+  teilzeit: "Part-time",
+  minijob: "Minijob",
+};
 
 const DEFAULTS: PreferencesForm = {
   notes: "",
@@ -136,7 +145,7 @@ export default function PreferencesPage() {
             description={
               <p>
                 The AI reads this directly — titles, seniority, skills, and anything you want to
-                avoid, all in your own words.
+                avoid, all in your own words. English or German both work.
               </p>
             }
           >
@@ -167,8 +176,10 @@ export default function PreferencesPage() {
                 hint={
                   <p>
                     What you can actually do today, comma-separated. The AI matches job requirements
-                    against this — and counts adjacent tech (React ↔ Vue, Node ↔ Python) as
-                    transferable rather than missing.
+                    against this — and counts adjacent tech (React ↔ Vue, Django ↔ FastAPI) as
+                    transferable rather than missing. If you list programming languages here, a job
+                    built on a language that&apos;s in neither this field nor the next (e.g. a Java
+                    backend when you only list TypeScript) is treated as a blocker.
                   </p>
                 }
               >
@@ -186,8 +197,8 @@ export default function PreferencesPage() {
                 htmlFor="prefs-preferred-languages"
                 hint={
                   <p>
-                    What you would rather work in day to day. A job in another language isn&apos;t
-                    excluded — it just scores a little lower.
+                    What you would rather work in day to day. A job in a language from your skills
+                    that isn&apos;t listed here just scores a little lower.
                   </p>
                 }
               >
@@ -210,9 +221,8 @@ export default function PreferencesPage() {
                 }
               />
               <p className="mt-1.5 text-[12px] leading-relaxed text-text-faint">
-                Treats every soft-skill requirement in a posting (Zuverlässigkeit, Teamfähigkeit,
-                Belastbarkeit, Kommunikationsstärke …) as fully met, so the AI never deducts points
-                for one.
+                Treats every soft-skill requirement in a posting (reliability, teamwork, resilience,
+                communication …) as fully met, so the AI never deducts points for one.
               </p>
             </div>
           </SettingsSection>
@@ -262,10 +272,10 @@ export default function PreferencesPage() {
                 legend="Exclude contract forms"
                 hint={
                   <p>
-                    Tick what you do <strong>not</strong> want — Ausbildung (apprenticeship),
-                    Studium (dual study), Werkstudent (working student), Freelance. A ticked form is
-                    treated as a hard blocker: those postings score low and say why. Tick nothing to
-                    accept every contract form.
+                    Tick what you do <strong>not</strong> want — apprenticeship (Ausbildung), dual
+                    study (duales Studium), working student (Werkstudent), freelance. A ticked form
+                    is treated as a hard blocker: those postings score low and say why. Tick nothing
+                    to accept every contract form.
                   </p>
                 }
               >
@@ -273,7 +283,7 @@ export default function PreferencesPage() {
                   {EXCLUDED_EMPLOYMENT_TYPES.map((type) => (
                     <Checkbox
                       key={type}
-                      label={type}
+                      label={OPTION_LABELS[type]}
                       checked={form.excluded_employment_types.includes(type)}
                       onChange={() =>
                         setForm({
@@ -293,7 +303,7 @@ export default function PreferencesPage() {
                 legend="Working time"
                 hint={
                   <p>
-                    Vollzeit (full-time), Teilzeit (part-time), Minijob (marginal employment). Tick
+                    Full-time (Vollzeit), part-time (Teilzeit), Minijob (marginal employment). Tick
                     none to accept any.
                   </p>
                 }
@@ -302,7 +312,7 @@ export default function PreferencesPage() {
                   {WORK_TIME_MODELS.map((type) => (
                     <Checkbox
                       key={type}
-                      label={type}
+                      label={OPTION_LABELS[type]}
                       checked={form.work_time_models.includes(type)}
                       onChange={() =>
                         setForm({

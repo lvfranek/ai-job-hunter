@@ -3,7 +3,7 @@ import { chunk, condenseDescription, parseScoringResponse, toScoringResult } fro
 
 describe("condenseDescription", () => {
   it("returns a placeholder for null input", () => {
-    expect(condenseDescription(null)).toBe("(keine Beschreibung verfügbar)");
+    expect(condenseDescription(null)).toBe("(no description available)");
   });
 
   it("returns short text unchanged", () => {
@@ -13,8 +13,8 @@ describe("condenseDescription", () => {
   it("keeps workplace details from the cut-off part", () => {
     const long = `${"x".repeat(3500)} Benefits: 2 Tage Home-Office pro Woche, Rest im Büro. ${"y".repeat(500)}`;
     const result = condenseDescription(long);
-    expect(result).toContain("…[gekürzt]");
-    expect(result).toContain("Angaben zum Arbeitsort aus dem gekürzten Teil");
+    expect(result).toContain("…[truncated]");
+    expect(result).toContain("Workplace details from the truncated part");
     expect(result).toContain("2 Tage Home-Office pro Woche, Rest im Büro.");
     expect(result.length).toBeLessThan(3000 + 1000);
   });
@@ -22,7 +22,7 @@ describe("condenseDescription", () => {
   it("truncates long text and marks it as shortened", () => {
     const long = "x".repeat(4000);
     const result = condenseDescription(long);
-    expect(result.endsWith("…[gekürzt]")).toBe(true);
+    expect(result.endsWith("…[truncated]")).toBe(true);
     expect(result.length).toBeLessThan(long.length);
   });
 });

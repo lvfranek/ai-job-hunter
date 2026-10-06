@@ -627,10 +627,10 @@ const STATS_PROFILES: KeywordProfile[] = [
 const STATS_PORTALS = ["linkedin", "indeed", "stepstone", "xing"];
 const STATS_RUNS = 10;
 const LOW_SCORE_BLOCKERS = [
-  "Vor Ort, kein Home-Office – du suchst nur Remote oder Hybrid",
-  "Senior-Stelle – du suchst keine Senior-Positionen",
-  "PHP als Kernsprache – nicht in deinen Skills",
-  "Ausbildung – du schließt Ausbildung und Werkstudent aus",
+  "On-site, no home office – you only want 100% remote or hybrid",
+  "Senior role – you're not looking for senior positions",
+  "PHP as core language – not in your skills",
+  "Apprenticeship – you excluded apprenticeships and working-student roles",
   null,
 ];
 

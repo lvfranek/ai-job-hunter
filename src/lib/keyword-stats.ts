@@ -52,17 +52,27 @@ export const BLOCKER_LABELS: Record<BlockerCategory, string> = {
 };
 
 function categorizeBlockerPart(part: string): BlockerCategory {
+  // Blockers are English since the app went English-only, but rows scored
+  // before that are German — both have to land in the same buckets.
   // Contract first: "du schließt Ausbildung … aus" must not fall through to another bucket.
   if (
-    /ausbildung|werkstudent|praktikum|freelance|freiberuf|duales studium|weiterbildung|abschlussarbeit|trainee|minijob|teilzeit|befristet|zeitarbeit/i.test(
+    /ausbildung|apprentice|werkstudent|working student|praktikum|internship|freelanc|freiberuf|duales studium|dual study|weiterbildung|abschlussarbeit|trainee|minijob|teilzeit|part-time|befristet|fixed-term|zeitarbeit|temp agency/i.test(
       part,
     )
   ) {
     return "contract";
   }
-  if (/kernsprache|nicht in deinen skills/i.test(part)) return "stack";
-  if (/senior|jahre|berufserfahrung|\blead\b|principal/i.test(part)) return "seniority";
-  if (/remote|home-?office|hybrid|vor ort|büro|standort|präsenz|deutschland|on-?site/i.test(part)) {
+  if (/kernsprache|nicht in deinen skills|core language|not in your skills/i.test(part)) {
+    return "stack";
+  }
+  if (/senior|jahre|berufserfahrung|years|experience|\blead\b|principal/i.test(part)) {
+    return "seniority";
+  }
+  if (
+    /remote|home-?office|hybrid|vor ort|büro|standort|präsenz|deutschland|on-?site|office|location|relocat|germany/i.test(
+      part,
+    )
+  ) {
     return "location";
   }
   return "other";
@@ -70,7 +80,7 @@ function categorizeBlockerPart(part: string): BlockerCategory {
 
 /**
  * Which kinds of hard blocker a match carries. Rule-generated blockers look like
- * "Hybrid mit Büro-Tagen – du suchst nur 100% Remote; Java als Kernsprache – …"
+ * "Hybrid with office days – you only want 100% remote; Java as core language – …"
  * (see hardBlockers in scoring-rules.ts); the model's own are free text.
  */
 export function categorizeBlocker(blocker: string | null): BlockerCategory[] {

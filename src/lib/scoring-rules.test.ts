@@ -77,6 +77,7 @@ describe("languages", () => {
 
   it("accepts a requirement when any alternative is known", () => {
     expect(missingCoreLanguages(["Java oder Python"], candidateLanguages("Python"))).toEqual([]);
+    expect(missingCoreLanguages(["Java or Python"], candidateLanguages("Python"))).toEqual([]);
   });
 
   it("ignores names that aren't programming languages", () => {
@@ -99,7 +100,7 @@ describe("applyHardRules", () => {
     const out = applyHardRules(result, facts({ arrangement: "hybrid" }), prefs, NO_LIMITS);
     expect(out.match_score).toBe(30);
     expect(out.location_fit).toBe(0);
-    expect(out.blocker).toBe("Hybrid mit Büro-Tagen – du suchst nur 100% Remote");
+    expect(out.blocker).toBe("Hybrid with office days – you only want 100% remote");
   });
 
   it("does not block when the posting doesn't say where the work happens", () => {
@@ -129,7 +130,7 @@ describe("applyHardRules", () => {
   it("blocks a Java role when Java isn't in the skills", () => {
     const out = applyHardRules(result, facts({ coreLanguages: ["Java"] }), prefs, NO_LIMITS);
     expect(out.match_score).toBe(30);
-    expect(out.blocker).toBe("Java als Kernsprache – nicht in deinen Skills");
+    expect(out.blocker).toBe("Java as core language – not in your skills");
   });
 
   it("skips the language rule when the skills list names no language", () => {
@@ -151,7 +152,7 @@ describe("applyHardRules", () => {
       prefs,
       noSenior,
     );
-    expect(out.blocker).toBe("Senior-Stelle – du suchst keine Senior-Positionen");
+    expect(out.blocker).toBe("Senior role – you're not looking for senior positions");
     expect(out.seniority_fit).toBe(0);
   });
 
@@ -179,7 +180,7 @@ describe("applyHardRules", () => {
       excludeSenior: false,
       maxRequiredYears: 2,
     });
-    expect(out.blocker).toBe("3 Jahre Erfahrung gefordert – du suchst Stellen bis 2 Jahre");
+    expect(out.blocker).toBe("3 years of experience required – you accept up to 2");
   });
 
   it("lists every broken rule", () => {
@@ -190,7 +191,7 @@ describe("applyHardRules", () => {
       NO_LIMITS,
     );
     expect(out.blocker).toBe(
-      "Vor Ort, kein Home-Office – du suchst nur 100% Remote; Java als Kernsprache – nicht in deinen Skills",
+      "On-site, no home office – you only want 100% remote; Java as core language – not in your skills",
     );
   });
 
@@ -206,7 +207,7 @@ describe("applyHardRules", () => {
       prefs,
       NO_LIMITS,
     );
-    expect(out.blocker).toBe("Java als Kernsprache – nicht in deinen Skills");
+    expect(out.blocker).toBe("Java as core language – not in your skills");
   });
 
   it("names a language only once when model and title both report it", () => {
@@ -216,7 +217,7 @@ describe("applyHardRules", () => {
       prefs,
       NO_LIMITS,
     );
-    expect(out.blocker).toBe("Java als Kernsprache – nicht in deinen Skills");
+    expect(out.blocker).toBe("Java as core language – not in your skills");
   });
 
   it("treats several languages in a title as alternatives", () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useEffectEvent, useRef, useState } from "react";
+import type { ScoreOptions } from "@/lib/rescore";
 
 // Scrapes and scoring runs execute on the server (`after` in /api/scrape and
 // /api/score) and never cared what the browser did — but the polling, progress
@@ -67,7 +68,8 @@ type BackgroundRuns = {
   /** Post-run summary: what got scored, what didn't, and why. */
   scoreReport: ScoreReport | null;
   dismissScoreReport: () => void;
-  startScore: () => void;
+  /** Without options: new and outdated scores, every job. */
+  startScore: (options?: ScoreOptions) => void;
   cancelScore: () => void;
 
   /** Bumped whenever the job list may have changed — refetch when it does. */
@@ -203,7 +205,7 @@ export function BackgroundRunsProvider({ children }: { children: React.ReactNode
   }
 
   /** Start scoring, or with `resumeRunId` follow a run that is already going. */
-  async function runScore(resumeRunId?: string) {
+  async function runScore(resumeRunId?: string, options?: ScoreOptions) {
     if (scoreBusy.current) return;
     scoreBusy.current = true;
     setIsScoring(true);
@@ -214,11 +216,15 @@ export function BackgroundRunsProvider({ children }: { children: React.ReactNode
     try {
       let runId = resumeRunId;
       if (!runId) {
-        const res = await fetch("/api/score", { method: "POST" });
+        const res = await fetch("/api/score", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(options ?? {}),
+        });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Scoring failed");
         if (!data.runId) {
-          outcome = "Scores already up to date";
+          outcome = options ? "No jobs match these filters" : "Scores already up to date";
           return;
         }
         runId = data.runId as string;
@@ -346,7 +352,7 @@ export function BackgroundRunsProvider({ children }: { children: React.ReactNode
         scoreStatus,
         scoreReport,
         dismissScoreReport: () => setScoreReport(null),
-        startScore: () => void runScore(),
+        startScore: (options) => void runScore(undefined, options),
         cancelScore: () => void cancelScore(),
         jobsVersion,
       }}

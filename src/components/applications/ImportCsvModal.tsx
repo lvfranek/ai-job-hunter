@@ -4,7 +4,7 @@ import { useState } from "react";
 import { DownloadSimple, FileArrowUp } from "@phosphor-icons/react/dist/ssr";
 import { buttonPrimary, buttonSecondary } from "@/components/controls";
 import { DEMO_SAVE_MESSAGE } from "@/components/form";
-import { Modal } from "@/components/applications/Modal";
+import { Modal } from "@/components/Modal";
 import { formatAppliedDate } from "@/components/applications/format";
 import { CSV_TEMPLATE, parseApplicationsCsv, type ImportResult } from "@/lib/csv-import";
 import { jobStatusLabels } from "@/lib/mock-data";
@@ -24,7 +24,7 @@ function downloadTemplate() {
   const url = URL.createObjectURL(new Blob([CSV_TEMPLATE], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = "bewerbungen-vorlage.csv";
+  a.download = "applications-template.csv";
   a.click();
   URL.revokeObjectURL(url);
 }

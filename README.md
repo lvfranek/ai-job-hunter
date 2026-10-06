@@ -14,6 +14,7 @@ Next.js and Supabase.
 
 - [Tech Stack](#tech-stack)
 - [Features](#features)
+- [Keyword Statistics](#keyword-statistics)
 - [Live Demo](#live-demo)
 - [Installation](#️-installation)
 - [Environment Variables](#environment-variables)
@@ -62,6 +63,27 @@ Next.js and Supabase.
 - **Webhook notifications** — get a JSON summary of new high-fit jobs after each run.
 - **Single-user by design** — one password gate protects the whole deployment, with a read-only
   demo mode for visitors.
+
+## Keyword Statistics
+
+The **Statistics** page (sidebar → chart icon) shows which of your search keywords actually find
+jobs worth applying to, so you can rotate keywords without losing track of the old ones. Every
+scrape records which keyword found which job; removed keywords stay listed as _paused_ with their
+full history. Requires migration `028_keyword_tracking.sql`.
+
+| Section               | What it shows                                                                                                                                                                                                                                      |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stat tiles            | All-time jobs found, average score, 80+ matches, applications, searches run, keyword slots in use.                                                                                                                                                 |
+| Volume vs. quality    | One dot per keyword: jobs found per search (x) against average score (y), dot size = 80+ matches. Lines mark your median keyword.                                                                                                                  |
+| From found to applied | Funnel from every scraped job down to interviews.                                                                                                                                                                                                  |
+| Keywords              | Per keyword: jobs, new jobs per search, share found by no other keyword, average score, 80+ matches, applications, and a verdict (Strong / Solid / Weak / Redundant / Too new). Rows expand into per-run history, per-board breakdown and overlap. |
+| Keyword × job board   | Which board delivers the good matches for which keyword; flags searches that hit the results limit.                                                                                                                                                |
+| Why jobs fall through | Share of each keyword's jobs blocked by location/remote, tech stack, seniority or contract type.                                                                                                                                                   |
+| Keywords to try       | Phrases common in the titles of your best matches that no keyword covers yet — swap them in with one click.                                                                                                                                        |
+
+Verdicts compare a keyword's 80+ matches per search with your median keyword (paused ones
+included) and need at least 3 searches; "Redundant" marks the weaker of two keywords that find
+almost the same jobs.
 
 ## Live Demo
 

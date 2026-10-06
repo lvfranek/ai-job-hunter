@@ -38,6 +38,8 @@ const job: DbJob = {
   description: "desc",
   platform: "indeed",
   status: null,
+  applied_at: null,
+  salary: null,
   posted_date: null,
   created_at: "",
   deleted_at: null,

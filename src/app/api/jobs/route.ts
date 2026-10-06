@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
+import { APPLIED_STATUSES, MANUAL_PLATFORM } from "@/lib/mock-data";
 
 export async function GET() {
   const supabase = getSupabaseServerClient();
@@ -9,6 +10,8 @@ export async function GET() {
       .select(`*, job_matches (*)`)
       .eq("user_id", CURRENT_USER_ID)
       .is("deleted_at", null)
+      // Manual applications live on /applications only, never in the match feed.
+      .neq("platform", MANUAL_PLATFORM)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -37,7 +40,8 @@ export async function POST(request: NextRequest) {
 
 // Bulk-prune old job posts: soft-deletes every non-deleted job whose effective
 // posted date (posted_date, falling back to created_at) is older than
-// `olderThanDays` days. Returns the number of jobs removed.
+// `olderThanDays` days. Returns the number of jobs removed. Jobs you applied to
+// and manual applications are never pruned — they belong to the tracker.
 export async function DELETE(request: NextRequest) {
   const supabase = getSupabaseServerClient();
   try {
@@ -56,6 +60,8 @@ export async function DELETE(request: NextRequest) {
       .update({ deleted_at: new Date().toISOString() })
       .eq("user_id", CURRENT_USER_ID)
       .is("deleted_at", null)
+      .neq("platform", MANUAL_PLATFORM)
+      .or(`status.is.null,status.not.in.(${APPLIED_STATUSES.join(",")})`)
       .or(`posted_date.lt.${cutoff},and(posted_date.is.null,created_at.lt.${cutoff})`)
       .select("id");
 

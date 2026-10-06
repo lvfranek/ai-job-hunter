@@ -81,10 +81,12 @@ function ScoreBreakdown({ match }: { match: JobMatchDetail }) {
   );
 }
 
-const statusTier: Record<JobStatus, { text: string; bg: string; border: string }> = {
+export const statusTier: Record<JobStatus, { text: string; bg: string; border: string }> = {
   interested: { text: "text-sky-900", bg: "bg-sky-200", border: "border-sky-400" },
   applied: { text: "text-green-900", bg: "bg-green-200", border: "border-green-500" },
   interview: { text: "text-violet-900", bg: "bg-violet-200", border: "border-violet-400" },
+  offer: { text: "text-amber-900", bg: "bg-amber-200", border: "border-amber-400" },
+  rejected: { text: "text-rose-900", bg: "bg-rose-200", border: "border-rose-400" },
   not_interested: { text: "text-slate-700", bg: "bg-slate-200", border: "border-slate-400" },
 };
 

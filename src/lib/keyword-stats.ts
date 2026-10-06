@@ -3,6 +3,7 @@
 // is unit-testable and the page can share its types.
 
 import { parseDbTimestamp } from "@/lib/db-time";
+import { APPLIED_STATUSES } from "@/lib/mock-data";
 
 /** A job at or above this score counts as a good match — same bar as "High matches" on the dashboard. */
 export const GOOD_MATCH_SCORE = 80;
@@ -179,8 +180,6 @@ export interface StatsOverview {
   scored: number;
   avgScore: number | null;
   goodMatches: number;
-  applied: number;
-  interviews: number;
   scrapeRuns: number;
   searches: number;
   trackedSince: string | null;
@@ -216,7 +215,8 @@ export interface StatsResponse {
 // Aggregation
 
 const isGood = (job: StatsJob) => job.score !== null && job.score >= GOOD_MATCH_SCORE;
-const isApplied = (job: StatsJob) => job.status === "applied" || job.status === "interview";
+// A rejection or an offer still means you applied.
+const isApplied = (job: StatsJob) => (APPLIED_STATUSES as string[]).includes(job.status ?? "");
 const time = (ts: string) => parseDbTimestamp(ts).getTime();
 
 function average(values: number[]): number | null {
@@ -384,9 +384,7 @@ export function computeStats({
   );
 
   const scored = jobs.filter((j) => j.score !== null);
-  const interestedOrLater = jobs.filter((j) =>
-    ["interested", "applied", "interview"].includes(j.status ?? ""),
-  ).length;
+  const interestedOrLater = jobs.filter((j) => j.status === "interested" || isApplied(j)).length;
   const runTimes = searches.map((s) => s.run_at).sort((a, b) => time(a) - time(b));
 
   return {
@@ -395,8 +393,6 @@ export function computeStats({
       scored: scored.length,
       avgScore: average(scored.map((j) => j.score as number)),
       goodMatches: jobs.filter(isGood).length,
-      applied: jobs.filter(isApplied).length,
-      interviews: jobs.filter((j) => j.status === "interview").length,
       scrapeRuns,
       searches: searches.length,
       trackedSince: runTimes[0] ?? null,

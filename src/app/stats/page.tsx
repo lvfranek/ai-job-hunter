@@ -127,7 +127,7 @@ export default function StatsPage() {
               in the Supabase SQL editor, then reload this page.
             </Notice>
           )}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
             <StatTile
               label="Jobs found"
               value={fmtNumber(o.totalJobs)}
@@ -142,11 +142,6 @@ export default function StatsPage() {
               label={`${stats.goodMatchScore}+ matches`}
               value={fmtNumber(o.goodMatches)}
               hint={`${fmtPercent(o.scored ? o.goodMatches / o.scored : null)} of scored`}
-            />
-            <StatTile
-              label="Applied"
-              value={fmtNumber(o.applied)}
-              hint={`${o.interviews} interview${o.interviews === 1 ? "" : "s"}`}
             />
             <StatTile
               label="Searches"

@@ -15,6 +15,7 @@ import {
   demoScrapeStatus,
   demoScoreStatus,
   demoStats,
+  demoApplications,
   demoCoverLetterParagraphs,
   findDemoJob,
 } from "@/lib/demo-data";
@@ -71,6 +72,8 @@ async function handle(request: NextRequest): Promise<NextResponse> {
         return NextResponse.json(demoScoreStatus);
       case "/stats":
         return NextResponse.json(demoStats);
+      case "/applications":
+        return NextResponse.json(demoApplications);
     }
   }
 
@@ -149,6 +152,16 @@ async function handle(request: NextRequest): Promise<NextResponse> {
     });
   }
 
+  if (method === "POST" && path === "/applications") {
+    const body = await request.json().catch(() => null);
+    const count = Array.isArray(body) ? body.length : 1;
+    return NextResponse.json({ inserted: count, skipped: 0, demo: true });
+  }
+
+  if (method === "DELETE" && path.startsWith("/jobs/")) {
+    return NextResponse.json({ deleted: true, demo: true });
+  }
+
   if (method === "DELETE" && path === "/jobs") {
     // Fixtures are never persisted, so nothing is actually removed.
     return NextResponse.json({ deleted: 0, demo: true });
@@ -157,12 +170,8 @@ async function handle(request: NextRequest): Promise<NextResponse> {
   if (method === "PATCH" && path.startsWith("/jobs/")) {
     const id = path.slice("/jobs/".length);
     const body = await readJson(request);
-    const job = findDemoJob(id) ?? demoJobs[0];
-    return NextResponse.json({
-      ...job,
-      status: (body.status as string | null) ?? null,
-      demo: true,
-    });
+    const job = findDemoJob(id) ?? demoApplications.find((a) => a.id === id) ?? demoJobs[0];
+    return NextResponse.json({ ...job, ...body, demo: true });
   }
 
   return NextResponse.json({ error: `Unknown demo route: ${method} ${path}` }, { status: 404 });

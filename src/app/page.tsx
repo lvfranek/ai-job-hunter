@@ -39,7 +39,7 @@ function toUiJob(row: JobWithMatch): Job {
     postedDate: formatDaysAgo(daysAgo),
     daysAgo,
     platform: (row.platform as Platform) ?? "indeed",
-    url: row.url,
+    url: row.url ?? "", // the dashboard never lists manual applications, the only URL-less rows
     description: row.description,
     status: (row.status as JobStatus | null) ?? null,
     isStale: match != null && (match.stale_at != null || match.scoring_version < SCORING_VERSION),

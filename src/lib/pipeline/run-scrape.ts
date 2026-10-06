@@ -210,11 +210,14 @@ export async function runScrapePipeline(
       return true;
     });
 
-    const candidates: DbJob[] = uniqueJobs.map((mapped) => ({
+    // Scraped listings always have a URL; only manual applications can lack one.
+    const candidates: (DbJob & { url: string })[] = uniqueJobs.map((mapped) => ({
       ...mapped,
       id: mapped.url,
       user_id: CURRENT_USER_ID,
       status: null,
+      applied_at: null,
+      salary: null,
       created_at: "",
       deleted_at: null,
     }));

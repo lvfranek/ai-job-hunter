@@ -1,5 +1,6 @@
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
 import { CHUNK_SIZE, chunk, extractCandidateLimits, scoreChunk } from "@/lib/agents/agent-3";
+import { MANUAL_PLATFORM } from "@/lib/mock-data";
 import { AI_MODEL, OpenRouterError } from "@/lib/openrouter";
 import { SCORING_VERSION, type CandidateLimits } from "@/lib/scoring-rules";
 import type { DbJob, Preferences } from "@/lib/types";
@@ -71,7 +72,8 @@ export async function getJobsNeedingScoring(
       .from("jobs")
       .select("*, job_matches(id, stale_at, scoring_version)")
       .eq("user_id", CURRENT_USER_ID)
-      .is("deleted_at", null),
+      .is("deleted_at", null)
+      .neq("platform", MANUAL_PLATFORM), // tracked by hand, never AI-scored
   ]);
 
   // A failed query must not read as "nothing to score" — that is how a missing

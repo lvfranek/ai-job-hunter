@@ -1,15 +1,31 @@
 export type Platform = "linkedin" | "indeed" | "xing" | "stepstone" | "arbeitsagentur";
 
-export type JobStatus = "interested" | "applied" | "interview" | "not_interested";
+export type JobStatus =
+  "interested" | "applied" | "interview" | "offer" | "rejected" | "not_interested";
 
-export const JOB_STATUSES: JobStatus[] = ["interested", "applied", "interview", "not_interested"];
+export const JOB_STATUSES: JobStatus[] = [
+  "interested",
+  "applied",
+  "interview",
+  "offer",
+  "rejected",
+  "not_interested",
+];
 
 export const jobStatusLabels: Record<JobStatus, string> = {
   interested: "Interested",
   applied: "Applied",
   interview: "Interview",
+  offer: "Offer",
+  rejected: "Rejected",
   not_interested: "Not interested",
 };
+
+/** Statuses that mean "I sent an application" — these jobs show up in the tracker. */
+export const APPLIED_STATUSES: JobStatus[] = ["applied", "interview", "offer", "rejected"];
+
+/** `jobs.platform` of an application added by hand (or CSV) instead of scraped. */
+export const MANUAL_PLATFORM = "manual";
 
 /** The AI scorer's per-job breakdown, shown when a job card is expanded. */
 export type JobMatchDetail = {

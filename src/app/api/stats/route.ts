@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient, CURRENT_USER_ID, selectAll } from "@/lib/supabase";
+import { MANUAL_PLATFORM } from "@/lib/mock-data";
 import {
   computeStats,
   suggestKeywords,
@@ -35,6 +36,7 @@ export async function GET() {
           .from("jobs")
           .select("id, title, platform, status, job_matches(match_score, blocker)")
           .eq("user_id", CURRENT_USER_ID)
+          .neq("platform", MANUAL_PLATFORM) // statistics are about what the scraper found
           .order("id")
           .range(from, to),
       ),

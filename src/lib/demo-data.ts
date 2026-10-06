@@ -5,6 +5,8 @@ import { SCORING_VERSION } from "@/lib/scoring-rules";
 import type { DbJob, JobMatch, JobWithMatch, Preferences, Profile, Settings } from "@/lib/types";
 import type { ParsedProfile } from "@/lib/agents/agent-1";
 import type { CoverLetterLanguage } from "@/lib/agents/agent-4";
+import type { ApplicationRow } from "@/lib/applications";
+import { APPLIED_STATUSES, MANUAL_PLATFORM, type JobStatus } from "@/lib/mock-data";
 import {
   computeStats,
   suggestKeywords,
@@ -299,6 +301,11 @@ function buildJob(seed: JobSeed, forceScored: boolean): JobWithMatch {
     description: seed.description,
     platform: seed.platform,
     status: seed.status,
+    applied_at:
+      seed.status === "applied" || seed.status === "interview"
+        ? daysAgoIso(Math.max(0, seed.postedDaysAgo - 1)).slice(0, 10)
+        : null,
+    salary: null,
     posted_date: daysAgoIso(seed.postedDaysAgo),
     created_at: daysAgoIso(seed.postedDaysAgo),
     deleted_at: null,
@@ -325,6 +332,41 @@ export function findDemoJob(id: string | undefined | null): JobWithMatch | undef
   if (!id) return undefined;
   return demoJobsScored.find((j) => j.id === id) ?? demoJobs.find((j) => j.id === id);
 }
+
+/** Response shape of GET /api/applications: applied demo jobs plus a few added by hand. */
+export const demoApplications: ApplicationRow[] = [
+  ...demoJobs
+    .filter((j) => (APPLIED_STATUSES as (string | null)[]).includes(j.status))
+    .map((j) => ({
+      id: j.id,
+      title: j.title,
+      company: j.company,
+      url: j.url,
+      platform: j.platform,
+      status: j.status as JobStatus,
+      applied_at: j.applied_at,
+      salary: null,
+      created_at: j.created_at,
+    })),
+  ...(
+    [
+      ["Frontend Developer (m/w/d)", "Lindwurm Software GmbH", "interview", 6, "52–58k"],
+      ["React Engineer", "Kranich Mobility AG", "applied", 9, null],
+      ["Junior Web Developer", "Seeblick Media", "rejected", 21, "45k"],
+      ["Full-Stack Developer", "Polarlicht Health GmbH", "applied", 13, null],
+    ] as const
+  ).map(([title, company, status, days, salary], i) => ({
+    id: `demo-application-${i}`,
+    title,
+    company,
+    url: null,
+    platform: MANUAL_PLATFORM,
+    status,
+    applied_at: daysAgoIso(days).slice(0, 10),
+    salary,
+    created_at: daysAgoIso(days),
+  })),
+].sort((a, b) => (b.applied_at ?? "").localeCompare(a.applied_at ?? ""));
 
 export const demoPreferences: Preferences = {
   id: "demo-preferences",

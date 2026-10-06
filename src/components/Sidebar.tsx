@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   ChartBar,
+  ClipboardText,
   GearSix,
   Lightning,
   SignOut,
@@ -17,6 +18,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: SquaresFour },
+  { href: "/applications", label: "Applications", icon: ClipboardText },
   { href: "/stats", label: "Statistics", icon: ChartBar },
   { href: "/preferences", label: "AI Scoring Preferences", icon: Target },
   { href: "/settings", label: "Scraping Settings", icon: GearSix },

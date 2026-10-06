@@ -68,12 +68,14 @@ export interface Settings {
 export interface DbJob {
   id: string;
   user_id: string;
-  url: string;
+  url: string | null; // null only for manual applications entered without a link
   title: string;
   company: string;
   description: string | null;
-  platform: string;
+  platform: string; // a job board, or MANUAL_PLATFORM for applications added by hand
   status: string | null;
+  applied_at: string | null; // YYYY-MM-DD
+  salary: string | null;
   posted_date: string | null;
   created_at: string;
   deleted_at: string | null;

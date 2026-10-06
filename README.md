@@ -3,9 +3,9 @@
 [![CI](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml/badge.svg)](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml)
 
 Scrapes job boards (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur), scores matches against your
-profile with an LLM, and helps you generate tailored resumes. Track each job's application
-status (interested, applied, interview, not interested) and filter the list by it. Built with
-Next.js and Supabase.
+profile with an LLM, and helps you generate tailored resumes. An application tracker keeps every
+job you applied to in one list — scraped ones and ones you found elsewhere, added by hand or
+imported from a spreadsheet. Built with Next.js and Supabase.
 
 ![AI Job Hunter](public/aijobhunter.jpeg)
 ![AI Job Hunter](public/aijobhunter-2.jpeg)
@@ -14,6 +14,7 @@ Next.js and Supabase.
 
 - [Tech Stack](#tech-stack)
 - [Features](#features)
+- [Application Tracker](#application-tracker)
 - [Keyword Statistics](#keyword-statistics)
 - [Live Demo](#live-demo)
 - [Installation](#️-installation)
@@ -52,8 +53,9 @@ Next.js and Supabase.
   posting that breaks one can't score high.
 - **Tailored resumes** — generate a resume per job, exportable as `.docx`.
 - **CV-aware profile** — upload a PDF or Word CV and the app parses it into your matching profile.
-- **Application tracking** — mark each job interested / applied / interview / not interested, and
-  filter the list by status.
+- **Application tracker** — one list of everything you applied to, with date, status, link and
+  salary. Jobs you mark as applied on the dashboard land there automatically; jobs found
+  elsewhere can be added by hand or imported from a CSV export of your spreadsheet.
 - **Keyword statistics** — all-time numbers per search keyword (jobs found, average score, 80+
   matches, applications, overlap with other keywords, why its jobs get blocked, which board works
   best for it), a verdict per keyword, title-based keyword suggestions, and one-click swapping so
@@ -64,6 +66,44 @@ Next.js and Supabase.
 - **Single-user by design** — one password gate protects the whole deployment, with a read-only
   demo mode for visitors.
 
+## Application Tracker
+
+The **Applications** page (sidebar → clipboard icon) lists every job you applied to, newest first,
+with a count of applications, interviews and rejections on top. Requires migration
+`029_application_tracking.sql`.
+
+- **From the dashboard** — set a scraped job to _Applied_ (or later) and it appears in the tracker,
+  dated today. Clearing its status takes it out again.
+- **Found elsewhere** — _Add application_ takes a job title, employer, date, status, and an
+  optional link and salary. These jobs are never shown in the match feed, never AI-scored and
+  not counted in the keyword statistics.
+- **CSV import** — export your spreadsheet (Excel: File → Save As → CSV) and pick it under
+  _Import CSV_, or start from the template the dialog offers (_Download CSV template_). You see a preview before anything is saved; rows that can't be read are marked
+  and left out, and rows whose link is already tracked are skipped.
+
+| Statuses       | Meaning                                                          |
+| -------------- | ---------------------------------------------------------------- |
+| Interested     | Worth applying to — not in the tracker yet                       |
+| Applied        | Application sent                                                 |
+| Interview      | Invited to an interview                                          |
+| Offer          | Got an offer                                                     |
+| Rejected       | Turned down                                                      |
+| Not interested | Hidden from your shortlist on the dashboard — not in the tracker |
+
+The CSV importer reads both German and English Excel exports:
+
+| Column (any of these headers, case-insensitive)              | Required | Accepted values                                                                     |
+| ------------------------------------------------------------ | -------- | ----------------------------------------------------------------------------------- |
+| `Titel`, `Stelle`, `Position`, `Job`, `Title`                | Yes      | Text                                                                                |
+| `Arbeitgeber`, `Firma`, `Unternehmen`, `Company`, `Employer` | Yes      | Text                                                                                |
+| `Datum`, `Bewerbungsdatum`, `Date`                           | No       | `03.09.2026`, `3.9.26`, `03/09/2026` or `2026-09-03`                                |
+| `Status`                                                     | No       | e.g. _beworben_, _Vorstellungsgespräch_, _Absage_, _Zusage_ — empty means _Applied_ |
+| `Link`, `URL`, `Stellenanzeige`                              | No       | `http(s)://…`                                                                       |
+| `Gehalt`, `Salary`                                           | No       | Free text, e.g. `55–60k`                                                            |
+
+Separators `;` and `,` are both detected, and files saved as plain "CSV" (Windows-1252) keep their
+umlauts. "Remove old posts" on the dashboard never deletes a job you applied to.
+
 ## Keyword Statistics
 
 The **Statistics** page (sidebar → chart icon) shows which of your search keywords actually find
@@ -73,9 +113,9 @@ full history. Requires migration `028_keyword_tracking.sql`.
 
 | Section               | What it shows                                                                                                                                                                                                                                      |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stat tiles            | All-time jobs found, average score, 80+ matches, applications, searches run, keyword slots in use.                                                                                                                                                 |
+| Stat tiles            | All-time jobs found, average score, 80+ matches, searches run, keyword slots in use.                                                                                                                                                               |
 | Volume vs. quality    | One dot per keyword: jobs found per search (x) against average score (y), dot size = 80+ matches. Lines mark your median keyword.                                                                                                                  |
-| From found to applied | Funnel from every scraped job down to interviews.                                                                                                                                                                                                  |
+| From found to applied | Funnel from every scraped job down to interviews (applications themselves live in the tracker).                                                                                                                                                    |
 | Keywords              | Per keyword: jobs, new jobs per search, share found by no other keyword, average score, 80+ matches, applications, and a verdict (Strong / Solid / Weak / Redundant / Too new). Rows expand into per-run history, per-board breakdown and overlap. |
 | Keyword × job board   | Which board delivers the good matches for which keyword; flags searches that hit the results limit.                                                                                                                                                |
 | Why jobs fall through | Share of each keyword's jobs blocked by location/remote, tech stack, seniority or contract type.                                                                                                                                                   |
@@ -170,8 +210,9 @@ writes are persisted.
 
 Unit tests cover the pure logic that is easiest to get subtly wrong: the HTML-to-Markdown
 conversion for scraped postings (`text-format`), the LLM scoring-response parser and chunking
-(`agents/agent-3`), the hard scoring rules (`scoring-rules`), and `.docx` resume generation. They run in CI on every push and pull
-request.
+(`agents/agent-3`), the hard scoring rules (`scoring-rules`), the keyword statistics
+(`keyword-stats`), the tracker's CSV import (`csv-import`), and `.docx` resume generation. They run
+in CI on every push and pull request.
 
 ```bash
 npm test

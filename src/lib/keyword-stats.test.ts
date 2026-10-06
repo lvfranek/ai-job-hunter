@@ -133,7 +133,6 @@ describe("computeStats", () => {
       totalJobs: 5,
       scored: 3,
       goodMatches: 2,
-      applied: 1,
       scrapeRuns: 2,
       trackedSince: "2026-10-01T10:00:00",
     });

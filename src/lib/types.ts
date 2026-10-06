@@ -1,8 +1,3 @@
-export interface Language {
-  name: string;
-  level: string; // "basic" | "conversational" | "fluent" | "native"
-}
-
 // Candidate data for the cover-letter generator only — NOT used by AI scoring.
 // Preferences.notes is the scoring agent's free-text input instead.
 export interface Profile {
@@ -12,18 +7,8 @@ export interface Profile {
   name: string | null;
   email: string | null;
   phone: string | null;
-  date_of_birth: string | null;
-  languages: Language[];
   location: string | null; // used as the "ZIP City" line in the cover letter header
   street_address: string | null;
-  // Professional
-  cv_text: string | null;
-  current_situation: string | null;
-  // Skills (by category)
-  skills_frontend: string[];
-  skills_backend: string[];
-  skills_devops: string[];
-  skills_tools: string[];
   // Cover letter content
   personal_story: string | null; // opening hook, adapted per job by the AI
   key_achievements: string[]; // AI picks the most relevant ones per job

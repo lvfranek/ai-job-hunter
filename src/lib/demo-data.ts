@@ -412,63 +412,14 @@ export const demoSettings: Settings = {
   updated_at: daysAgoIso(6),
 };
 
-const DEMO_CV_TEXT = [
-  "Alex Demo — Frontend Developer",
-  "Berlin, Germany · alex.demo@example.com · +49 30 1234567",
-  "",
-  "SUMMARY",
-  "Frontend developer with 5 years' experience building product UIs in React and TypeScript. " +
-    "Currently at a Berlin SaaS scale-up, looking for a mid-to-senior product role with a strong design culture.",
-  "",
-  "EXPERIENCE",
-  "Frontend Developer — Meridian SaaS GmbH, Berlin (2022–present)",
-  "- Cut the main app's Largest Contentful Paint from 4.1s to 1.3s by reworking the data-fetching layer and code-splitting the dashboard.",
-  "- Led the migration of a 120k-line codebase from Create React App to the Next.js App Router with zero downtime.",
-  "- Built the company's first shared component library, now used by four product teams.",
-  "",
-  "Junior Frontend Developer — Kleinbahn Interactive, Leipzig (2020–2022)",
-  "- Shipped customer-facing features in React and Redux for an e-commerce platform.",
-  "- Introduced Storybook and visual regression tests to the team.",
-  "",
-  "SKILLS",
-  "React, TypeScript, Next.js, Redux, Tailwind CSS, Vitest, Playwright, Node.js, Express, PostgreSQL, Prisma, Docker, GitHub Actions, Figma",
-  "",
-  "EDUCATION",
-  "B.Sc. Media Informatics — HTWK Leipzig (2020)",
-  "",
-  "LANGUAGES",
-  "German (native), English (fluent), Spanish (basic)",
-].join("\n");
-
 export const demoProfile: Profile = {
   id: "demo-profile",
   user_id: DEMO_USER_ID,
   name: "Alex Demo",
   email: "alex.demo@example.com",
   phone: "+49 30 1234567",
-  date_of_birth: "1994-05-12",
-  languages: [
-    { name: "German", level: "native" },
-    { name: "English", level: "fluent" },
-    { name: "Spanish", level: "basic" },
-  ],
   location: "10405 Berlin",
   street_address: "Beispielstraße 12",
-  cv_text: DEMO_CV_TEXT,
-  current_situation:
-    "Frontend developer with 5 years' experience, currently at a Berlin SaaS scale-up, looking for a mid-to-senior product role.",
-  skills_frontend: [
-    "React",
-    "TypeScript",
-    "Next.js",
-    "Redux",
-    "Tailwind CSS",
-    "Vitest",
-    "Playwright",
-  ],
-  skills_backend: ["Node.js", "Express", "PostgreSQL", "Prisma", "REST", "GraphQL"],
-  skills_devops: ["Docker", "GitHub Actions", "Vercel", "AWS (S3, Lambda)"],
-  skills_tools: ["Figma", "Jira", "Storybook", "Linear"],
   personal_story:
     "I got into web development rebuilding my football club's ancient website in a weekend — it had to work on the treasurer's ten-year-old phone, and that constraint taught me more about performance and accessibility than any course since.",
   key_achievements: [
@@ -482,19 +433,13 @@ export const demoProfile: Profile = {
   updated_at: daysAgoIso(8),
 };
 
-/** Response shape of POST /api/profile/parse (ParsedProfile + cv_text). */
-export const demoParsedCv: ParsedProfile & { cv_text: string } = {
-  name: "Alex Demo",
-  email: "alex.demo@example.com",
-  phone: "+49 30 1234567",
-  location: "Berlin, Germany",
-  languages: ["German", "English", "Spanish"],
-  current_situation: "Frontend developer, 5 years experience",
-  skills_frontend: demoProfile.skills_frontend,
-  skills_backend: demoProfile.skills_backend,
-  skills_devops: demoProfile.skills_devops,
-  skills_tools: demoProfile.skills_tools,
-  cv_text: DEMO_CV_TEXT,
+/** Response shape of POST /api/profile/parse. */
+export const demoParsedCv: ParsedProfile = {
+  name: demoProfile.name,
+  email: demoProfile.email,
+  phone: demoProfile.phone,
+  street_address: demoProfile.street_address,
+  location: demoProfile.location,
 };
 
 /** Response shape of GET /api/credentials — fake, non-secret "last 4" only. */

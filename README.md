@@ -3,7 +3,7 @@
 [![CI](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml/badge.svg)](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml)
 
 Scrapes job boards (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur), scores matches against your
-profile with an LLM, and helps you generate tailored resumes. An application tracker keeps every
+AI Scoring Preferences with an LLM, and writes a tailored cover letter for any job. An application tracker keeps every
 job you applied to in one list — scraped ones and ones you found elsewhere, added by hand or
 imported from a spreadsheet. Built with Next.js and Supabase.
 
@@ -30,24 +30,24 @@ imported from a spreadsheet. Built with Next.js and Supabase.
 
 ## Tech Stack
 
-| Area      | Choice                                                       |
-| --------- | ------------------------------------------------------------ |
-| Framework | Next.js 16 (App Router)                                      |
-| UI        | React 19                                                     |
-| Language  | TypeScript                                                   |
-| Styling   | Tailwind CSS v4                                              |
-| Database  | [Supabase](https://supabase.com) (Postgres + RLS)            |
-| Scraping  | [Apify](https://apify.com) job-board actors                  |
-| AI        | [OpenRouter](https://openrouter.ai) — LLM match scoring      |
-| Documents | `pdf-parse` / `mammoth` (CV parsing), `docx` (resume export) |
-| Testing   | Vitest                                                       |
-| Icons     | Phosphor Icons                                               |
-| Hosting   | Vercel                                                       |
+| Area      | Choice                                                            |
+| --------- | ----------------------------------------------------------------- |
+| Framework | Next.js 16 (App Router)                                           |
+| UI        | React 19                                                          |
+| Language  | TypeScript                                                        |
+| Styling   | Tailwind CSS v4                                                   |
+| Database  | [Supabase](https://supabase.com) (Postgres + RLS)                 |
+| Scraping  | [Apify](https://apify.com) job-board actors                       |
+| AI        | [OpenRouter](https://openrouter.ai) — LLM match scoring           |
+| Documents | `pdf-parse` / `mammoth` (CV upload), `docx` (cover letter export) |
+| Testing   | Vitest                                                            |
+| Icons     | Phosphor Icons                                                    |
+| Hosting   | Vercel                                                            |
 
 ## Features
 
 - **Multi-board scraping** — Indeed, LinkedIn, Xing, Stepstone and Arbeitsagentur in a single scan.
-- **LLM match scoring** — every job is scored 0–100 against your profile, with written reasoning
+- **LLM match scoring** — every job is scored 0–100 against your AI Scoring Preferences, with written reasoning
   for why it fits or doesn't. Hard constraints come only from your preferences (accepted work
   arrangements, the programming languages in your skills, seniority limits from your notes) and
   are enforced in code on top of the model's facts, so a posting that breaks one can't score high.
@@ -55,8 +55,12 @@ imported from a spreadsheet. Built with Next.js and Supabase.
   jobs by status (e.g. not interested, applied) or age. Since every job costs AI credits, a run
   only starts after a second confirmation that unlocks after 3 seconds. Preferences can be
   written in English or German.
-- **Tailored resumes** — generate a resume per job, exportable as `.docx`.
-- **CV-aware profile** — upload a PDF or Word CV and the app parses it into your matching profile.
+- **Tailored cover letters** — one click on a job writes a cover letter for it, in German or
+  English, as a `.docx`. It's built from your Cover Letter Profile: contact details for the
+  header, plus a personal story, key achievements and motivation the AI adapts to each job.
+- **Fill the profile from your CV** — optionally upload your CV (résumé) as PDF, Word or text and
+  your name, contact details and address are filled in. The app doesn't create CVs, and the
+  uploaded file isn't stored.
 - **Application tracker** — one list of everything you applied to, with date, status, link and
   salary. Jobs you mark as applied on the dashboard land there automatically; jobs found
   elsewhere can be added by hand or imported from a CSV export of your spreadsheet.
@@ -216,7 +220,7 @@ Unit tests cover the pure logic that is easiest to get subtly wrong: the HTML-to
 conversion for scraped postings (`text-format`), the LLM scoring-response parser and chunking
 (`agents/agent-3`), the hard scoring rules (`scoring-rules`), the keyword statistics
 (`keyword-stats`), the tracker's CSV import (`csv-import`), the rescoring filters (`rescore`), and
-`.docx` resume generation. They run
+`.docx` cover letter generation. They run
 in CI on every push and pull request.
 
 ```bash

@@ -233,7 +233,7 @@ export function JobCard({
             className={buttonSecondary}
           >
             <FileText size={14} weight="bold" />
-            Resume
+            Cover letter
           </button>
           <CaretDown
             size={15}

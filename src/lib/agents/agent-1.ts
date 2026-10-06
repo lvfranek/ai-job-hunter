@@ -1,45 +1,33 @@
 import { generateText } from "@/lib/openrouter";
 
+// Reads a candidate's CV (résumé) for the details a cover letter header needs.
+// The app never creates a CV — uploading one only fills these fields in.
 export interface ParsedProfile {
   name: string | null;
   email: string | null;
   phone: string | null;
+  street_address: string | null;
   location: string | null;
-  languages: string[];
-  current_situation: string | null;
-  skills_frontend: string[];
-  skills_backend: string[];
-  skills_devops: string[];
-  skills_tools: string[];
 }
 
-const PROMPT = `You are an expert CV parser. Extract structured information from the CV text below.
+const PROMPT = `You are an expert CV parser. Extract the candidate's contact details from the
+CV text below. The CV may be in English or German.
 
-Focus on:
-1. Full name (if present)
-2. Email address (if present)
-3. Phone number (if present)
-4. Location (city/country if mentioned)
-5. Languages spoken (e.g. German, English)
-6. Current situation: a short one-line summary of their current role and experience (e.g. "Senior Product Manager, 8 years experience"). The candidate may edit this later if the CV doesn't reflect their actual current situation (e.g. between jobs, studying).
-7. Technical skills, split into categories — be generous, include everything you see:
-   - frontend (React, Vue, CSS, TypeScript, ...)
-   - backend (Node.js, Python, PostgreSQL, ...)
-   - devops (Docker, AWS, Kubernetes, CI/CD, ...)
-   - tools (Jira, Figma, Excel, or anything else that doesn't fit the categories above)
+- name: full name
+- email
+- phone
+- street_address: street and house number only (e.g. "Musterstraße 12")
+- location: postcode and city, as in a letter's address line (e.g. "22765 Hamburg");
+  just the city if no postcode is given
 
-Return ONLY valid JSON, no markdown, no explanations:
+Use null for anything the CV doesn't contain. Return ONLY valid JSON, no markdown,
+no explanations:
 {
   "name": "John Doe",
   "email": "john@example.com",
   "phone": "+49 123 4567890",
-  "location": "Berlin, Germany",
-  "languages": ["German", "English"],
-  "current_situation": "Senior Product Manager, 8 years experience",
-  "skills_frontend": ["React", "TypeScript"],
-  "skills_backend": ["Node.js", "PostgreSQL"],
-  "skills_devops": ["Docker", "AWS"],
-  "skills_tools": ["Jira", "Figma"]
+  "street_address": "Musterstraße 12",
+  "location": "22765 Hamburg"
 }
 
 CV Text:

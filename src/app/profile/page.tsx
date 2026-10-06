@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { UploadSimple, CircleNotch } from "@phosphor-icons/react/dist/ssr";
-import { TagInput } from "@/components/TagInput";
-import { LanguageInput } from "@/components/LanguageInput";
 import {
   DEMO_SAVE_MESSAGE,
   ErrorBanner,
@@ -15,53 +13,46 @@ import {
   textInputClass,
 } from "@/components/form";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
-import type { Language } from "@/lib/types";
 
 interface ProfileForm {
   name: string;
   email: string;
   phone: string;
-  date_of_birth: string;
-  languages: Language[];
   location: string;
   street_address: string;
-  current_situation: string;
-  cv_text: string;
-  skills_frontend: string[];
-  skills_backend: string[];
-  skills_devops: string[];
-  skills_tools: string[];
   personal_story: string;
   key_achievements: string[];
   motivation: string;
 }
 
-function toLanguages(raw: unknown): Language[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.map((item) =>
-    typeof item === "string" ? { name: item, level: "fluent" } : (item as Language),
-  );
-}
+const text = (value: unknown) => (typeof value === "string" ? value : "");
 
 function toForm(data: Record<string, unknown>): ProfileForm {
   return {
-    name: (data.name as string) ?? "",
-    email: (data.email as string) ?? "",
-    phone: (data.phone as string) ?? "",
-    date_of_birth: (data.date_of_birth as string) ?? "",
-    languages: toLanguages(data.languages),
-    location: (data.location as string) ?? "",
-    street_address: (data.street_address as string) ?? "",
-    current_situation: (data.current_situation as string) ?? "",
-    cv_text: (data.cv_text as string) ?? "",
-    skills_frontend: (data.skills_frontend as string[]) ?? [],
-    skills_backend: (data.skills_backend as string[]) ?? [],
-    skills_devops: (data.skills_devops as string[]) ?? [],
-    skills_tools: (data.skills_tools as string[]) ?? [],
-    personal_story: (data.personal_story as string) ?? "",
-    key_achievements: (data.key_achievements as string[]) ?? [],
-    motivation: (data.motivation as string) ?? "",
+    name: text(data.name),
+    email: text(data.email),
+    phone: text(data.phone),
+    location: text(data.location),
+    street_address: text(data.street_address),
+    personal_story: text(data.personal_story),
+    key_achievements: Array.isArray(data.key_achievements)
+      ? (data.key_achievements as string[])
+      : [],
+    motivation: text(data.motivation),
   };
+}
+
+// A CV only fills in contact details, and only the ones it actually contains —
+// it must never wipe the cover letter content you wrote yourself.
+const CV_FIELDS = ["name", "email", "phone", "street_address", "location"] as const;
+
+function mergeCvDetails(form: ProfileForm, parsed: Record<string, unknown>): ProfileForm {
+  const next = { ...form };
+  for (const field of CV_FIELDS) {
+    const value = text(parsed[field]).trim();
+    if (value) next[field] = value;
+  }
+  return next;
 }
 
 export default function ProfilePage() {
@@ -80,11 +71,10 @@ export default function ProfilePage() {
     fetch("/api/profile")
       .then((res) => res.json())
       .then((data) => {
-        if (data) {
-          const next = toForm(data);
-          setForm(next);
-          setSavedSnapshot(JSON.stringify(next));
-        }
+        // No profile yet: start from an empty form, so it can be filled in by hand too.
+        const next = toForm(data && typeof data === "object" ? data : {});
+        setForm(next);
+        setSavedSnapshot(JSON.stringify(next));
       });
   }, []);
 
@@ -102,8 +92,8 @@ export default function ProfilePage() {
       body.append("file", file);
       const res = await fetch("/api/profile/parse", { method: "POST", body });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to parse CV");
-      setForm(toForm(data));
+      if (!res.ok) throw new Error(data.error || "Failed to read the CV");
+      setForm((current) => mergeCvDetails(current ?? toForm({}), data));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -121,7 +111,6 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          date_of_birth: form.date_of_birth || null,
           key_achievements: form.key_achievements.map((a) => a.trim()).filter(Boolean),
         }),
       });
@@ -149,11 +138,11 @@ export default function ProfilePage() {
 
       <div className="space-y-4">
         <SettingsSection
-          title="CV"
+          title="Fill in from your CV"
           description={
             <p>
-              Upload your CV and the fields below are filled in for you. You can edit everything
-              afterwards.
+              Optional. Upload your CV (résumé) and your name, contact details and address are
+              filled in below. Nothing else is taken from it, and the file isn&apos;t stored.
             </p>
           }
         >
@@ -176,7 +165,7 @@ export default function ProfilePage() {
             {parsing ? (
               <>
                 <CircleNotch size={22} className="animate-spin text-text-muted" />
-                <p className="text-[13px] text-text-muted">Parsing your CV…</p>
+                <p className="text-[13px] text-text-muted">Reading your CV…</p>
                 <p className="text-[12px] text-text-faint">This can take up to a minute</p>
               </>
             ) : (
@@ -207,11 +196,6 @@ export default function ProfilePage() {
               }}
             />
           </div>
-          {!form && !parsing && (
-            <p className="text-[13px] text-text-faint">
-              No profile yet. Upload a CV above to get started.
-            </p>
-          )}
         </SettingsSection>
 
         {form && (
@@ -247,15 +231,6 @@ export default function ProfilePage() {
                     className={textInputClass}
                   />
                 </Field>
-                <Field label="Date of birth" htmlFor="profile-dob">
-                  <input
-                    id="profile-dob"
-                    type="date"
-                    value={form.date_of_birth}
-                    onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
-                    className={textInputClass}
-                  />
-                </Field>
                 <Field label="Street address" htmlFor="profile-street">
                   <input
                     id="profile-street"
@@ -278,64 +253,6 @@ export default function ProfilePage() {
                     className={textInputClass}
                   />
                 </Field>
-              </div>
-              <LanguageInput
-                languages={form.languages}
-                onChange={(languages) => setForm({ ...form, languages })}
-              />
-            </SettingsSection>
-
-            <SettingsSection
-              title="Professional background"
-              description={<p>Gives the AI context on where you are in your career.</p>}
-            >
-              <Field label="Current situation" htmlFor="profile-current-situation">
-                <textarea
-                  id="profile-current-situation"
-                  value={form.current_situation}
-                  onChange={(e) => setForm({ ...form, current_situation: e.target.value })}
-                  rows={3}
-                  placeholder="e.g. Employed as Senior Developer at Acme Corp / Between jobs, studying data science / Freelancing since 2023"
-                  className={textareaClass}
-                />
-              </Field>
-              <Field label="Full CV text" htmlFor="profile-cv-text">
-                <textarea
-                  id="profile-cv-text"
-                  value={form.cv_text}
-                  onChange={(e) => setForm({ ...form, cv_text: e.target.value })}
-                  rows={8}
-                  className={textareaClass}
-                />
-              </Field>
-            </SettingsSection>
-
-            <SettingsSection
-              title="Skills"
-              description={<p>Grouped by area — the AI highlights the ones each job asks for.</p>}
-            >
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <TagInput
-                  label="Frontend"
-                  tags={form.skills_frontend}
-                  onChange={(skills_frontend) => setForm({ ...form, skills_frontend })}
-                />
-                <TagInput
-                  label="Backend"
-                  tags={form.skills_backend}
-                  onChange={(skills_backend) => setForm({ ...form, skills_backend })}
-                />
-                <TagInput
-                  label="DevOps"
-                  tags={form.skills_devops}
-                  onChange={(skills_devops) => setForm({ ...form, skills_devops })}
-                />
-                <TagInput
-                  label="Tools & other"
-                  helperText="Anything that doesn't fit the categories above"
-                  tags={form.skills_tools}
-                  onChange={(skills_tools) => setForm({ ...form, skills_tools })}
-                />
               </div>
             </SettingsSection>
 

@@ -33,8 +33,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const cvText = await extractCvText(file);
-    const parsed = await parseProfileFromCV(cvText);
-    return NextResponse.json({ ...parsed, cv_text: cvText });
+    return NextResponse.json(await parseProfileFromCV(cvText));
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }

@@ -1,13 +1,16 @@
 import { getSupabaseServerClient, CURRENT_USER_ID, selectAll } from "@/lib/supabase";
-import { CHUNK_SIZE, chunk, extractCandidateLimits, scoreChunk } from "@/lib/agents/agent-3";
+import { CHUNK_SIZE, chunk, scoreChunk, type ScoringGeo } from "@/lib/agents/agent-3";
+import { getPlaceIndex } from "@/lib/geo/load";
+import { resolveHomes } from "@/lib/geo/places";
+import { acceptsOfficeWork } from "@/lib/preferences";
 import { parseDbTimestamp } from "@/lib/db-time";
 import { MANUAL_PLATFORM } from "@/lib/mock-data";
 import { scoreFilterIncludes, type ScoreOptions } from "@/lib/rescore";
 import { AI_MODEL, OpenRouterError } from "@/lib/openrouter";
-import { SCORING_VERSION, type CandidateLimits } from "@/lib/scoring-rules";
+import { SCORING_VERSION } from "@/lib/scoring-rules";
 import type { DbJob, Preferences } from "@/lib/types";
 
-// Run this many chunks concurrently. Chunks are small now (6 condensed jobs, a
+// Run this many chunks concurrently. Chunks are small now (5 condensed jobs, a
 // few seconds each), so more can be in flight without hammering the provider —
 // this is what turns a ~6 minute run into a ~2 minute one.
 const CONCURRENCY = 6;
@@ -36,13 +39,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 async function scoreChunkResilient(
   jobChunk: DbJob[],
   preferences: Preferences,
-  limits: CandidateLimits,
+  geo: ScoringGeo | null,
 ): Promise<Awaited<ReturnType<typeof scoreChunk>>> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= CHUNK_RETRIES; attempt++) {
     try {
       return await withTimeout(
-        scoreChunk(jobChunk, preferences, limits),
+        scoreChunk(jobChunk, preferences, geo),
         CHUNK_TIMEOUT_MS,
         "scoreChunk",
       );
@@ -55,6 +58,22 @@ async function scoreChunkResilient(
     }
   }
   throw lastError;
+}
+
+/**
+ * The place data and the candidate's cities, once per run — only when office
+ * work is accepted and cities are set. Otherwise the distance rule has nothing
+ * to measure and the place data isn't loaded at all. A city that doesn't
+ * resolve is skipped, never guessed: no city at all means no distance rule.
+ */
+async function scoringGeo(preferences: Preferences): Promise<ScoringGeo | null> {
+  if (!acceptsOfficeWork(preferences.job_type) || !preferences.work_locations?.length) return null;
+  const index = await getPlaceIndex();
+  const { homes, unresolved } = resolveHomes(index, preferences.work_locations);
+  if (unresolved.length > 0) {
+    console.warn(`Work locations not found, ignored: ${unresolved.join(", ")}`);
+  }
+  return homes.length > 0 ? { index, homes } : null;
 }
 
 type JobWithMatchInfo = DbJob & {
@@ -212,7 +231,7 @@ export async function runScorePipeline(
       model: AI_MODEL,
     });
 
-    const limits = await extractCandidateLimits(preferences.notes);
+    const geo = await scoringGeo(preferences);
 
     // Set by a chunk that failed for a reason no other chunk can survive either
     // (bad key, unknown model). Checked between rounds so the run aborts in
@@ -245,7 +264,7 @@ export async function runScorePipeline(
       await Promise.all(
         round.map(async (jobChunk, idx) => {
           try {
-            const results = await scoreChunkResilient(jobChunk, preferences, limits);
+            const results = await scoreChunkResilient(jobChunk, preferences, geo);
             if (results.length > 0) {
               const { error } = await supabase.from("job_matches").upsert(
                 results.map((r) => ({

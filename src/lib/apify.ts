@@ -85,13 +85,48 @@ export async function pollApifyRun(
   throw new Error("Apify run timed out");
 }
 
-export interface ScrapedJob {
+/** Where a board says a job is. Stored raw; resolved to places when scoring. */
+export interface ScrapedLocation {
+  location: string | null;
+  postal_code: string | null;
+  country_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface ScrapedJob extends ScrapedLocation {
   url: string;
   title: string;
   company: string;
   description: string;
   platform: string;
   posted_date: string | null;
+}
+
+// Actor output changes over time, so location fields are read as unknown and
+// checked — a missing or reshaped field leaves the job without a location
+// instead of failing the scrape.
+const str = (value: unknown): string | null => {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+};
+
+const num = (value: unknown): number | null => {
+  const n = typeof value === "string" ? Number(value) : value;
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
+};
+
+const field = (value: unknown, key: string): unknown =>
+  value && typeof value === "object" ? (value as Record<string, unknown>)[key] : undefined;
+
+function scrapedLocation(fields: Partial<Record<keyof ScrapedLocation, unknown>>): ScrapedLocation {
+  return {
+    location: str(fields.location),
+    postal_code: str(fields.postal_code),
+    country_code: str(fields.country_code),
+    latitude: num(fields.latitude),
+    longitude: num(fields.longitude),
+  };
 }
 
 // Each actor only offers a handful of fixed "posted within" buckets, not an
@@ -108,6 +143,8 @@ function pickDateFilter(days: number, buckets: [number, string][]): string | und
 interface IndeedRawJob {
   url: string;
   title: string;
+  /** {city, postalCode, countryCode, latitude, longitude} */
+  location?: unknown;
   description?: { text?: string };
   datePublished?: string;
   dateOnIndeed?: string;
@@ -144,13 +181,20 @@ export function mapIndeedJob(raw: unknown): ScrapedJob {
     description: normalizeBlockText(job.description?.text || ""),
     platform: "indeed",
     posted_date: job.datePublished || job.dateOnIndeed || null,
+    ...scrapedLocation({
+      location: typeof job.location === "string" ? job.location : field(job.location, "city"),
+      postal_code: field(job.location, "postalCode"),
+      country_code: field(job.location, "countryCode"),
+      latitude: field(job.location, "latitude"),
+      longitude: field(job.location, "longitude"),
+    }),
   };
 }
 
 interface LinkedinRawJob {
   url: string;
   title: string;
-  location?: string;
+  location?: unknown; // "Hamburg, Hamburg, Germany"
   companyName?: string;
   description?: string; // flat text — no line breaks at all
   descriptionHtml?: string; // same posting WITH its structure; prefer this
@@ -185,6 +229,7 @@ export function mapLinkedinJob(raw: unknown): ScrapedJob {
       : normalizeBlockText(job.description || ""),
     platform: "linkedin",
     posted_date: job.postedDate || null,
+    ...scrapedLocation({ location: job.location }),
   };
 }
 
@@ -192,7 +237,7 @@ interface StepstoneRawJob {
   url: string;
   title: string;
   datePosted?: string;
-  location?: { location?: string };
+  location?: unknown; // {location: "Hamburg"}
   company?: { name?: string };
   textSnippet?: string;
   // `title` is the posting's own German heading ("Deine Aufgaben"); `name` is a
@@ -248,6 +293,9 @@ export function mapStepstoneJob(raw: unknown): ScrapedJob {
       .join("\n\n"),
     platform: "stepstone",
     posted_date: job.datePosted || null,
+    ...scrapedLocation({
+      location: typeof job.location === "string" ? job.location : field(job.location, "location"),
+    }),
   };
 }
 
@@ -255,6 +303,10 @@ interface XingRawJob {
   url: string;
   title: string;
   company?: string;
+  location?: unknown; // city
+  locations?: unknown; // further published locations
+  location_zip?: unknown;
+  location_country_code?: unknown;
   description_text?: string; // flat text — no line breaks at all
   description_html?: string; // same posting WITH its structure; prefer this
   date_posted?: string;
@@ -289,6 +341,15 @@ export function mapXingJob(raw: unknown): ScrapedJob {
       : normalizeBlockText(job.description_text || ""),
     platform: "xing",
     posted_date: job.date_posted || null,
+    ...scrapedLocation({
+      // The scorer reads " | " as a list of places.
+      location: [job.location, ...(Array.isArray(job.locations) ? job.locations : [])]
+        .map(str)
+        .filter((l, i, all): l is string => l !== null && all.indexOf(l) === i)
+        .join(" | "),
+      postal_code: job.location_zip,
+      country_code: job.location_country_code,
+    }),
   };
 }
 
@@ -296,6 +357,10 @@ interface ArbeitsagenturRawJob {
   portalUrl: string;
   title: string;
   employer?: string;
+  location?: unknown; // city
+  postalCode?: unknown;
+  lat?: unknown;
+  lng?: unknown;
   description?: string;
   publishedDate?: string;
   firstPublishedDate?: string;
@@ -337,5 +402,13 @@ export function mapArbeitsagenturJob(raw: unknown): ScrapedJob {
     description: normalizeBlockText(job.description || ""),
     platform: "arbeitsagentur",
     posted_date: job.publishedDate || job.firstPublishedDate || null,
+    // The whole board is German.
+    ...scrapedLocation({
+      location: job.location,
+      postal_code: job.postalCode,
+      country_code: "DE",
+      latitude: job.lat,
+      longitude: job.lng,
+    }),
   };
 }

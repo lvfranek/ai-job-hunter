@@ -8,6 +8,7 @@ import {
   markJobsForRescore,
   runScorePipeline,
 } from "@/lib/pipeline/run-score";
+import { isReadyForScoring } from "@/lib/preferences";
 import { parseScoreOptions, scoreFilterIncludes } from "@/lib/rescore";
 
 // Let the scoring run keep going after the response is sent. On a Node.js server
@@ -47,8 +48,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!preferences) {
-    return NextResponse.json({ error: "Complete your preferences first" }, { status: 400 });
+  if (!preferences || !isReadyForScoring(preferences)) {
+    return NextResponse.json(
+      { error: "Add your skills or CV in AI Scoring Preferences first" },
+      { status: 400 },
+    );
   }
 
   if (needsScoring.length === 0) {

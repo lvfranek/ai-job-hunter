@@ -1,16 +1,25 @@
 import { generateText } from "@/lib/openrouter";
+import { MAX_BACKGROUND_CHARS } from "@/lib/preferences";
 import { normalizeBlockText } from "@/lib/text-format";
 import {
-  applyHardRules,
-  BLOCKED_MAX_SCORE,
-  NO_LIMITS,
+  computeChance,
   readPostingFacts,
-  type CandidateLimits,
-  type ScoringResult,
+  TASK_FITS,
+  toCandidate,
+  type Candidate,
+  type ChanceResult,
 } from "@/lib/scoring-rules";
+import type { Home, PlacePoints } from "@/lib/geo/distance";
+import { resolveJobPlaces, type PlaceIndex } from "@/lib/geo/places";
 import type { DbJob, Preferences } from "@/lib/types";
 
-export type { ScoringResult } from "@/lib/scoring-rules";
+export type { ChanceResult } from "@/lib/scoring-rules";
+
+/** Place data and the candidate's resolved cities, for the distance rule. */
+export interface ScoringGeo {
+  index: PlaceIndex;
+  homes: Home[];
+}
 
 // German job postings run 4-12k characters, most of it benefits boilerplate,
 // legal text and company blurb after the actual requirements. Sending them whole
@@ -58,281 +67,212 @@ export function condenseDescription(text: string | null): string {
     : head;
 }
 
-const EMPLOYMENT_LABELS: Record<string, string> = {
-  freelance: "Freelance (freiberuflich)",
-  ausbildung: "Apprenticeship (Ausbildung)",
-  studium: "Dual study / student programme (duales Studium)",
-  werkstudent: "Working student (Werkstudent)",
+const TARGET_LEVEL_LABELS: Record<string, string> = {
+  junior: "junior / entry level",
+  mid: "mid-level",
+  senior: "senior / lead",
 };
 
-const WORK_ARRANGEMENT_LABELS: Record<string, string> = {
-  remote: "100% remote — no regular office days at all",
-  hybrid: "hybrid — regular office days",
-  "on-site": "on-site in the office",
-};
+function orNone(value: string | null | undefined, fallback: string): string {
+  return value?.trim() || fallback;
+}
 
-const WORK_TIME_LABELS: Record<string, string> = {
-  vollzeit: "Full-time (Vollzeit)",
-  teilzeit: "Part-time (Teilzeit)",
-  minijob: "Minijob — marginal employment (geringfügige Beschäftigung)",
-};
+function candidateProfile(preferences: Preferences): string {
+  const levels = (preferences.target_levels ?? []).map((l) => TARGET_LEVEL_LABELS[l] ?? l);
+  const background = (preferences.background ?? "").trim().slice(0, MAX_BACKGROUND_CHARS);
+  return `Target levels: ${levels.length > 0 ? levels.join(", ") : "not stated"}
+Years of relevant professional experience: ${preferences.experience_years ?? "not stated"}
+Skills they are strong in: ${orNone(preferences.own_skills, "not listed")}
+Skills they know the basics of: ${orNone(preferences.basic_skills, "none listed")}
+Education: ${orNone(preferences.education, "not stated")}
+Certificates and licences: ${orNone(preferences.certifications, "none listed")}
+Spoken languages: ${orNone(preferences.spoken_languages, "not stated")}
 
-function labelList(values: string[], labels: Record<string, string>): string {
-  const mapped = (values ?? []).map((v) => labels[v] ?? v).filter(Boolean);
-  return mapped.length > 0 ? mapped.join(", ") : "";
+The ideal job, in their own words:
+"""
+${orNone(preferences.notes, "Not described.")}
+"""
+
+Dealbreakers — what they never want:
+"""
+${orNone(preferences.dealbreakers, "None listed.")}
+"""
+
+Background / CV:
+"""
+${background || "Not provided — judge from the skills, education and certificates above."}
+"""`;
 }
 
 function buildPrompt(jobs: DbJob[], preferences: Preferences): string {
-  const excludedEmployment = labelList(
-    preferences.excluded_employment_types ?? [],
-    EMPLOYMENT_LABELS,
-  );
-  const workTime = labelList(preferences.work_time_models ?? [], WORK_TIME_LABELS);
-  const arrangements = labelList(preferences.job_type ?? [], WORK_ARRANGEMENT_LABELS);
-  const softSkillRule = preferences.soft_skills_flexible
-    ? `THE CANDIDATE HAS MARKED SOFT SKILLS AS FLEXIBLE. Treat every soft-skill
-requirement in a posting (reliability, teamwork, resilience, communication,
-initiative, flexibility, motivation — in German postings Zuverlässigkeit,
-Teamfähigkeit, Belastbarkeit, Kommunikationsstärke, Eigeninitiative …) as FULLY MET.
-Never deduct a single point for a soft skill, and never name one as a gap.`
-    : `Soft skills are treated like any other requirement.`;
-
-  return `You are an expert job-fit evaluator working for ONE candidate on the GERMAN job
-market. Your scores decide which postings this person ever gets to see.
-
-## Your bias: recall over precision
-This candidate is actively job hunting. Missing a good opportunity is far more
-damaging than surfacing a mediocre one. When you are torn
-between two scores, GIVE THE HIGHER ONE. A posting that is merely imperfect must
-never end up in the same band as one that is genuinely impossible.
-
-This bias NEVER overrides something the candidate explicitly ruled out in their own
-words below. "Recall over precision" is about imperfect fits, not about postings
-they said they don't want.
+  return `You check job postings against ONE candidate's profile, on the German job
+market. You do NOT rate the jobs. You report facts about each posting and check
+its must-have requirements against the profile; code decides everything else
+from your answers. Be literal and consistent: the same posting must always get
+the same answer. The candidate can work in any profession — read their profile
+for what it says, not as a software developer by default.
 
 ## The candidate
-
-What they want, in their own words — this is your PRIMARY signal. Anything they
-explicitly say they do NOT want is a hard blocker (see below), exactly like the
-exclusion lists. They may write in English, German or a mix of both — read every
-language the same way:
-"""
-${preferences.notes || "No specific preferences given."}
-"""
-
-Skills they actually have: ${preferences.own_skills || "not specified"}
-Programming languages they'd prefer to work in: ${preferences.preferred_languages || "no preference"}
-Preferred location: ${preferences.preferred_location || "any"}
-Work arrangements they accept: ${arrangements || "any"}${
-    arrangements ? " — anything else is a hard blocker" : ""
-  }
-Contract forms they do NOT want — treat each of these as a hard blocker: ${
-    excludedEmployment || "none excluded — every contract form is acceptable"
-  }
-Acceptable working-time models: ${workTime || "no preference — do not penalise any working-time model"}
-
-${softSkillRule}
+${candidateProfile(preferences)}
 
 ## Reading the postings
-Most postings are in German, some in English. Read each in its own language and
-connect German and English terminology yourself: Werkstudent, Praktikum, Ausbildung, duales Studium,
-Vollzeit/Teilzeit, unbefristet, (m/w/d), Berufserfahrung, Kenntnisse,
-"Wir bieten", "Dein Profil", "Nice to have". Never invent a requirement that is
-not written in the posting.
+Most postings are in German, some in English. Read each in its own language.
+"Dein Profil", "Das bringst du mit", "Anforderungen", "Your profile" list
+requirements; "Wir bieten", "Benefits", "Deine Aufgaben" do not. Anything marked
+"Nice to have", "von Vorteil", "wünschenswert", "idealerweise", "gerne",
+"ein Plus" is NOT a must-have. Never invent a requirement that is not written
+in the posting.
 
-## Score bands — calibrate against these, they must be comparable across jobs
-- 90-100: stack, level, location and contract form all fit. Apply immediately.
-- 75-89: clear match with one small gap.
-- 55-74: solid option. Partial match, but applying is clearly worth it.
-- 35-54: long shot, still not excluded.
-- 0-34: ONLY when you can name a hard blocker (see below). Never otherwise.
+## For each posting, report
 
-## Hard blockers — the ONLY justification for a score under 35
-Score below 35 only if one of these is true, and then you MUST name it in the
-"blocker" field in short, plain English:
-- The posting's work_arrangement (Step 1) is not one the candidate accepts —
-  e.g. hybrid with office days when they only accept 100% remote.
-- Location is unreachable and the posting offers no remote option, while the
-  candidate needs a different region.
-- A completed degree or Ausbildung is MANDATORY and the candidate does not have it.
-- A language is MANDATORY that the candidate does not speak.
-- The posting's contract form appears on the candidate's exclusion list above
-  (e.g. it is a Werkstudentenstelle and they excluded Werkstudent).
-- The posting is explicitly senior-only ("mindestens 5 Jahre Berufserfahrung
-  zwingend", "nur für erfahrene …").
-- A core programming language (Step 1: core_languages) is not in the
-  candidate's skills.
-- "ruled_out" is not null (see "Step 1" below).
-If none of these apply, "blocker" MUST be null and the score MUST be 35 or above.
-
-## What must NOT sink a score
-- An experience requirement somewhat above the candidate's own level ("2-3 Jahre
-  Berufserfahrung", "2-3 years"): moderate deduction only, never a blocker —
-  UNLESS the candidate stated their own experience or an experience limit that
-  the posting exceeds, or ruled out this posting's level (see "Step 1"). The
-  candidate's own words always win over this rule. Employers routinely hire under
-  specification.
-- A framework the candidate hasn't used, in a language they know (React ↔ Vue ↔
-  Angular, Django ↔ FastAPI, MySQL ↔ Postgres): small deduction only — these
-  transfer. A different core programming language does NOT transfer: a Java,
-  C# or PHP role is not a fit for someone whose skills list has none of them.
-- Anything listed under "Nice to have" / "Von Vorteil" / "Wünschenswert": no
-  deduction at all.
-- A long wish list of technologies: judge the CORE requirements, not the wish list.
-
-## Step 1 — read the facts out of each posting BEFORE you score it
-These fields are plain facts about the posting. The recall bias does NOT apply
-here: answer what the posting says, not what would be kind to the candidate.
-
-- work_arrangement: where the work happens, as the posting describes it.
-    - "remote": fully remote — "100% remote", "full remote", "remote-first",
-      "ortsunabhängig", "komplett aus dem Home-Office", or "Remote" in the title
-      with no office days in the text. Occasional team events or onboarding on
-      site (a few times a year) still count as remote.
-    - "hybrid": ANY regular office presence — "2 Tage Home-Office", "3 Tage im
-      Büro", "bis zu 60% mobiles Arbeiten", "flexibel zwischen Büro und
-      Home-Office", "Home-Office möglich" without saying it's fully remote.
-      "Mobiles Arbeiten" / "Mobile Working" listed as a benefit is hybrid too —
-      in German postings it means partial home office, not a remote job.
-    - "onsite": office work with no home-office option mentioned.
-    - "unknown": the posting says nothing about the workplace at all.
-- core_languages: the general-purpose programming languages the role is BUILT
-  AROUND — what the main day-to-day code is written in. Use canonical names
-  (Java, Kotlin, C#, C++, Go, PHP, Python, Ruby, TypeScript, JavaScript, Swift,
-  Dart …). Name the language behind a core framework (Spring → Java, .NET → C#,
-  Laravel → PHP, Rails → Ruby). If the posting offers alternatives, put them in
-  ONE entry joined by " or " ("Java or Python"). Leave out SQL, HTML/CSS,
-  shell scripting, anything under "Nice to have" / "von Vorteil", and side
-  mentions. [] if the posting names no programming language.
+- requirements: the posting's MUST-HAVE requirements, at most 8, in the order
+  the posting lists them. Leave out years of experience (that is
+  required_years), soft skills (communication, teamwork, reliability,
+  Belastbarkeit, Teamfähigkeit, Eigeninitiative …) and every nice-to-have.
+  Each entry:
+    - text: a short label of at most 6 words. Keep the posting's own term for
+      tools, software, technologies and certificates ("SAP S/4HANA", "React",
+      "Staplerschein"); otherwise short English ("Customer service experience").
+    - kind:
+        - "qualification": a formal credential the posting makes MANDATORY with
+          no alternative — a licence, a state exam or registration, a specific
+          completed degree or Ausbildung stated as required ("abgeschlossene
+          Ausbildung als Pflegefachkraft", "Führerschein Klasse C zwingend").
+          If the posting accepts an alternative ("Studium oder vergleichbare
+          Qualifikation", "oder entsprechende Berufserfahrung"), it is "skill".
+        - "language": a spoken language the posting requires ("German C1").
+        - "skill": everything else — tools, methods, domain knowledge, kinds of
+          experience.
+    - status, judged ONLY from the candidate profile above:
+        - "met": the profile names it or an obvious equivalent (React.js ↔
+          React, MS Office ↔ Excel, Kundenberatung ↔ customer service) and they
+          used it in work, an Ausbildung, studies or real projects. Anything in
+          "Skills they are strong in" counts as met.
+        - "partial": only a basic or adjacent version — listed under "basics",
+          coursework, a hobby project, a closely related tool (Vue for React),
+          a language one level below the one asked for.
+        - "missing": nothing related anywhere in the profile.
 - required_years: the minimum years of professional experience the posting
   REQUIRES, as a number ("3+ years" → 3, "2-5 Jahre" → 2, "mehrjährige
-  Erfahrung" → 2). null if it names none. Years under "Nice to have" don't count.
-
+  Erfahrung" → 2, "erste Berufserfahrung" → 1). null if it names none. Years
+  under "Nice to have" don't count.
 - posting_level: "junior", "mid" or "senior" — the level the posting ASKS FOR.
-  "senior" if ANY of these hold, even under a neutral title like "Full-Stack
-  Developer":
-    - the title says Senior, Lead, Principal, Staff, Head of, Architekt
-    - the requirements use senior wording: "Senior-Level", "Senior-Erfahrung",
-      "auf Senior-Niveau", "langjährige Berufserfahrung", "Expertenwissen",
-      "Experte in …", "beherrschst … blind", "tiefgreifende Expertise"
-    - 5 or more years of professional experience are required
-    - it asks for technical or disciplinary leadership of a team
-  NOT senior on their own — these are "mid" at most:
-    - 2, 3 or 4 years of experience ("3+ years", "mehrjährige Erfahrung")
-    - "Ownership", "Verantwortung für …", "you own the feature / the interface"
-      — that is owning work, not leading people
-    - "eigenständig", "selbstständig arbeiten"
-  "mid" for roughly 2-4 years without senior wording. "junior" for entry level,
-  Berufseinsteiger, 0-1 years, or no experience requirement at all.
-- ruled_out: go through everything the candidate says they do NOT want in their
-  own words above. If this posting matches one of those things, a short English
-  phrase naming it (e.g. "Senior role – you're not looking for senior positions"),
-  otherwise null.
-  The candidate's own definitions beat the general ones above. If they state how
-  much experience they have or accept (e.g. "I have 1 year of experience",
-  "ich habe 1 Jahr Erfahrung", "no roles asking for 3+ years", "keine Stellen ab
-  3 Jahren"), apply it literally: a posting that REQUIRES more years than that is
-  ruled_out ("3 years required – you have 1"), whatever
-  posting_level says. Years under "Nice to have" / "von Vorteil" don't count. If they ruled out senior positions and posting_level is
-  "senior", ruled_out MUST be set. Missing years of experience are NOT a reason
-  to relax this — "Senior-Level" alone is enough.
-
-A job with ruled_out set is a hard blocker: score under 35 and repeat the phrase
-in "blocker".
+    - "senior" if the title says Senior, Lead, Principal, Staff, Head of,
+      Leiter, Architekt; or the requirements use senior wording
+      ("Senior-Level", "langjährige Berufserfahrung", "Expertenwissen",
+      "tiefgreifende Expertise"); or 5+ years are required; or it asks for
+      leading a team.
+    - "mid" for roughly 2-4 years without senior wording. "Ownership",
+      "Verantwortung für …", "eigenständig" alone are not senior.
+    - "junior" for entry level, Berufseinsteiger, Absolventen, 0-1 years, or
+      no experience requirement at all.
+- task_fit: how the posting's day-to-day TASKS ("Deine Aufgaben", "Your
+  tasks", what the job is actually about) compare with what the candidate has
+  done (background, skills) and the ideal job they describe. Ignore the job
+  title — judge the work.
+    - "same": they have done these tasks before, at work, in an Ausbildung,
+      studies or real projects.
+    - "adjacent": similar or neighbouring tasks their background clearly
+      prepares them for.
+    - "different": tasks unrelated to anything in their profile.
+- work_arrangement: where the work happens, as the posting describes it.
+    - "remote": fully remote — "100% remote", "full remote", "remote-first",
+      "ortsunabhängig", "komplett aus dem Home-Office", or "Remote" in the
+      title with no office days in the text. A few on-site team events a year
+      still count as remote.
+    - "hybrid": ANY regular office presence — "2 Tage Home-Office", "3 Tage im
+      Büro", "bis zu 60% mobiles Arbeiten", "Home-Office möglich" without
+      saying it's fully remote. "Mobiles Arbeiten" listed as a benefit is
+      hybrid too.
+    - "onsite": work on site with no home-office option mentioned.
+    - "unknown": the posting says nothing about the workplace.
+- work_locations: the cities or towns this position is worked from, as the
+  posting names them ("Hamburg", "Norderstedt") — not the company's registered
+  seat, headquarters or other offices. Several if it can be done at any of
+  them. [] if fully remote or no place is named. The board's own location
+  field is given as "location" when known.
+- contract_form: the position itself, not experience it asks for
+  ("Erfahrung aus einem Werkstudentenjob" is still "regular").
+  "werkstudent", "ausbildung", "studium" (duales Studium), "praktikum"
+  (internship), "freelance", or "regular" for ordinary employment.
+- work_time: "fulltime" (Vollzeit), "parttime" (Teilzeit), "both" (either is
+  offered), "minijob", or "unknown".
+- core_languages: only for programming jobs — the general-purpose programming
+  languages the role is BUILT AROUND, canonical names (Java, C#, Python,
+  TypeScript …), the language behind a core framework (Spring → Java, .NET →
+  C#, Laravel → PHP). Alternatives go in ONE entry joined by " or ". Leave out
+  SQL, HTML/CSS, shell and nice-to-haves. [] for every other job.
+- dealbreaker: if the posting clearly matches one of the candidate's
+  dealbreakers, a short English phrase naming it ("Cold calling", "Shift
+  work"); otherwise null. Always null when they listed none.
+- reasoning: ONE sentence in English, at most 25 words, addressing the
+  candidate as "you": what matches best and the biggest gap. No verdict.
 
 ## Output
-For every job return these fields, in this order:
-- work_arrangement, core_languages, required_years, posting_level and
-  ruled_out (Step 1).
-- match_score (0-100): REQUIRED, never leave it out. The overall band from the
-  scale above. Weight skills heaviest, then employment/location fit, then
-  seniority.
-- skill_overlap_pct (0-100): how well the required tech matches the candidate's
-  skills and the stack they described wanting.
-- seniority_fit (0-100): how well the required experience level matches. Apply
-  the "must not sink a score" rule above. 0 if the candidate ruled out this
-  posting's level.
-- location_fit (0-100): location and remote policy vs. the candidate's preference.
-- employment_fit (0-100): 0 if the posting's contract form is on the exclusion
-  list above — that is a blocker. Otherwise judge the working-time model against
-  the candidate's accepted list, and return 100 if they stated no preference.
-- blocker: short English phrase naming the hard blocker, or null. Null unless the
-  score is under 35.
-- reasoning: 1-2 concrete sentences IN ENGLISH, addressing the candidate as "you".
-  Name the specific technology or aspect that matches AND the one thing that
-  doesn't. No generic filler.
+Return ONLY a minified JSON array — no markdown fences, no commentary — with one
+object per posting, fields in this order:
+[{"job_id":"uuid","requirements":[{"text":"React","kind":"skill","status":"met"},{"text":"German C1","kind":"language","status":"met"},{"text":"Node.js","kind":"skill","status":"partial"}],"required_years":2,"posting_level":"mid","task_fit":"same","work_arrangement":"hybrid","work_locations":["Hamburg"],"contract_form":"regular","work_time":"fulltime","core_languages":["TypeScript"],"dealbreaker":null,"reasoning":"Your React and TypeScript work fits the core stack; Node.js on the backend is the biggest gap."}]
 
-Return ONLY a valid JSON array — no markdown fences, no commentary:
-[
-  {
-    "job_id": "uuid",
-    "work_arrangement": "remote",
-    "core_languages": ["TypeScript"],
-    "required_years": 2,
-    "posting_level": "mid",
-    "ruled_out": null,
-    "match_score": 78,
-    "skill_overlap_pct": 88,
-    "seniority_fit": 60,
-    "location_fit": 90,
-    "employment_fit": 100,
-    "blocker": null,
-    "reasoning": "React and TypeScript are exactly your stack and remote fits. It asks for 2 years of experience, a bit more than you have, but it's still worth applying."
-  }
-]
-
-## Jobs to score
+## Postings
 ${JSON.stringify(
   jobs.map((j) => ({
     id: j.id,
     title: j.title,
     company: j.company,
+    ...(j.location ? { location: j.location } : {}),
     description: condenseDescription(j.description),
   })),
 )}`;
 }
 
-function clampScore(value: unknown): number {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return 0;
-  return Math.max(0, Math.min(100, Math.round(num)));
-}
-
-function textOrNull(value: unknown): string | null {
-  const text = typeof value === "string" ? value.trim() : "";
-  return text && text.toLowerCase() !== "null" ? text : null;
+/**
+ * Whether a raw model entry is complete enough to judge. Without the checklist
+ * or the task fit there is nothing to compute a tier from — the job stays
+ * unscored and the next run retries it, instead of silently landing anywhere.
+ */
+export function isCompleteEntry(entry: Record<string, unknown>): boolean {
+  return (
+    Array.isArray(entry.requirements) &&
+    (TASK_FITS as string[]).includes(
+      String(entry.task_fit ?? "")
+        .toLowerCase()
+        .trim(),
+    )
+  );
 }
 
 /**
- * Turn one raw model entry into a ScoringResult. A posting the candidate ruled
- * out in their own words is forced into the blocked band here rather than
- * trusted to the model: in practice it classifies "this is senior" correctly
- * and then talks itself back into a 90 because of the recall bias.
- *
- * The model's own "blocker" alone does NOT cap the score — it occasionally
- * invents one (reading "Erfahrung aus einem Werkstudentenjob" as a
- * Werkstudent position), and the hard rules in scoring-rules.ts already cover
- * the constraints that must hold.
+ * One raw model entry → the stored result, with the tier decided in code.
+ * `locate` turns the cities the model read into places (the server passes the
+ * place data in); without it the distance rule has nothing to measure.
  */
-export function toScoringResult(entry: Record<string, unknown>): ScoringResult {
-  const ruledOut = textOrNull(entry.ruled_out);
-  const blocker = textOrNull(entry.blocker) ?? ruledOut;
-  const matchScore = clampScore(entry.match_score);
+export function toChanceResult(
+  entry: Record<string, unknown>,
+  job: Pick<DbJob, "id" | "title" | "description">,
+  candidate: Candidate,
+  locate: (modelCities: string[]) => PlacePoints[] = () => [],
+): ChanceResult {
+  const facts = readPostingFacts(entry, job);
+  facts.places = locate(facts.workLocations);
+  const { chance, blockers, downgrades, distanceKm, workLocation } = computeChance(
+    facts,
+    candidate,
+  );
   return {
-    job_id: String(entry.job_id),
-    match_score: ruledOut ? Math.min(matchScore, BLOCKED_MAX_SCORE) : matchScore,
-    skill_overlap_pct: clampScore(entry.skill_overlap_pct),
-    seniority_fit: clampScore(entry.seniority_fit),
-    location_fit: clampScore(entry.location_fit),
-    employment_fit: clampScore(entry.employment_fit),
-    blocker,
-    reasoning: String(entry.reasoning ?? ""),
+    job_id: job.id,
+    chance,
+    requirements: facts.requirements,
+    downgrades,
+    distance_km: distanceKm,
+    work_location: workLocation,
+    blocker: blockers.length > 0 ? blockers.join("; ") : null,
+    reasoning: typeof entry.reasoning === "string" ? entry.reasoning.trim() : "",
   };
 }
 
 /**
  * Pull every balanced {...} out of a malformed response, at any nesting depth,
- * keeping only the ones that look like a score object and actually parse.
+ * keeping only the ones that look like a job entry and actually parse.
  *
  * This is the salvage path: a response truncated mid-object used to throw from
  * JSON.parse and cost the entire chunk. Here the incomplete tail object is
@@ -398,10 +338,13 @@ export function parseScoringResponse(raw: string): Array<Record<string, unknown>
   return extractJsonObjects(cleaned);
 }
 
-// Small chunks are the whole point: ~6 condensed descriptions is roughly 6k
+// Small chunks are the whole point: ~5 condensed descriptions is roughly 5k
 // tokens, which comes back in seconds instead of grinding against the request
-// timeout — and a chunk that does fail costs six jobs, not twenty-five.
-export const CHUNK_SIZE = 6;
+// timeout — and a chunk that does fail costs five jobs, not twenty-five. Five,
+// not six: each answer carries a requirement checklist (~300 tokens per job).
+export const CHUNK_SIZE = 5;
+const SCORING_MAX_TOKENS = 6000;
+const SCORING_SEED = 7;
 
 export function chunk<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -413,73 +356,31 @@ export function chunk<T>(items: T[], size: number): T[][] {
 export async function scoreChunk(
   jobs: DbJob[],
   preferences: Preferences,
-  limits: CandidateLimits,
-): Promise<ScoringResult[]> {
-  // Low temperature: the same job should not drift between scores across runs.
-  const text = await generateText(buildPrompt(jobs, preferences), { temperature: 0.2 });
+  geo: ScoringGeo | null = null,
+): Promise<ChanceResult[]> {
+  // Temperature 0 and a fixed seed: the same posting should get the same
+  // checklist on every run. The checklist is ~8 entries per job, so the answer
+  // needs more room than the client's default.
+  const text = await generateText(buildPrompt(jobs, preferences), {
+    temperature: 0,
+    seed: SCORING_SEED,
+    maxTokens: SCORING_MAX_TOKENS,
+  });
   const parsed = parseScoringResponse(text);
+  const candidate = toCandidate(preferences, geo?.homes);
 
-  const validIds = new Set(jobs.map((j) => j.id));
+  const byId = new Map(jobs.map((j) => [j.id, j]));
   const seen = new Set<string>();
-
-  return parsed
-    .filter((entry) => {
-      const id = String(entry.job_id);
-      if (!validIds.has(id) || seen.has(id)) return false;
-      // No score means no result: the job stays unscored and the next run
-      // retries it, instead of silently landing at 0.
-      if (entry.match_score == null || !Number.isFinite(Number(entry.match_score))) return false;
-      seen.add(id);
-      return true;
-    })
-    .map((entry) => {
-      const job = jobs.find((j) => j.id === String(entry.job_id))!;
-      const facts = readPostingFacts(entry, job.title);
-      return applyHardRules(toScoringResult(entry), facts, preferences, limits);
-    });
-}
-
-/**
- * Read the hard limits out of the candidate's free-text notes, once per run.
- * The scorer applies them in code (see scoring-rules.ts) — asked per chunk,
- * the model would weigh "no senior positions" against everything else and lose
- * it. A failed read falls back to no limits rather than failing the run; the
- * prompt still carries the notes.
- */
-export async function extractCandidateLimits(notes: string | null): Promise<CandidateLimits> {
-  if (!notes?.trim()) return NO_LIMITS;
-  const prompt = `A job seeker described the jobs they want, in English, German or both.
-Extract two hard limits from it.
-
-- exclude_senior: true only if they say they do NOT want senior positions.
-- max_required_years: the most years of REQUIRED professional experience they
-  still accept — only when they state such a limit. "no jobs asking for 3+ years"
-  → 2, "keine Stellen, die 3 oder mehr Jahre verlangen" → 2, "maximal 2 Jahre
-  Erfahrung gefordert" → 2. Their own experience alone ("I have 1 year of
-  experience", "ich habe 1 Jahr Erfahrung") is NOT a limit → null.
-
-Return ONLY JSON, no markdown: {"exclude_senior": false, "max_required_years": null}
-
-Text:
-"""
-${notes}
-"""`;
-  try {
-    const raw = await generateText(prompt, { temperature: 0, maxTokens: 200 });
-    const parsed = JSON.parse(
-      raw
-        .trim()
-        .replace(/^```(?:json)?\s*/i, "")
-        .replace(/\s*```$/, ""),
-    ) as Record<string, unknown>;
-    const years = Number(parsed.max_required_years);
-    return {
-      excludeSenior: parsed.exclude_senior === true,
-      maxRequiredYears:
-        parsed.max_required_years != null && Number.isFinite(years) && years >= 0 ? years : null,
-    };
-  } catch (error) {
-    console.error("Reading candidate limits failed, scoring without them:", error);
-    return NO_LIMITS;
+  const results: ChanceResult[] = [];
+  for (const entry of parsed) {
+    const job = byId.get(String(entry.job_id));
+    if (!job || seen.has(job.id) || !isCompleteEntry(entry)) continue;
+    seen.add(job.id);
+    results.push(
+      toChanceResult(entry, job, candidate, (cities) =>
+        geo ? resolveJobPlaces(geo.index, job, cities) : [],
+      ),
+    );
   }
+  return results;
 }

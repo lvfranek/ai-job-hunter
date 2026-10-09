@@ -24,7 +24,7 @@ type SortKey =
   | "jobs"
   | "newPerSearch"
   | "exclusive"
-  | "avgScore"
+  | "goodShare"
   | "goodMatches"
   | "applied"
   | "lastSearchedAt";
@@ -44,8 +44,18 @@ const columns: { key: SortKey; label: string; title: string; numeric: boolean }[
     title: "Share of its jobs no other keyword found — low means redundant",
     numeric: true,
   },
-  { key: "avgScore", label: "Avg score", title: "Average match score of its jobs", numeric: true },
-  { key: "goodMatches", label: "80+", title: "Jobs that scored 80 or more", numeric: true },
+  {
+    key: "goodShare",
+    label: "Good+ %",
+    title: "Share of its scored jobs with a Good or Very good chance",
+    numeric: true,
+  },
+  {
+    key: "goodMatches",
+    label: "Good+",
+    title: "Jobs with a Good or Very good chance",
+    numeric: true,
+  },
   {
     key: "applied",
     label: "Applied",
@@ -320,8 +330,8 @@ function KeywordDetail({
               <tr>
                 <th className="pb-1 font-medium">Board</th>
                 <th className="pb-1 text-right font-medium">Jobs</th>
-                <th className="pb-1 text-right font-medium">Avg</th>
-                <th className="pb-1 text-right font-medium">80+</th>
+                <th className="pb-1 text-right font-medium">Good+ %</th>
+                <th className="pb-1 text-right font-medium">Good+</th>
               </tr>
             </thead>
             <tbody className="tabular-nums text-[#1E2A3D]">
@@ -342,7 +352,7 @@ function KeywordDetail({
                     )}
                   </td>
                   <td className="py-1 text-right">{b.jobs}</td>
-                  <td className="py-1 text-right">{fmtNumber(b.avgScore)}</td>
+                  <td className="py-1 text-right">{fmtPercent(b.goodShare)}</td>
                   <td className="py-1 text-right">{b.goodMatches}</td>
                 </tr>
               ))}
@@ -498,7 +508,7 @@ export function KeywordTable({
                   <td className="py-2.5 text-right">
                     {fmtPercent(k.jobs ? k.exclusive / k.jobs : null)}
                   </td>
-                  <td className="py-2.5 text-right">{fmtNumber(k.avgScore)}</td>
+                  <td className="py-2.5 text-right">{fmtPercent(k.goodShare)}</td>
                   <td className="py-2.5 text-right">
                     {k.goodMatches}
                     {k.goodPerSearch !== null && (

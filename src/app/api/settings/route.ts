@@ -25,7 +25,7 @@ export async function GET() {
         stepstone: true,
         arbeitsagentur: true,
       },
-      notification_threshold: 75,
+      notification_min_chance: "good",
     };
 
     // Derived, not stored — never expose the webhook URL itself to the client.

@@ -13,8 +13,11 @@ import {
   SettingsSection,
   textInputClass,
 } from "@/components/form";
+import { Select } from "@/components/controls";
+import { chanceLabels } from "@/lib/chance";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
 import { KEYWORD_SLOTS } from "@/lib/keyword-stats";
+import type { NotificationChance } from "@/lib/types";
 import { ApiKeysSection } from "./ApiKeysSection";
 
 // Each portal is scraped once per keyword (most job boards return nothing for
@@ -39,7 +42,7 @@ interface SettingsForm {
   scraper_results_per_scan: number;
   remote_only: boolean;
   portal_toggles: PortalToggles;
-  notification_threshold: number;
+  notification_min_chance: NotificationChance;
 }
 
 const PORTALS: { key: keyof PortalToggles; label: string }[] = [
@@ -63,7 +66,7 @@ const DEFAULTS: SettingsForm = {
     stepstone: true,
     arbeitsagentur: true,
   },
-  notification_threshold: 75,
+  notification_min_chance: "good",
 };
 
 function toForm(data: Record<string, unknown>): SettingsForm {
@@ -84,8 +87,8 @@ function toForm(data: Record<string, unknown>): SettingsForm {
       ...DEFAULTS.portal_toggles,
       ...(data.portal_toggles as Partial<PortalToggles>),
     },
-    notification_threshold:
-      (data.notification_threshold as number) ?? DEFAULTS.notification_threshold,
+    notification_min_chance:
+      data.notification_min_chance === "very_good" ? "very_good" : DEFAULTS.notification_min_chance,
   };
 }
 
@@ -134,8 +137,6 @@ export default function SettingsPage() {
       return setError("Results per scan must be greater than 0");
     if (!Object.values(form.portal_toggles).some(Boolean))
       return setError("Select at least one job board to search");
-    if (form.notification_threshold < 0 || form.notification_threshold > 100)
-      return setError("Notification threshold must be between 0 and 100");
 
     const normalizedForm = { ...form, scraper_search_keywords: padKeywords(cleanedKeywords) };
 
@@ -366,13 +367,13 @@ export default function SettingsPage() {
             description={<p>For automated runs via the cron endpoint — see README for setup.</p>}
           >
             <Field
-              label="Notification threshold"
-              htmlFor="settings-notification-threshold"
+              label="Notify me about"
+              htmlFor="settings-notification-chance"
               hint={
                 <>
                   <p>
-                    Jobs scoring at or above this trigger a webhook notification. Only affects the
-                    webhook — the dashboard still shows every job regardless of score. Configure the
+                    Newly scored jobs with this chance or better trigger a webhook notification.
+                    Only affects the webhook — the dashboard still shows every job. Configure the
                     webhook URL via the <code>NOTIFICATION_WEBHOOK_URL</code> environment variable.
                   </p>
                   <p className="flex items-center gap-1.5 pt-1 text-text-muted">
@@ -387,17 +388,20 @@ export default function SettingsPage() {
                 </>
               }
             >
-              <input
-                id="settings-notification-threshold"
-                type="number"
-                min={0}
-                max={100}
-                value={form.notification_threshold}
+              <Select
+                id="settings-notification-chance"
+                value={form.notification_min_chance}
                 onChange={(e) =>
-                  setForm({ ...form, notification_threshold: Number(e.target.value) })
+                  setForm({
+                    ...form,
+                    notification_min_chance: e.target.value as NotificationChance,
+                  })
                 }
-                className={`${textInputClass} max-w-40`}
-              />
+                className="max-w-60"
+              >
+                <option value="good">{chanceLabels.good} or better</option>
+                <option value="very_good">{chanceLabels.very_good} only</option>
+              </Select>
             </Field>
           </SettingsSection>
 

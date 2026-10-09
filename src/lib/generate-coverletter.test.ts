@@ -33,6 +33,11 @@ const job: DbJob = {
   applied_at: null,
   salary: null,
   posted_date: null,
+  location: null,
+  postal_code: null,
+  country_code: null,
+  latitude: null,
+  longitude: null,
   created_at: "",
   deleted_at: null,
 };

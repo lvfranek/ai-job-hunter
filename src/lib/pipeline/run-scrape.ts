@@ -250,6 +250,11 @@ export async function runScrapePipeline(
           description: job.description,
           platform: job.platform,
           posted_date: job.posted_date,
+          location: job.location,
+          postal_code: job.postal_code,
+          country_code: job.country_code,
+          latitude: job.latitude,
+          longitude: job.longitude,
         })
         .select("id")
         .single();

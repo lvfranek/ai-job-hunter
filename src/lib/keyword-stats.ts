@@ -2,11 +2,9 @@
 // actually worth something. Pure module (no server imports) so the aggregation
 // is unit-testable and the page can share its types.
 
+import { isGoodChance, type Chance } from "@/lib/chance";
 import { parseDbTimestamp } from "@/lib/db-time";
 import { APPLIED_STATUSES } from "@/lib/mock-data";
-
-/** A job at or above this score counts as a good match — same bar as "High matches" on the dashboard. */
-export const GOOD_MATCH_SCORE = 80;
 
 /** Each board is scraped once per keyword, so keywords are a small fixed set. */
 export const KEYWORD_SLOTS = 5;
@@ -33,25 +31,37 @@ export function normalizeKeyword(keyword: string): string {
 // ---------------------------------------------------------------------------
 // Blockers
 
-export type BlockerCategory = "location" | "stack" | "seniority" | "contract" | "other";
+export type BlockerCategory =
+  "location" | "stack" | "seniority" | "contract" | "qualification" | "dealbreaker" | "other";
 
 export const BLOCKER_CATEGORIES: BlockerCategory[] = [
   "location",
   "stack",
   "seniority",
   "contract",
+  "qualification",
+  "dealbreaker",
   "other",
 ];
 
 export const BLOCKER_LABELS: Record<BlockerCategory, string> = {
   location: "Location / remote",
-  stack: "Tech stack",
+  stack: "Skills",
   seniority: "Seniority",
   contract: "Contract type",
+  qualification: "Qualifications / languages",
+  dealbreaker: "Dealbreakers",
   other: "Other",
 };
 
-function categorizeBlockerPart(part: string): BlockerCategory {
+function categorizeBlockerPart(rawPart: string): BlockerCategory {
+  const part = rawPart.trim();
+  // Fixed prefixes from scoring-rules.ts first: a dealbreaker or a missing
+  // licence is free text and may well mention "part-time" or "senior".
+  if (/^missing (?:qualification|language):/i.test(part)) return "qualification";
+  if (/^dealbreaker:/i.test(part)) return "dealbreaker";
+  // A city name may contain anything ("Seniorenstadt", "Freiberg").
+  if (/^office in .+ km away/i.test(part)) return "location";
   // Blockers are English since the app went English-only, but rows scored
   // before that are German — both have to land in the same buckets.
   // Contract first: "du schließt Ausbildung … aus" must not fall through to another bucket.
@@ -100,8 +110,8 @@ export interface StatsJob {
   title: string;
   platform: string;
   status: string | null;
-  /** Latest match score, null when never scored. */
-  score: number | null;
+  /** Latest chance tier, null when never scored (or not since the tiers). */
+  chance: Chance | null;
   blocker: string | null;
 }
 
@@ -136,7 +146,8 @@ export interface BoardStat {
   capHits: number;
   failures: number;
   jobs: number;
-  avgScore: number | null;
+  /** Share of its scored jobs with a Good or Very good chance. */
+  goodShare: number | null;
   goodMatches: number;
   applied: number;
 }
@@ -164,7 +175,8 @@ export interface KeywordStat {
   /** The keyword sharing the most jobs with this one. */
   overlap: { keyword: string; shared: number } | null;
   scored: number;
-  avgScore: number | null;
+  /** Share of its scored jobs with a Good or Very good chance. */
+  goodShare: number | null;
   goodMatches: number;
   interested: number;
   applied: number;
@@ -188,7 +200,7 @@ export interface KeywordStat {
 export interface StatsOverview {
   totalJobs: number;
   scored: number;
-  avgScore: number | null;
+  goodShare: number | null;
   goodMatches: number;
   scrapeRuns: number;
   searches: number;
@@ -202,7 +214,7 @@ export interface FunnelStep {
 
 export interface KeywordSuggestion {
   phrase: string;
-  /** Good matches (80+ or applied/interview) whose title contains the phrase. */
+  /** Good matches (Good+ chance or applied) whose title contains the phrase. */
   goodJobs: number;
   /** All jobs whose title contains it. */
   jobs: number;
@@ -217,21 +229,18 @@ export interface StatsResponse {
   boards: BoardStat[];
   suggestions: KeywordSuggestion[];
   activeKeywords: string[];
-  goodMatchScore: number;
   keywordSlots: number;
 }
 
 // ---------------------------------------------------------------------------
 // Aggregation
 
-const isGood = (job: StatsJob) => job.score !== null && job.score >= GOOD_MATCH_SCORE;
+// Same bar as the dashboard's Good and Very good tiles.
+const isGood = (job: StatsJob) => isGoodChance(job.chance);
+const isScored = (job: StatsJob) => job.chance !== null;
 // A rejection or an offer still means you applied.
 const isApplied = (job: StatsJob) => (APPLIED_STATUSES as string[]).includes(job.status ?? "");
 const time = (ts: string) => parseDbTimestamp(ts).getTime();
-
-function average(values: number[]): number | null {
-  return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
-}
 
 function ratio(numerator: number, denominator: number): number | null {
   return denominator > 0 ? numerator / denominator : null;
@@ -244,7 +253,15 @@ function median(values: number[]): number {
 }
 
 function emptyBlockers(): Record<BlockerCategory, number> {
-  return { location: 0, stack: 0, seniority: 0, contract: 0, other: 0 };
+  return {
+    location: 0,
+    stack: 0,
+    seniority: 0,
+    contract: 0,
+    qualification: 0,
+    dealbreaker: 0,
+    other: 0,
+  };
 }
 
 /** Board breakdown from a set of searches plus the jobs they relate to. */
@@ -261,7 +278,7 @@ function boardStats(searches: StatsSearch[], jobs: StatsJob[]): BoardStat[] {
         capHits: own.filter((s) => s.result_cap !== null && s.returned >= s.result_cap).length,
         failures: own.filter((s) => s.error !== null).length,
         jobs: portalJobs.length,
-        avgScore: average(portalJobs.flatMap((j) => (j.score === null ? [] : [j.score]))),
+        goodShare: ratio(portalJobs.filter(isGood).length, portalJobs.filter(isScored).length),
         goodMatches: portalJobs.filter(isGood).length,
         applied: portalJobs.filter(isApplied).length,
       };
@@ -340,7 +357,7 @@ export function computeStats({
     }
     const [topOverlap] = [...overlapCounts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
-    const scoredJobs = kwJobs.filter((j) => j.score !== null);
+    const scoredJobs = kwJobs.filter(isScored);
     const blockers = emptyBlockers();
     let blocked = 0;
     for (const job of scoredJobs) {
@@ -362,7 +379,7 @@ export function computeStats({
       exclusive: kwJobs.filter((j) => keywordsByJob.get(j.id)?.size === 1).length,
       overlap: topOverlap ? { keyword: topOverlap[0], shared: topOverlap[1] } : null,
       scored: scoredJobs.length,
-      avgScore: average(scoredJobs.map((j) => j.score as number)),
+      goodShare: ratio(goodMatches, scoredJobs.length),
       goodMatches,
       interested: kwJobs.filter((j) => j.status === "interested").length,
       applied: kwJobs.filter(isApplied).length,
@@ -393,7 +410,8 @@ export function computeStats({
       a.keyword.localeCompare(b.keyword),
   );
 
-  const scored = jobs.filter((j) => j.score !== null);
+  const scored = jobs.filter(isScored);
+  const good = jobs.filter(isGood).length;
   const interestedOrLater = jobs.filter((j) => j.status === "interested" || isApplied(j)).length;
   const runTimes = searches.map((s) => s.run_at).sort((a, b) => time(a) - time(b));
 
@@ -401,8 +419,8 @@ export function computeStats({
     overview: {
       totalJobs: jobs.length,
       scored: scored.length,
-      avgScore: average(scored.map((j) => j.score as number)),
-      goodMatches: jobs.filter(isGood).length,
+      goodShare: ratio(good, scored.length),
+      goodMatches: good,
       scrapeRuns,
       searches: searches.length,
       trackedSince: runTimes[0] ?? null,
@@ -410,7 +428,7 @@ export function computeStats({
     funnel: [
       { label: "Found", value: jobs.length },
       { label: "Scored", value: scored.length },
-      { label: `${GOOD_MATCH_SCORE}+ match`, value: jobs.filter(isGood).length },
+      { label: "Good+ chance", value: good },
       { label: "Interested", value: interestedOrLater },
       { label: "Applied", value: jobs.filter(isApplied).length },
       { label: "Interview", value: jobs.filter((j) => j.status === "interview").length },
@@ -418,7 +436,6 @@ export function computeStats({
     keywords,
     boards: boardStats(searches, jobs),
     activeKeywords: active,
-    goodMatchScore: GOOD_MATCH_SCORE,
     keywordSlots: KEYWORD_SLOTS,
   };
 }

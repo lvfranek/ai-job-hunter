@@ -47,6 +47,8 @@ export interface GenerateOptions {
   maxTokens?: number;
   /** Low values keep scoring reproducible; leave unset for creative tasks. */
   temperature?: number;
+  /** Fixed sampling seed, for providers that honour it — more reproducible scoring. */
+  seed?: number;
 }
 
 async function callOpenRouter(
@@ -68,6 +70,7 @@ async function callOpenRouter(
         messages: [{ role: "user", content: prompt }],
         max_tokens: options.maxTokens ?? DEFAULT_MAX_TOKENS,
         ...(options.temperature != null ? { temperature: options.temperature } : {}),
+        ...(options.seed != null ? { seed: options.seed } : {}),
       }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });

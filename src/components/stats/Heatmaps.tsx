@@ -10,7 +10,6 @@ import {
 } from "@/lib/keyword-stats";
 import {
   blueRamp,
-  fmtNumber,
   fmtPercent,
   orangeRamp,
   portalLabel,
@@ -48,7 +47,7 @@ const cellBase =
   "flex h-12 min-w-[76px] flex-col items-center justify-center rounded-lg px-2 text-center leading-tight";
 
 /**
- * Keyword × job board. Color and the big number are 80+ matches; the small line
+ * Keyword × job board. Color and the big number are Good+ chances; the small line
  * is how many jobs that combination found. Flags searches that hit the results
  * limit (there was more to find) and searches that failed.
  */
@@ -116,7 +115,7 @@ export function BoardMatrix({
                       <div
                         className={`${cellBase} relative`}
                         style={{ background: fill, color }}
-                        title={`${k.keyword} on ${portalLabel(portal)}: ${b.goodMatches} matches 80+, ${b.jobs} jobs, average score ${fmtNumber(b.avgScore)}${notes.length ? ` — ${notes.join(", ")}` : ""}`}
+                        title={`${k.keyword} on ${portalLabel(portal)}: ${b.goodMatches} Good+ chances, ${b.jobs} jobs, ${fmtPercent(b.goodShare)} Good+ share${notes.length ? ` — ${notes.join(", ")}` : ""}`}
                       >
                         <span className="text-[15px] font-semibold tabular-nums">
                           {b.goodMatches}
@@ -145,14 +144,14 @@ export function BoardMatrix({
                   <div className="font-medium text-[#1E2A3D]">
                     {b.goodMatches} of {b.jobs}
                   </div>
-                  <div className="text-[11px]">avg {fmtNumber(b.avgScore)}</div>
+                  <div className="text-[11px]">{fmtPercent(b.goodShare)} good+</div>
                 </td>
               ))}
             </tr>
           </tfoot>
         </table>
       </div>
-      <RampLegend ramp={blueRamp} low="0" high={String(max)} label="80+ matches" />
+      <RampLegend ramp={blueRamp} low="0" high={String(max)} label="Good+ chances" />
       {(hasCapHits || hasFailures) && (
         <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-text-muted">
           {hasCapHits && (

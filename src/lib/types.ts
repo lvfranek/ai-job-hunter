@@ -1,5 +1,10 @@
+import type { Chance, Requirement } from "@/lib/chance";
+
+/** Webhook notifications fire for Good+ or for Very good only. */
+export type NotificationChance = Extract<Chance, "good" | "very_good">;
+
 // Candidate data for the cover-letter generator only — NOT used by AI scoring.
-// Preferences.notes is the scoring agent's free-text input instead.
+// The scorer reads Preferences instead.
 export interface Profile {
   id: string;
   user_id: string;
@@ -20,20 +25,36 @@ export interface Profile {
 export interface Preferences {
   id: string;
   user_id: string;
-  notes: string; // free text: what the candidate wants and doesn't want, read directly by the AI scorer
-  preferred_location: string | null;
+  // What they're after — read by the AI scorer.
+  notes: string; // free text: the ideal job in their own words
+  dealbreakers: string; // free text: what they never want — a match makes the job Low
+  // Experience — applied in code (scoring-rules.ts), never left to the model.
+  experience_years: number | null; // years of RELEVANT professional experience
+  target_levels: string[]; // junior | mid | senior; empty = derived from experience_years
+  max_required_years: number | null; // jobs requiring more than this are Low
+  // Who they are — the AI checks each posting's must-haves against this.
+  background: string; // the CV as text: positions, education, projects
+  own_skills: string; // free text: skills they're strong in (this or background is required before scoring)
+  basic_skills: string; // free text: skills they know the basics of (count as partial)
+  education: string;
+  certifications: string; // licences and certificates
+  spoken_languages: string; // e.g. "German native, English C1"
+  // Where and how.
   job_type: string[]; // remote | hybrid | on-site
-  // Contract forms to FILTER OUT (freelance | ausbildung | studium | werkstudent).
+  // Cities they'd commute to for hybrid or on-site work, each with its own
+  // radius. Ignored when only remote is accepted.
+  work_locations: WorkLocation[];
+  // Contract forms to FILTER OUT (freelance | ausbildung | studium | werkstudent | praktikum).
   // An exclusion list, unlike every other preference here.
   excluded_employment_types: string[];
   work_time_models: string[]; // wanted: vollzeit | teilzeit | minijob
-  own_skills: string; // free text: skills the candidate actually has
-  preferred_languages: string; // free text: programming languages they'd rather work in
-  // Scoring instruction, not a fact about the candidate: when true the scorer
-  // treats every soft-skill requirement in a posting as fully met.
-  soft_skills_flexible: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface WorkLocation {
+  place: string; // a place name as resolved on save, e.g. "Hamburg", "Wien (AT)"
+  radius_km: number;
 }
 
 export interface Settings {
@@ -45,7 +66,7 @@ export interface Settings {
   scraper_results_per_scan: number;
   remote_only: boolean; // query the scraper for remote-only jobs at the source, where supported
   portal_toggles: Record<string, boolean>;
-  notification_threshold: number; // min match_score (0-100) to trigger a webhook notification
+  notification_min_chance: NotificationChance; // lowest tier that triggers a webhook notification
   created_at: string;
   updated_at: string;
 }
@@ -62,6 +83,12 @@ export interface DbJob {
   applied_at: string | null; // YYYY-MM-DD
   salary: string | null;
   posted_date: string | null;
+  // Where the job board says the job is — raw, resolved to points when scoring.
+  location: string | null;
+  postal_code: string | null;
+  country_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
   deleted_at: string | null;
 }
@@ -70,15 +97,19 @@ export interface JobMatch {
   id: string;
   job_id: string;
   user_id: string;
-  match_score: number;
-  skill_overlap_pct: number;
-  seniority_fit: number;
-  location_fit: number;
-  employment_fit: number;
+  // Null only on rows scored before the chance tiers (SCORING_VERSION < 2).
+  chance: Chance | null;
+  // The posting's must-haves and whether the candidate covers each one.
+  requirements: Requirement[];
+  // Every cap that held the tier down, as short phrases ("Asks 3 yrs, you have 1 – at most Fair").
+  downgrades: string[];
+  // Nearest of the job's places and its distance from the closest of the
+  // candidate's cities; null when the distance rule didn't apply (remote, no data).
+  distance_km: number | null;
+  work_location: string | null;
   reasoning: string | null;
-  // Set only when the job scored low for a nameable hard reason ("Standort
-  // Zürich, kein Remote"). Null means "no blocker — a low score here is just
-  // a weak match, not an impossibility".
+  // Set only when a hard rule made the job Low ("Hybrid with office days – you
+  // only want 100% remote"). Null means a Low tier is just a weak match.
   blocker: string | null;
   stale_at: string | null;
   scoring_version: number; // SCORING_VERSION that produced this row — older means re-score

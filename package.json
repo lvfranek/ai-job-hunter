@@ -12,7 +12,8 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "geo:build": "node scripts/build-places.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

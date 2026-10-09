@@ -98,7 +98,7 @@ export function SwapKeywordMenu({
                 >
                   <span className="min-w-0 flex-1 truncate">{k.keyword}</span>
                   <span className="shrink-0 text-[11px] tabular-nums text-text-faint">
-                    {fmtNumber(k.goodPerSearch, 1)} 80+/search
+                    {fmtNumber(k.goodPerSearch, 1)} good+/search
                   </span>
                   <VerdictPill verdict={k.verdict} />
                 </button>

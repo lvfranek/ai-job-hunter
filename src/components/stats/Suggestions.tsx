@@ -20,7 +20,7 @@ export function Suggestions({
   if (suggestions.length === 0) {
     return (
       <p className="text-[13px] text-text-muted">
-        No suggestions yet — they appear once a few job titles stand out among your 80+ matches.
+        No suggestions yet — they appear once a few job titles stand out among your Good+ chances.
       </p>
     );
   }

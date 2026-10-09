@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withResolvedWorkLocations } from "@/lib/geo/api";
+import { DEFAULT_PREFERENCES, normalizePreferences } from "@/lib/preferences";
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
 
 export async function GET() {
@@ -12,18 +14,7 @@ export async function GET() {
 
     if (error && error.code !== "PGRST116") throw error;
 
-    const defaultPreferences = {
-      notes: "",
-      preferred_location: "",
-      job_type: [],
-      excluded_employment_types: [],
-      work_time_models: [],
-      own_skills: "",
-      preferred_languages: "",
-      soft_skills_flexible: false,
-    };
-
-    return NextResponse.json(data || defaultPreferences);
+    return NextResponse.json(data || DEFAULT_PREFERENCES);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : (error as { message?: string })?.message;
@@ -34,10 +25,13 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const supabase = getSupabaseServerClient();
   try {
-    const body = await request.json();
+    // Only known fields, numbers parsed — the upsert fails on anything else.
+    const checked = await withResolvedWorkLocations(normalizePreferences(await request.json()));
+    if ("error" in checked) return NextResponse.json({ error: checked.error }, { status: 400 });
+    const { preferences } = checked;
     const { data, error } = await supabase
       .from("preferences")
-      .upsert({ ...body, user_id: CURRENT_USER_ID }, { onConflict: "user_id" })
+      .upsert({ ...preferences, user_id: CURRENT_USER_ID }, { onConflict: "user_id" })
       .select();
 
     if (error) throw error;

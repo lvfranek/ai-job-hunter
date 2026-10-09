@@ -20,6 +20,8 @@ import {
   findDemoJob,
 } from "@/lib/demo-data";
 import { generateCoverLetterDocx } from "@/lib/generate-coverletter";
+import { placeSearch, withResolvedWorkLocations } from "@/lib/geo/api";
+import { normalizePreferences } from "@/lib/preferences";
 import type { CoverLetterLanguage } from "@/lib/agents/agent-4";
 import type { DbJob, Profile } from "@/lib/types";
 
@@ -74,6 +76,12 @@ async function handle(request: NextRequest): Promise<NextResponse> {
         return NextResponse.json(demoStats);
       case "/applications":
         return NextResponse.json(demoApplications);
+      case "/places": {
+        const params = request.nextUrl.searchParams;
+        return NextResponse.json(
+          await placeSearch(params.get("q") ?? "", params.get("exact") === "1"),
+        );
+      }
     }
   }
 
@@ -128,10 +136,14 @@ async function handle(request: NextRequest): Promise<NextResponse> {
   }
 
   // ---- writes: accepted, never persisted --------------------------------
-  if (
-    method === "POST" &&
-    (path === "/profile" || path === "/preferences" || path === "/settings")
-  ) {
+  // Checked like the real save, so an unknown city shows the same hint.
+  if (method === "POST" && path === "/preferences") {
+    const checked = await withResolvedWorkLocations(normalizePreferences(await readJson(request)));
+    if ("error" in checked) return NextResponse.json({ error: checked.error }, { status: 400 });
+    return NextResponse.json({ ...checked.preferences, demo: true });
+  }
+
+  if (method === "POST" && (path === "/profile" || path === "/settings")) {
     const body = await readJson(request);
     return NextResponse.json({ ...body, demo: true });
   }

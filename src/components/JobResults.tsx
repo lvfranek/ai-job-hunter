@@ -5,15 +5,19 @@ import {
   ArrowLeft,
   ArrowRight,
   Briefcase,
+  Eye,
+  EyeSlash,
   Lightning,
   Sparkle,
   Trash,
   Warning,
   X,
 } from "@phosphor-icons/react";
+import { chanceRank, compareByChance, type Chance } from "@/lib/chance";
 import type { Job, JobStatus } from "@/lib/mock-data";
 import type { ScoreOptions } from "@/lib/rescore";
-import { jobStatusLabels } from "@/lib/mock-data";
+import { JOB_STATUSES, jobStatusLabels } from "@/lib/mock-data";
+import { useStoredValue } from "@/lib/use-stored-value";
 import { JobCard } from "@/components/JobCard";
 import { AgentStatus } from "@/components/AgentStatus";
 import { CoverLetterModal } from "@/components/CoverLetterModal";
@@ -30,19 +34,24 @@ import {
   Select,
 } from "@/components/controls";
 
-type SortKey = "score" | "date";
+type SortKey = "chance" | "date";
 
 const sortLabels: Record<SortKey, string> = {
-  score: "Best fit",
+  chance: "Best chance",
   date: "Newest",
 };
 
-const minScoreOptions = [
-  { value: 0, label: "Any score" },
-  { value: 50, label: "50+" },
-  { value: 70, label: "70+" },
-  { value: 80, label: "80+" },
-];
+/** The lowest tier to show; unscored jobs only show under "any". */
+type ChanceFilter = "any" | Exclude<Chance, "low">;
+
+const chanceFilterLabels: Record<ChanceFilter, string> = {
+  any: "Any chance",
+  fair: "Fair or better",
+  good: "Good or better",
+  very_good: "Very good only",
+};
+
+const CHANCE_FILTER_OPTIONS = Object.keys(chanceFilterLabels) as ChanceFilter[];
 
 type StatusFilter = JobStatus | "all" | "none";
 
@@ -53,6 +62,47 @@ const statusFilterLabels: Record<StatusFilter, string> = {
 };
 
 const PAGE_SIZE = 25;
+
+// Filter choices are remembered per browser. "Not interested" jobs are hidden
+// unless showHidden is on (or the status filter asks for them explicitly).
+interface Filters {
+  chance: ChanceFilter;
+  sort: SortKey;
+  status: StatusFilter;
+  showHidden: boolean;
+}
+
+const DEFAULT_FILTERS: Filters = {
+  chance: "any",
+  sort: "chance",
+  status: "all",
+  showHidden: false,
+};
+
+function parseFilters(stored: unknown): Filters {
+  const f = (stored && typeof stored === "object" ? stored : {}) as Record<string, unknown>;
+  return {
+    chance: CHANCE_FILTER_OPTIONS.includes(f.chance as ChanceFilter)
+      ? (f.chance as ChanceFilter)
+      : DEFAULT_FILTERS.chance,
+    sort: f.sort === "chance" || f.sort === "date" ? f.sort : DEFAULT_FILTERS.sort,
+    status:
+      f.status === "all" || f.status === "none" || JOB_STATUSES.includes(f.status as JobStatus)
+        ? (f.status as StatusFilter)
+        : DEFAULT_FILTERS.status,
+    showHidden: f.showHidden === true,
+  };
+}
+
+function matchesChance(job: Job, filter: ChanceFilter): boolean {
+  if (filter === "any") return true;
+  return job.chance !== null && chanceRank(job.chance) >= chanceRank(filter);
+}
+
+// Long titles would push the Undo button off small screens.
+const shortTitle = (title: string) => (title.length > 40 ? `${title.slice(0, 39)}…` : title);
+
+type ToastState = { message: string; action?: { label: string; onClick: () => void } };
 
 export function JobResults({
   jobs,
@@ -65,10 +115,12 @@ export function JobResults({
   onRefresh: () => void;
   onStatusChange: (jobId: string, status: JobStatus | null) => void;
 }) {
-  const [sortKey, setSortKey] = useState<SortKey>("score");
-  const [minScore, setMinScore] = useState(0);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [filters, setFilters] = useStoredValue("job-filters:v1", DEFAULT_FILTERS, parseFilters);
   const [page, setPage] = useState(1);
+  const updateFilters = (changes: Partial<Filters>) => {
+    setFilters({ ...filters, ...changes });
+    setPage(1);
+  };
   // Scrape and scoring runs are owned by the app-wide provider, not this
   // component, so they keep going (and keep reporting) across page changes.
   // scoreStatus is the always-on line next to the Adjust-score button: what the
@@ -96,7 +148,7 @@ export function JobResults({
   const [pruneDays, setPruneDays] = useState(30);
   const [confirmingPrune, setConfirmingPrune] = useState(false);
   const [pruning, setPruning] = useState(false);
-  const [pruneMessage, setPruneMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
   // The ⋯ overflow menu holds the rarely used "remove old posts" action.
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -132,10 +184,31 @@ export function JobResults({
   );
 
   useEffect(() => {
-    if (!pruneMessage) return;
-    const t = setTimeout(() => setPruneMessage(null), 3000);
+    if (!toast) return;
+    // Long enough to reach an Undo button; a plain confirmation goes sooner.
+    const t = setTimeout(() => setToast(null), toast.action ? 6000 : 3000);
     return () => clearTimeout(t);
-  }, [pruneMessage]);
+  }, [toast]);
+
+  // Every status change goes through here — the card's select and its
+  // one-click hide button alike — so hiding a job always offers Undo.
+  function changeStatus(jobId: string, status: JobStatus | null) {
+    const job = jobs.find((j) => j.id === jobId);
+    const previous = job?.status ?? null;
+    onStatusChange(jobId, status);
+    if (job && status === "not_interested" && previous !== "not_interested") {
+      setToast({
+        message: `${filters.showHidden ? "Marked as not interested" : "Hidden"}: ${shortTitle(job.title)}`,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            onStatusChange(jobId, previous);
+            setToast(null);
+          },
+        },
+      });
+    }
+  }
 
   async function handlePrune() {
     setPruning(true);
@@ -144,15 +217,16 @@ export function JobResults({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to remove old jobs");
       const n = data.deleted ?? 0;
-      setPruneMessage(
-        n === 0
-          ? "No jobs older than that"
-          : `Removed ${n} job${n === 1 ? "" : "s"} older than ${pruneDays} days`,
-      );
+      setToast({
+        message:
+          n === 0
+            ? "No jobs older than that"
+            : `Removed ${n} job${n === 1 ? "" : "s"} older than ${pruneDays} days`,
+      });
       onRefresh();
     } catch (error) {
       console.error("Prune failed:", error);
-      setPruneMessage("Failed to remove old jobs");
+      setToast({ message: "Failed to remove old jobs" });
     } finally {
       setPruning(false);
       closeMenu();
@@ -171,17 +245,21 @@ export function JobResults({
     startScore(options);
   }
 
+  const hiddenCount = jobs.filter((job) => job.status === "not_interested").length;
+  const showHiddenToggle = hiddenCount > 0 || filters.showHidden;
+
   const sorted = useMemo(() => {
+    const { chance, sort, status, showHidden } = filters;
     const copy = jobs
-      .filter((job) => job.matchScore >= minScore)
+      .filter((job) => job.status !== "not_interested" || showHidden || status === "not_interested")
+      .filter((job) => matchesChance(job, chance))
       .filter(
         (job) =>
-          statusFilter === "all" ||
-          (statusFilter === "none" ? job.status === null : job.status === statusFilter),
+          status === "all" || (status === "none" ? job.status === null : job.status === status),
       );
-    if (sortKey === "score") return copy.sort((a, b) => b.matchScore - a.matchScore);
+    if (sort === "chance") return copy.sort(compareByChance);
     return copy.sort((a, b) => a.daysAgo - b.daysAgo);
-  }, [jobs, sortKey, minScore, statusFilter]);
+  }, [jobs, filters]);
 
   const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -207,7 +285,7 @@ export function JobResults({
 
   return (
     <div className="rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)]">
-      <Toast message={pruneMessage} />
+      <Toast message={toast?.message ?? null} action={toast?.action} />
       <div className="grid grid-cols-2 gap-2 border-b border-[#D7E4ED] px-4 py-3 sm:flex sm:flex-wrap sm:items-center">
         {/* Mobile: a grid — two equal buttons, then the status line with the trash
             button at its right end, then the filters. Desktop: one row with the
@@ -299,27 +377,21 @@ export function JobResults({
         </div>
 
         <div className="contents sm:ml-auto sm:flex sm:items-center sm:gap-2">
-          <div className="col-span-2 row-start-3 grid grid-cols-[1fr_auto_1fr] gap-1.5 max-[360px]:grid-cols-2 sm:flex sm:items-center sm:gap-2">
+          <div className="col-span-2 row-start-3 grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:gap-2">
             <Select
-              value={minScore}
-              onChange={(e) => {
-                setMinScore(Number(e.target.value));
-                setPage(1);
-              }}
-              aria-label="Minimum match score"
+              value={filters.chance}
+              onChange={(e) => updateFilters({ chance: e.target.value as ChanceFilter })}
+              aria-label="Minimum chance"
             >
-              {minScoreOptions.map(({ value, label }) => (
-                <option key={value} value={value}>
-                  {label}
+              {CHANCE_FILTER_OPTIONS.map((key) => (
+                <option key={key} value={key}>
+                  {chanceFilterLabels[key]}
                 </option>
               ))}
             </Select>
             <Select
-              value={sortKey}
-              onChange={(e) => {
-                setSortKey(e.target.value as SortKey);
-                setPage(1);
-              }}
+              value={filters.sort}
+              onChange={(e) => updateFilters({ sort: e.target.value as SortKey })}
               aria-label="Sort jobs by"
             >
               {(Object.keys(sortLabels) as SortKey[]).map((key) => (
@@ -329,13 +401,10 @@ export function JobResults({
               ))}
             </Select>
             <Select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as StatusFilter);
-                setPage(1);
-              }}
+              value={filters.status}
+              onChange={(e) => updateFilters({ status: e.target.value as StatusFilter })}
               aria-label="Filter by status"
-              className="max-[360px]:col-span-2"
+              className={showHiddenToggle ? "" : "col-span-2"}
             >
               {(Object.keys(statusFilterLabels) as StatusFilter[]).map((key) => (
                 <option key={key} value={key}>
@@ -343,6 +412,22 @@ export function JobResults({
                 </option>
               ))}
             </Select>
+            {showHiddenToggle && (
+              <button
+                type="button"
+                onClick={() => updateFilters({ showHidden: !filters.showHidden })}
+                aria-pressed={filters.showHidden}
+                title="Jobs you marked as not interested"
+                className={`${buttonSecondary} sm:order-first`}
+              >
+                {filters.showHidden ? (
+                  <EyeSlash size={14} weight="bold" />
+                ) : (
+                  <Eye size={14} weight="bold" />
+                )}
+                {filters.showHidden ? "Hide not interested" : `Show hidden (${hiddenCount})`}
+              </button>
+            )}
           </div>
           {jobs.length > 0 && (
             <div
@@ -486,7 +571,7 @@ export function JobResults({
                 key={job.id}
                 job={job}
                 onGenerateCoverLetter={setCoverLetterJob}
-                onStatusChange={onStatusChange}
+                onStatusChange={changeStatus}
               />
             ))}
           </div>

@@ -2,7 +2,14 @@
 
 import { useRef, useState } from "react";
 import type { KeywordStat } from "@/lib/keyword-stats";
-import { chart, ChartTooltip, fmtNumber, niceTicks, useElementWidth } from "@/components/stats/ui";
+import {
+  chart,
+  ChartTooltip,
+  fmtNumber,
+  fmtPercent,
+  niceTicks,
+  useElementWidth,
+} from "@/components/stats/ui";
 
 const HEIGHT = 300;
 const PAD = { top: 16, right: 16, bottom: 40, left: 44 };
@@ -14,9 +21,12 @@ function median(values: number[]): number {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+/** A keyword's quality: the share of its scored jobs that are a Good+ chance, in percent. */
+const quality = (k: KeywordStat) => (k.goodShare as number) * 100;
+
 /**
- * Volume (jobs found per search) against quality (average score), one dot per
- * keyword. The median lines split it into four quadrants: top right is what
+ * Volume (jobs found per search) against quality (share of Good+ chances), one
+ * dot per keyword. The median lines split it into four quadrants: top right is what
  * you want more of, bottom left is what to rotate out.
  */
 export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
@@ -24,7 +34,7 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
   const width = useElementWidth(wrapRef);
   const [hovered, setHovered] = useState<string | null>(null);
 
-  const points = keywords.filter((k) => k.jobsPerSearch !== null && k.avgScore !== null);
+  const points = keywords.filter((k) => k.jobsPerSearch !== null && k.goodShare !== null);
   const skipped = keywords.filter((k) => !points.includes(k));
 
   if (points.length === 0) {
@@ -36,7 +46,7 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
   }
 
   const xs = points.map((p) => p.jobsPerSearch as number);
-  const ys = points.map((p) => p.avgScore as number);
+  const ys = points.map(quality);
   const xTicks = niceTicks(Math.max(...xs) * 1.1);
   const xMax = xTicks.at(-1) as number;
   const yMin = Math.max(0, Math.floor((Math.min(...ys) - 8) / 10) * 10);
@@ -61,21 +71,21 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
   const top = PAD.top + 12;
   const bottom = PAD.top + plotH - 6 - QUADRANT_LINE;
   const quadrants = [
-    { lines: ["Fewer jobs,", "better scores"], x: PAD.left + 6, y: top, anchor: "start" as const },
+    { lines: ["Fewer jobs,", "more good ones"], x: PAD.left + 6, y: top, anchor: "start" as const },
     {
-      lines: ["More jobs,", "better scores"],
+      lines: ["More jobs,", "more good ones"],
       x: PAD.left + plotW - 6,
       y: top,
       anchor: "end" as const,
     },
     {
-      lines: ["Fewer jobs,", "worse scores"],
+      lines: ["Fewer jobs,", "fewer good ones"],
       x: PAD.left + 6,
       y: bottom,
       anchor: "start" as const,
     },
     {
-      lines: ["More jobs,", "worse scores"],
+      lines: ["More jobs,", "fewer good ones"],
       x: PAD.left + plotW - 6,
       y: bottom,
       anchor: "end" as const,
@@ -89,7 +99,7 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
   const overlaps = (a: Box, b: Box) => a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
   const dots: (Box & { keyword: string })[] = points.map((p) => {
     const cx = sx(p.jobsPerSearch as number);
-    const cy = sy(p.avgScore as number);
+    const cy = sy(quality(p));
     const r = radius(p.goodMatches);
     return { keyword: p.keyword, x1: cx - r, x2: cx + r, y1: cy - r, y2: cy + r };
   });
@@ -106,7 +116,7 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
     .sort((a, b) => b.goodMatches - a.goodMatches)
     .flatMap((p) => {
       const cx = sx(p.jobsPerSearch as number);
-      const cy = sy(p.avgScore as number);
+      const cy = sy(quality(p));
       const r = radius(p.goodMatches);
       const w = textWidth(p.keyword);
       const spots = (
@@ -142,7 +152,7 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
             width={width}
             height={HEIGHT}
             role="img"
-            aria-label="Keywords by jobs found per search and average score"
+            aria-label="Keywords by jobs found per search and share of Good+ chances"
           >
             {/* Quadrant guides: medians of the plotted keywords. */}
             <line x1={midX} x2={midX} y1={PAD.top} y2={PAD.top + plotH} stroke={chart.axis} />
@@ -181,7 +191,7 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
                   fill={chart.inkMuted}
                   className="tabular-nums"
                 >
-                  {t}
+                  {t}%
                 </text>
               </g>
             ))}
@@ -220,19 +230,19 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
               fontSize={11}
               fill={chart.inkMuted}
             >
-              Average score →
+              Good+ share →
             </text>
 
             {points.map((p) => {
               const cx = sx(p.jobsPerSearch as number);
-              const cy = sy(p.avgScore as number);
+              const cy = sy(quality(p));
               const r = radius(p.goodMatches);
               return (
                 <g
                   key={p.keyword}
                   tabIndex={0}
                   role="button"
-                  aria-label={`${p.keyword}: ${fmtNumber(p.jobsPerSearch, 1)} jobs per search, average score ${fmtNumber(p.avgScore)}, ${p.goodMatches} matches of 80 or more`}
+                  aria-label={`${p.keyword}: ${fmtNumber(p.jobsPerSearch, 1)} jobs per search, ${fmtPercent(p.goodShare)} Good+ share, ${p.goodMatches} Good+ chances`}
                   onPointerEnter={() => setHovered(p.keyword)}
                   onPointerLeave={() => setHovered(null)}
                   onFocus={() => setHovered(p.keyword)}
@@ -274,12 +284,12 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
         {active && (
           <ChartTooltip
             x={Math.min(Math.max(sx(active.jobsPerSearch as number), 110), width - 110)}
-            y={sy(active.avgScore as number) - radius(active.goodMatches)}
+            y={sy(quality(active)) - radius(active.goodMatches)}
             title={active.keyword}
             rows={[
               { label: "Jobs per search", value: fmtNumber(active.jobsPerSearch, 1) },
-              { label: "Average score", value: fmtNumber(active.avgScore) },
-              { label: "80+ matches", value: fmtNumber(active.goodMatches) },
+              { label: "Good+ share", value: fmtPercent(active.goodShare) },
+              { label: "Good+ chances", value: fmtNumber(active.goodMatches) },
               { label: "Searches", value: fmtNumber(active.searches) },
             ]}
           />
@@ -301,7 +311,7 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
             Paused keyword
           </span>
         )}
-        <span>Dot size = 80+ matches · lines = your median keyword</span>
+        <span>Dot size = Good+ chances · lines = your median keyword</span>
         {skipped.length > 0 && (
           <span>Not plotted yet: {skipped.map((k) => k.keyword).join(", ")}</span>
         )}

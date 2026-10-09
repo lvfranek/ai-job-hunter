@@ -1,8 +1,10 @@
+import { chanceLabels, chancesAtLeast, type Chance } from "@/lib/chance";
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
+import type { NotificationChance } from "@/lib/types";
 
 interface MatchRow {
   id: string;
-  match_score: number;
+  chance: Chance;
   reasoning: string | null;
   jobs: {
     title: string;
@@ -22,17 +24,18 @@ export async function notifyNewJobs(): Promise<boolean> {
   const supabase = getSupabaseServerClient();
   const { data: settings } = await supabase
     .from("settings")
-    .select("notification_threshold")
+    .select("notification_min_chance")
     .eq("user_id", CURRENT_USER_ID)
     .single();
-  const threshold = settings?.notification_threshold ?? 75;
+  const minChance: NotificationChance =
+    settings?.notification_min_chance === "very_good" ? "very_good" : "good";
 
   const { data: matches } = await supabase
     .from("job_matches")
-    .select("id, match_score, reasoning, jobs(title, company, url, platform, posted_date)")
+    .select("id, chance, reasoning, jobs(title, company, url, platform, posted_date)")
     .eq("user_id", CURRENT_USER_ID)
     .is("notified_at", null)
-    .gte("match_score", threshold);
+    .in("chance", chancesAtLeast(minChance));
 
   const qualifying = ((matches ?? []) as unknown as MatchRow[]).filter((m) => m.jobs);
   if (qualifying.length === 0) return false;
@@ -45,7 +48,8 @@ export async function notifyNewJobs(): Promise<boolean> {
       company: m.jobs!.company,
       url: m.jobs!.url,
       platform: m.jobs!.platform,
-      score: m.match_score,
+      chance: m.chance,
+      chanceLabel: chanceLabels[m.chance],
       reasoning: m.reasoning,
       postedDate: m.jobs!.posted_date,
     })),

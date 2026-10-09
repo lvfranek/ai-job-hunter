@@ -134,14 +134,14 @@ export default function StatsPage() {
               hint="All time, incl. removed"
             />
             <StatTile
-              label="Average score"
-              value={fmtNumber(o.avgScore)}
-              hint={`${fmtNumber(o.scored)} scored`}
+              label="Good+ share"
+              value={fmtPercent(o.goodShare)}
+              hint={`of ${fmtNumber(o.scored)} scored`}
             />
             <StatTile
-              label={`${stats.goodMatchScore}+ matches`}
+              label="Good+ chances"
               value={fmtNumber(o.goodMatches)}
-              hint={`${fmtPercent(o.scored ? o.goodMatches / o.scored : null)} of scored`}
+              hint="Good or Very good chance"
             />
             <StatTile
               label="Searches"
@@ -158,7 +158,7 @@ export default function StatsPage() {
           <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <StatsCard
               title="Volume vs. quality"
-              description="Right = finds more jobs per search, up = better average score. Rotate out what sits bottom-left."
+              description="Right = finds more jobs per search, up = more of them are a Good+ chance. Rotate out what sits bottom-left."
             >
               <KeywordScatter keywords={stats.keywords} />
             </StatsCard>
@@ -209,7 +209,7 @@ export default function StatsPage() {
 
           <StatsCard
             title="Keywords to try"
-            description="Phrases that keep showing up in the titles of your 80+ matches and applications, but that none of your keywords covers yet."
+            description="Phrases that keep showing up in the titles of your Good+ chances and applications, but that none of your keywords covers yet."
           >
             <Suggestions
               suggestions={stats.suggestions}

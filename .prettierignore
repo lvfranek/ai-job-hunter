@@ -1,3 +1,4 @@
 .next
 node_modules
 supabase/migrations
+src/lib/geo/places-dach.json

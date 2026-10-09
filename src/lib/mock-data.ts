@@ -1,3 +1,5 @@
+import type { Chance, Requirement } from "@/lib/chance";
+
 export type Platform = "linkedin" | "indeed" | "xing" | "stepstone" | "arbeitsagentur";
 
 export type JobStatus =
@@ -27,14 +29,14 @@ export const APPLIED_STATUSES: JobStatus[] = ["applied", "interview", "offer", "
 /** `jobs.platform` of an application added by hand (or CSV) instead of scraped. */
 export const MANUAL_PLATFORM = "manual";
 
-/** The AI scorer's per-job breakdown, shown when a job card is expanded. */
+/** Why a job got its chance, shown when a job card is expanded. */
 export type JobMatchDetail = {
-  skillOverlap: number;
-  seniorityFit: number;
-  locationFit: number;
-  employmentFit: number;
+  /** The posting's must-haves and whether you cover each one. */
+  requirements: Requirement[];
+  /** Every cap that held the tier down. */
+  downgrades: string[];
   reasoning: string | null;
-  /** Named hard reason the job scored low, or null when nothing blocks it. */
+  /** Named hard reason the job is Low, or null when nothing blocks it. */
   blocker: string | null;
 };
 
@@ -42,12 +44,19 @@ export type Job = {
   id: string;
   title: string;
   company: string;
-  matchScore: number;
+  /** null until the job has a current-version score. */
+  chance: Chance | null;
+  /** Share of the checklist covered — orders jobs within a tier. */
+  coverage: number | null;
   postedDate: string;
   daysAgo: number;
   platform: Platform;
   url: string;
   description: string | null;
+  /** Where the job is: the place the scorer measured, else the board's own text. */
+  location: string | null;
+  /** From the closest of your cities; null for remote jobs or when unknown. */
+  distanceKm: number | null;
   status: JobStatus | null;
   isStale?: boolean;
   isScored: boolean;

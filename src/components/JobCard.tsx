@@ -2,77 +2,131 @@
 
 import { useState } from "react";
 import {
+  ArrowDown,
   ArrowSquareOut,
   Bank,
   Briefcase,
   CaretDown,
+  Check,
+  CircleHalf,
+  Eye,
+  EyeSlash,
   FileText,
   LinkedinLogo,
+  MapPin,
   Prohibit,
+  X,
 } from "@phosphor-icons/react/dist/ssr";
+import type { Chance, Requirement, RequirementKind, RequirementStatus } from "@/lib/chance";
 import type { Job, JobMatchDetail, JobStatus } from "@/lib/mock-data";
 import { JOB_STATUSES, jobStatusLabels, platformIconSlugs, platformLabels } from "@/lib/mock-data";
+import { ChanceBadge, ChancePill } from "@/components/ChanceBadge";
 import { JobDescription } from "@/components/JobDescription";
-import { buttonSecondary, Select } from "@/components/controls";
+import { buttonSecondary, iconButton, Select } from "@/components/controls";
 
-function scoreTier(score: number) {
-  if (score >= 80) {
-    return {
-      text: "text-emerald-800",
-      bg: "bg-emerald-100",
-      border: "border-emerald-300",
-      label: "high fit",
-    };
-  }
-  if (score >= 50) {
-    return {
-      text: "text-amber-800",
-      bg: "bg-amber-100",
-      border: "border-amber-300",
-      label: "medium fit",
-    };
-  }
-  return {
-    text: "text-rose-800",
-    bg: "bg-rose-100",
-    border: "border-rose-300",
-    label: "low fit",
-  };
-}
+const REQUIREMENT_STATUS: Record<
+  RequirementStatus,
+  { label: string; chip: string; icon: string; Icon: typeof Check }
+> = {
+  met: {
+    label: "You have it",
+    chip: "border-emerald-300 bg-emerald-50 text-emerald-900",
+    icon: "text-emerald-700",
+    Icon: Check,
+  },
+  partial: {
+    label: "Partly",
+    chip: "border-amber-300 bg-amber-50 text-amber-900",
+    icon: "text-amber-700",
+    Icon: CircleHalf,
+  },
+  missing: {
+    label: "Missing",
+    chip: "border-rose-300 bg-rose-50 text-rose-900",
+    icon: "text-rose-700",
+    Icon: X,
+  },
+};
 
-function SubScore({ label, value }: { label: string; value: number }) {
-  const tier = scoreTier(value);
+const KIND_LABEL: Record<RequirementKind, string | null> = {
+  skill: null,
+  qualification: "required credential",
+  language: "language",
+};
+
+function RequirementChip({ requirement }: { requirement: Requirement }) {
+  const status = REQUIREMENT_STATUS[requirement.status];
+  const kind = KIND_LABEL[requirement.kind];
   return (
-    <div className={`rounded-lg border px-2.5 py-1.5 ${tier.bg} ${tier.border}`}>
-      <div className="text-[10px] font-medium uppercase tracking-wide text-text-muted">{label}</div>
-      <div className={`text-[15px] font-semibold tabular-nums leading-tight ${tier.text}`}>
-        {value}
-      </div>
-    </div>
+    <li
+      className={`inline-flex max-w-full items-center gap-1.5 rounded-lg border px-2 py-1 text-[12px] ${status.chip}`}
+      title={`${status.label}${kind ? ` · ${kind}` : ""}`}
+    >
+      <status.Icon size={12} weight="bold" className={`shrink-0 ${status.icon}`} />
+      <span className="sr-only">{status.label}:</span>
+      <span className="min-w-0 truncate">{requirement.text}</span>
+      {kind && <span className="shrink-0 text-[11px] opacity-70">· {kind}</span>}
+    </li>
   );
 }
 
-function ScoreBreakdown({ match }: { match: JobMatchDetail }) {
+function ChanceBreakdown({ chance, match }: { chance: Chance; match: JobMatchDetail }) {
+  const { requirements, downgrades, blocker, reasoning } = match;
+  const metCount = requirements.filter((r) => r.status === "met").length;
   return (
     <div className="mb-4 rounded-xl border border-[#D7E4ED] bg-white p-3.5">
-      <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-text-faint">
-        Why this score
-      </div>
-      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <SubScore label="Skills" value={match.skillOverlap} />
-        <SubScore label="Seniority" value={match.seniorityFit} />
-        <SubScore label="Location" value={match.locationFit} />
-        <SubScore label="Contract" value={match.employmentFit} />
-      </div>
-      {match.blocker && (
-        <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-100 px-2.5 py-1 text-[12px] font-medium text-rose-800">
-          <Prohibit size={13} weight="bold" />
-          {match.blocker}
+      <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-text-faint">
+          Why this chance
         </div>
+        <ChancePill chance={chance} />
+      </div>
+
+      {blocker && (
+        <ul className="mb-2.5 flex flex-wrap gap-1.5">
+          {blocker.split("; ").map((reason) => (
+            <li
+              key={reason}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-100 px-2.5 py-1 text-[12px] font-medium text-rose-800"
+            >
+              <Prohibit size={13} weight="bold" className="shrink-0" />
+              {reason}
+            </li>
+          ))}
+        </ul>
       )}
-      {match.reasoning ? (
+
+      {requirements.length > 0 ? (
+        <>
+          <p className="mb-1.5 text-[12px] text-text-muted">
+            You meet {metCount} of {requirements.length} must-haves
+          </p>
+          <ul className="mb-3 flex flex-wrap gap-1.5">
+            {requirements.map((r) => (
+              <RequirementChip key={r.text} requirement={r} />
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="mb-3 text-[12px] text-text-faint">
+          The posting names no concrete must-haves.
+        </p>
+      )}
+
+      {downgrades.length > 0 && (
+        <ul className="mb-3 space-y-1">
+          {downgrades.map((reason) => (
+            <li key={reason} className="flex items-start gap-1.5 text-[12px] text-text-muted">
+              <ArrowDown size={12} weight="bold" className="mt-0.5 shrink-0 text-amber-700" />
+              {reason}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {reasoning ? (
         <p className="text-[13px] italic leading-relaxed text-[#1E2A3D]">
-          &ldquo;{match.reasoning}&rdquo;
+          &ldquo;{reasoning}&rdquo;
         </p>
       ) : (
         <p className="text-[12px] text-text-faint">No reasoning recorded for this job.</p>
@@ -99,7 +153,6 @@ export function JobCard({
   onGenerateCoverLetter: (job: Job) => void;
   onStatusChange: (jobId: string, status: JobStatus | null) => void;
 }) {
-  const tier = scoreTier(job.matchScore);
   const [expanded, setExpanded] = useState(false);
   // The panel is mounted on first open and kept afterwards, so closing can
   // animate out instead of vanishing.
@@ -108,8 +161,9 @@ export function JobCard({
     setHasOpened(true);
     setExpanded((e) => !e);
   };
-  // "Not interested" rows fade back so the list reads as what's still in play.
-  // The status/cover-letter controls stay at full strength so it's easy to undo.
+  // "Not interested" rows are hidden from the list by default; when shown, they
+  // fade back so the list reads as what's still in play. The controls stay at
+  // full strength so it's easy to undo.
   const dimmed = job.status === "not_interested";
   const dimClass = dimmed ? "opacity-50 grayscale" : "";
 
@@ -131,23 +185,7 @@ export function JobCard({
         }`}
       >
         <div className={`flex shrink-0 items-center gap-1.5 ${dimClass}`}>
-          {job.isScored ? (
-            <div
-              className={`flex h-8 w-10 shrink-0 items-center justify-center rounded-xl border ${tier.bg} ${tier.border}`}
-              aria-label={`Match score ${job.matchScore}, ${tier.label}`}
-            >
-              <span className={`text-[13px] font-semibold tabular-nums leading-none ${tier.text}`}>
-                {job.matchScore}
-              </span>
-            </div>
-          ) : (
-            <div
-              className="flex h-8 w-10 shrink-0 items-center justify-center rounded-xl border border-[#C9D8E3] bg-[#EEF4F9]"
-              aria-label="Not scored yet"
-            >
-              <span className="text-[11px] font-medium text-text-faint">—</span>
-            </div>
-          )}
+          <ChanceBadge chance={job.chance} />
 
           <a
             href={job.url}
@@ -171,11 +209,24 @@ export function JobCard({
           <h2 className="truncate text-[16px] font-semibold text-[#1E2A3D]">{job.title}</h2>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-text-muted">
             <span>{job.company}</span>
+            {job.location && (
+              <>
+                <span className="text-[#B8C4D1]">·</span>
+                <span className="flex min-w-0 items-center gap-1 text-[12px] text-text-faint">
+                  <MapPin size={12} weight="fill" className="shrink-0" />
+                  <span className="max-w-56 truncate">{job.location}</span>
+                  {/* 0 km means it's in one of your cities — the name says enough. */}
+                  {job.distanceKm !== null && job.distanceKm > 0 && (
+                    <span className="shrink-0 tabular-nums">· {job.distanceKm} km</span>
+                  )}
+                </span>
+              </>
+            )}
             <span className="text-[#B8C4D1]">·</span>
             <span className="text-[12px] text-text-faint">{job.postedDate}</span>
             {job.isStale && (
               <span className="rounded-md border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">
-                Score outdated
+                Outdated
               </span>
             )}
             <span className="ml-1 flex items-center gap-1.5">
@@ -200,7 +251,7 @@ export function JobCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 sm:flex sm:items-center">
           <Select
             value={job.status ?? ""}
             onClick={(e) => e.stopPropagation()}
@@ -235,6 +286,18 @@ export function JobCard({
             <FileText size={14} weight="bold" />
             Cover letter
           </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onStatusChange(job.id, dimmed ? null : "not_interested");
+            }}
+            aria-label={dimmed ? "Restore this job" : "Not interested — hide this job"}
+            title={dimmed ? "Restore" : "Not interested"}
+            className={iconButton}
+          >
+            {dimmed ? <Eye size={16} weight="bold" /> : <EyeSlash size={16} weight="bold" />}
+          </button>
           <CaretDown
             size={15}
             weight="bold"
@@ -258,7 +321,7 @@ export function JobCard({
                 expanded ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
               }`}
             >
-              {job.match && <ScoreBreakdown match={job.match} />}
+              {job.chance && job.match && <ChanceBreakdown chance={job.chance} match={job.match} />}
               <JobDescription text={job.description} />
             </div>
           )}

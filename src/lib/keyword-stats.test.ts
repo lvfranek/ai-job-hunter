@@ -16,7 +16,7 @@ function job(id: string, overrides: Partial<StatsJob> = {}): StatsJob {
     title: "Developer",
     platform: "linkedin",
     status: null,
-    score: 50,
+    chance: "fair",
     blocker: null,
     ...overrides,
   };
@@ -79,6 +79,20 @@ describe("categorizeBlocker", () => {
     ).toEqual(["contract"]);
   });
 
+  it("files the fixed-prefix blockers before any keyword match", () => {
+    expect(categorizeBlocker("Missing qualification: Führerschein Klasse C")).toEqual([
+      "qualification",
+    ]);
+    expect(categorizeBlocker("Missing language: German C1")).toEqual(["qualification"]);
+    expect(categorizeBlocker("Dealbreaker: Part-time sales shifts")).toEqual(["dealbreaker"]);
+    expect(
+      categorizeBlocker("Office in Freiberg, 30 km away – you want within 10 km of Senior Town"),
+    ).toEqual(["location"]);
+    expect(
+      categorizeBlocker("Senior role – you have 1 year of experience; Dealbreaker: Cold calling"),
+    ).toEqual(["seniority", "dealbreaker"]);
+  });
+
   it("handles free-text model blockers and empty values", () => {
     expect(categorizeBlocker("Standort München, kein Remote")).toEqual(["location"]);
     expect(categorizeBlocker("Reine Vertriebsrolle")).toEqual(["other"]);
@@ -89,11 +103,11 @@ describe("categorizeBlocker", () => {
 describe("computeStats", () => {
   it("counts jobs, exclusives, per-search rates and overlap per keyword", () => {
     const jobs = [
-      job("a", { score: 90, status: "applied" }),
-      job("b", { score: 85 }),
-      job("c", { score: 20, blocker: "Java als Kernsprache – nicht in deinen Skills" }),
-      job("d", { score: null }),
-      job("old", { score: null }), // scraped before keyword tracking
+      job("a", { chance: "very_good", status: "applied" }),
+      job("b", { chance: "good" }),
+      job("c", { chance: "low", blocker: "Java als Kernsprache – nicht in deinen Skills" }),
+      job("d", { chance: null }),
+      job("old", { chance: null }), // scraped before keyword tracking
     ];
     const stats = computeStats({
       jobs,
@@ -123,7 +137,7 @@ describe("computeStats", () => {
       exclusive: 1,
       overlap: { keyword: "web developer", shared: 1 },
       scored: 2,
-      avgScore: 87.5,
+      goodShare: 1,
       goodMatches: 2,
       applied: 1,
       jobsPerSearch: 1,
@@ -150,12 +164,14 @@ describe("computeStats", () => {
       trackedSince: "2026-10-01T10:00:00",
     });
     expect(stats.funnel.map((s) => s.value)).toEqual([5, 3, 2, 1, 1, 0]);
-    expect(stats.overview.avgScore).toBeCloseTo(65);
+    expect(stats.overview.goodShare).toBeCloseTo(2 / 3);
   });
 
   it("marks paused keywords and judges only keywords with enough searches", () => {
     const runs = ["run1", "run2", "run3"];
-    const jobs = Array.from({ length: 9 }, (_, i) => job(`j${i}`, { score: i < 6 ? 90 : 30 }));
+    const jobs = Array.from({ length: 9 }, (_, i) =>
+      job(`j${i}`, { chance: i < 6 ? "very_good" : "low" }),
+    );
     const stats = computeStats({
       jobs,
       jobKeywords: [
@@ -182,7 +198,9 @@ describe("computeStats", () => {
 
   it("flags only the weaker keyword of a heavily overlapping pair as redundant", () => {
     const runs = ["run1", "run2", "run3"];
-    const jobs = Array.from({ length: 25 }, (_, i) => job(`j${i}`, { score: i < 10 ? 90 : 40 }));
+    const jobs = Array.from({ length: 25 }, (_, i) =>
+      job(`j${i}`, { chance: i < 10 ? "very_good" : "fair" }),
+    );
     const stats = computeStats({
       jobs,
       jobKeywords: [
@@ -222,16 +240,16 @@ describe("computeStats", () => {
 describe("suggestKeywords", () => {
   it("suggests role phrases from good job titles that no keyword covers", () => {
     const jobs = [
-      job("1", { title: "AI Engineer (m/w/d)", score: 90 }),
-      job("2", { title: "AI Engineer (m/f/d) - Full Stack, TypeScript", score: 85 }),
-      job("3", { title: "Senior AI Engineer", score: 20 }),
-      job("4", { title: "Frontend-Entwickler (m/w/d)", score: 85 }),
-      job("5", { title: "Frontend Entwickler*in – React", score: 30, status: "applied" }),
-      job("6", { title: "Fullstack Developer (m/w/d)", score: 95 }),
-      job("7", { title: "Full-Stack Developer", score: 90 }),
+      job("1", { title: "AI Engineer (m/w/d)", chance: "very_good" }),
+      job("2", { title: "AI Engineer (m/f/d) - Full Stack, TypeScript", chance: "good" }),
+      job("3", { title: "Senior AI Engineer", chance: "low" }),
+      job("4", { title: "Frontend-Entwickler (m/w/d)", chance: "good" }),
+      job("5", { title: "Frontend Entwickler*in – React", chance: "low", status: "applied" }),
+      job("6", { title: "Fullstack Developer (m/w/d)", chance: "very_good" }),
+      job("7", { title: "Full-Stack Developer", chance: "very_good" }),
       // Most scraped jobs are poor matches — keeps the base rate realistic.
       ...Array.from({ length: 8 }, (_, i) =>
-        job(`bad${i}`, { title: "Java Backend Developer", score: 15 }),
+        job(`bad${i}`, { title: "Java Backend Developer", chance: "low" }),
       ),
     ];
     const suggestions = suggestKeywords(jobs, ["Full Stack Developer"]);
@@ -251,15 +269,15 @@ describe("suggestKeywords", () => {
 
   it("strips company prefixes and finds single-word German compounds", () => {
     const jobs = [
-      job("1", { title: "ACME GmbH: Softwareentwickler/in (m/w/d)", score: 90 }),
-      job("2", { title: "Softwareentwickler (m/w/d)", score: 85 }),
-      job("3", { title: "Lagerist", score: 10 }),
+      job("1", { title: "ACME GmbH: Softwareentwickler/in (m/w/d)", chance: "very_good" }),
+      job("2", { title: "Softwareentwickler (m/w/d)", chance: "good" }),
+      job("3", { title: "Lagerist", chance: "low" }),
     ];
     expect(suggestKeywords(jobs, []).map((s) => s.phrase)).toEqual(["softwareentwickler"]);
   });
 
   it("returns nothing without good matches", () => {
-    expect(suggestKeywords([job("1", { title: "AI Engineer", score: 10 })], [])).toEqual([]);
+    expect(suggestKeywords([job("1", { title: "AI Engineer", chance: "low" })], [])).toEqual([]);
   });
 });
 

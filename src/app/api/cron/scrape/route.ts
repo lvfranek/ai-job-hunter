@@ -4,6 +4,7 @@ import { isValidCronToken } from "@/lib/auth";
 import { runScrapePipeline, failStaleScrapeRuns } from "@/lib/pipeline/run-scrape";
 import { getJobsNeedingScoring, runScorePipeline } from "@/lib/pipeline/run-score";
 import { notifyNewJobs } from "@/lib/notify";
+import { isReadyForScoring } from "@/lib/preferences";
 import type { Settings } from "@/lib/types";
 
 // A scrape fans out to one Apify run per board × keyword (up to 25) and this
@@ -57,7 +58,8 @@ export async function POST(request: NextRequest) {
   let jobsScored = 0;
   try {
     const { jobs: needsScoring, preferences } = await getJobsNeedingScoring(supabase);
-    if (preferences && needsScoring.length > 0) {
+    // No skills or CV yet: every posting would be judged against nothing.
+    if (preferences && isReadyForScoring(preferences) && needsScoring.length > 0) {
       const { data: scoreRun, error: scoreRunError } = await supabase
         .from("score_runs")
         .insert({ user_id: CURRENT_USER_ID, status: "running", total: needsScoring.length })

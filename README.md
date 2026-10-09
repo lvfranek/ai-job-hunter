@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml/badge.svg)](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml)
 
-Scrapes job boards (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur), scores matches against your
-AI Scoring Preferences with an LLM, and writes a tailored cover letter for any job. An application tracker keeps every
+Scrapes job boards (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur), rates your chance at each
+job against your AI Scoring Preferences with an LLM, and writes a tailored cover letter for any job. An application tracker keeps every
 job you applied to in one list — scraped ones and ones you found elsewhere, added by hand or
 imported from a spreadsheet. Built with Next.js and Supabase.
 
@@ -26,6 +26,7 @@ imported from a spreadsheet. Built with Next.js and Supabase.
 - [Security Considerations](#security-considerations)
 - [Limitations](#limitations)
 - [Learn More](#learn-more)
+- [Data Sources](#data-sources)
 - [License](#license)
 
 ## Tech Stack
@@ -47,10 +48,26 @@ imported from a spreadsheet. Built with Next.js and Supabase.
 ## Features
 
 - **Multi-board scraping** — Indeed, LinkedIn, Xing, Stepstone and Arbeitsagentur in a single scan.
-- **LLM match scoring** — every job is scored 0–100 against your AI Scoring Preferences, with written reasoning
-  for why it fits or doesn't. Hard constraints come only from your preferences (accepted work
-  arrangements, the programming languages in your skills, seniority limits from your notes) and
-  are enforced in code on top of the model's facts, so a posting that breaks one can't score high.
+- **Chance tiers instead of a score** — every job lands in one of four tiers: Low, Fair, Good or
+  Very good chance. The LLM only reads the posting's facts and checks each must-have requirement
+  against your profile (met / partly / missing); the tier is computed from that checklist in code
+  with fixed rules, so tiers stay stable between runs instead of drifting. Hard blockers (work
+  arrangement, excluded contract forms, three or more years of experience missing, a mandatory
+  licence or language you don't have, your dealbreakers) make a job Low; smaller gaps cap it — one
+  year of experience short means at most Good, two years at most Fair. Each job shows its
+  checklist and every reason it was held back.
+- **Preferences for any profession** — years of experience and target levels, your
+  CV as text, strong and basic skills, education, certificates and spoken languages. Nothing is
+  specific to software jobs.
+- **Work locations with a radius** — for hybrid and on-site jobs, list the cities you'd commute
+  to, each with its own radius (e.g. Hamburg + 10 km, Berlin + 25 km). Anywhere in the city
+  counts, plus that distance around it as the crow flies; an office job further away is Low
+  chance and says how far it is. Remote jobs are never limited. Distances come from a bundled
+  place list (Germany, Austria, Switzerland), so no geocoding service is called. Each job card
+  shows where the job is and how far.
+- **Hide what you're not interested in** — one click hides a job (with Undo); hidden jobs stay out
+  of the list until you show them again. Filters for chance, sort order and status are
+  remembered per browser.
 - **Rescoring on demand** — score only new and outdated jobs or rescore everything, skipping
   jobs by status (e.g. not interested, applied) or age. Since every job costs AI credits, a run
   only starts after a second confirmation that unlocks after 3 seconds. Preferences can be
@@ -64,8 +81,8 @@ imported from a spreadsheet. Built with Next.js and Supabase.
 - **Application tracker** — one list of everything you applied to, with date, status, link and
   salary. Jobs you mark as applied on the dashboard land there automatically; jobs found
   elsewhere can be added by hand or imported from a CSV export of your spreadsheet.
-- **Keyword statistics** — all-time numbers per search keyword (jobs found, average score, 80+
-  matches, applications, overlap with other keywords, why its jobs get blocked, which board works
+- **Keyword statistics** — all-time numbers per search keyword (jobs found, share of Good+ chances,
+  applications, overlap with other keywords, why its jobs get blocked, which board works
   best for it), a verdict per keyword, title-based keyword suggestions, and one-click swapping so
   you can rotate keywords without losing their history.
 - **Scheduled scans** — `POST /api/cron/scrape` runs a full scrape + score pass, drivable from any
@@ -89,14 +106,14 @@ with a count of applications, interviews and rejections on top. Requires migrati
   _Import CSV_, or start from the template the dialog offers (_Download CSV template_). You see a preview before anything is saved; rows that can't be read are marked
   and left out, and rows whose link is already tracked are skipped.
 
-| Statuses       | Meaning                                                          |
-| -------------- | ---------------------------------------------------------------- |
-| Interested     | Worth applying to — not in the tracker yet                       |
-| Applied        | Application sent                                                 |
-| Interview      | Invited to an interview                                          |
-| Offer          | Got an offer                                                     |
-| Rejected       | Turned down                                                      |
-| Not interested | Hidden from your shortlist on the dashboard — not in the tracker |
+| Statuses       | Meaning                                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------- |
+| Interested     | Worth applying to — not in the tracker yet                                                                 |
+| Applied        | Application sent                                                                                           |
+| Interview      | Invited to an interview                                                                                    |
+| Offer          | Got an offer                                                                                               |
+| Rejected       | Turned down                                                                                                |
+| Not interested | Hidden from the dashboard list (one click, with Undo; "Show hidden" brings them back) — not in the tracker |
 
 The CSV importer reads both German and English Excel exports:
 
@@ -121,15 +138,15 @@ full history. Requires migration `028_keyword_tracking.sql`.
 
 | Section               | What it shows                                                                                                                                                                                                                                      |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stat tiles            | All-time jobs found, average score, 80+ matches, searches run, keyword slots in use.                                                                                                                                                               |
-| Volume vs. quality    | One dot per keyword: jobs found per search (x) against average score (y), dot size = 80+ matches. Lines mark your median keyword.                                                                                                                  |
+| Stat tiles            | All-time jobs found, share of Good+ chances, Good+ chances, searches run, keyword slots in use.                                                                                                                                                    |
+| Volume vs. quality    | One dot per keyword: jobs found per search (x) against its share of Good+ chances (y), dot size = Good+ chances. Lines mark your median keyword.                                                                                                   |
 | From found to applied | Funnel from every scraped job down to interviews (applications themselves live in the tracker).                                                                                                                                                    |
-| Keywords              | Per keyword: jobs, new jobs per search, share found by no other keyword, average score, 80+ matches, applications, and a verdict (Strong / Solid / Weak / Redundant / Too new). Rows expand into per-run history, per-board breakdown and overlap. |
+| Keywords              | Per keyword: jobs, new jobs per search, share found by no other keyword, Good+ share, Good+ chances, applications, and a verdict (Strong / Solid / Weak / Redundant / Too new). Rows expand into per-run history, per-board breakdown and overlap. |
 | Keyword × job board   | Which board delivers the good matches for which keyword; flags searches that hit the results limit.                                                                                                                                                |
-| Why jobs fall through | Share of each keyword's jobs blocked by location/remote, tech stack, seniority or contract type.                                                                                                                                                   |
+| Why jobs fall through | Share of each keyword's jobs blocked by location/remote, skills, seniority, contract type, missing qualifications/languages or your dealbreakers.                                                                                                  |
 | Keywords to try       | Phrases common in the titles of your best matches that no keyword covers yet — swap them in with one click.                                                                                                                                        |
 
-Verdicts compare a keyword's 80+ matches per search with your median keyword (paused ones
+Verdicts compare a keyword's Good+ chances per search with your median keyword (paused ones
 included) and need at least 3 searches; "Redundant" marks the weaker of two keywords that find
 almost the same jobs.
 
@@ -204,21 +221,24 @@ writes are persisted.
 
 ## Available Scripts
 
-| Command             | What it does                            |
-| ------------------- | --------------------------------------- |
-| `npm run dev`       | Start the development server            |
-| `npm run build`     | Production build                        |
-| `npm run start`     | Serve the production build              |
-| `npm run lint`      | ESLint                                  |
-| `npm run typecheck` | TypeScript check without emitting files |
-| `npm test`          | Run the Vitest suite                    |
-| `npm run format`    | Format the repo with Prettier           |
+| Command             | What it does                                                 |
+| ------------------- | ------------------------------------------------------------ |
+| `npm run dev`       | Start the development server                                 |
+| `npm run build`     | Production build                                             |
+| `npm run start`     | Serve the production build                                   |
+| `npm run lint`      | ESLint                                                       |
+| `npm run typecheck` | TypeScript check without emitting files                      |
+| `npm test`          | Run the Vitest suite                                         |
+| `npm run format`    | Format the repo with Prettier                                |
+| `npm run geo:build` | Rebuild the bundled place data from GeoNames (rarely needed) |
 
 ## Tests
 
 Unit tests cover the pure logic that is easiest to get subtly wrong: the HTML-to-Markdown
 conversion for scraped postings (`text-format`), the LLM scoring-response parser and chunking
-(`agents/agent-3`), the hard scoring rules (`scoring-rules`), the keyword statistics
+(`agents/agent-3`), the chance-tier rules (`scoring-rules`, `chance`), preference validation
+(`preferences`), place parsing and distances (`geo/places`), the job boards' location fields
+(`apify`), the keyword statistics
 (`keyword-stats`), the tracker's CSV import (`csv-import`), the rescoring filters (`rescore`), and
 `.docx` cover letter generation. They run
 in CI on every push and pull request.
@@ -265,8 +285,9 @@ you already use. The app doesn't depend on a specific one.
 ### Webhook notifications
 
 Set `NOTIFICATION_WEBHOOK_URL` to have the app POST a summary of newly-scored high-fit jobs after
-each cron run (leave it unset to skip this — the cron endpoint works fine without it). The score
-threshold is set in Settings → Notifications (default 75). Each job is only ever notified once,
+each cron run (leave it unset to skip this — the cron endpoint works fine without it). Choose
+"Good chance or better" or "Very good chance only" in Settings → Notifications (default: Good or
+better). Each job is only ever notified once,
 even if it gets rescored later. Any receiver that accepts a JSON POST works — a Slack/Discord
 webhook relay, [webhook.site](https://webhook.site) for testing, your own endpoint, etc.
 
@@ -282,8 +303,9 @@ Payload shape:
       "company": "TechCorp GmbH",
       "url": "https://...",
       "platform": "indeed",
-      "score": 87,
-      "reasoning": "Matches React and TypeScript, remote, senior level",
+      "chance": "very_good",
+      "chanceLabel": "Very good chance",
+      "reasoning": "Your React and TypeScript work covers the core stack; remote fits.",
       "postedDate": "2026-08-14"
     }
   ]
@@ -299,7 +321,7 @@ hours), these starting values in Settings keep it useful without wasting Apify c
 | ---------------------- | ----------------- | -------------------------------------------------------------------------------------- |
 | Results per scan       | 20                | Covers realistic daily posting volume per portal without wasting Apify credits         |
 | Max posting age (days) | 2                 | Keeps results fresh for time-sensitive applications, avoids re-scraping stale listings |
-| Notification threshold | 75                | Only notifies on genuinely strong matches, avoids notification fatigue                 |
+| Notify me about        | Very good only    | Only notifies on genuinely strong matches, avoids notification fatigue                 |
 
 Tune these after a few days based on actual `scrape_runs` data (duplicate rate, jobs found vs.
 stored).
@@ -327,8 +349,9 @@ stored).
   would mean introducing Supabase Auth and rewriting those policies.
 - **Scraping depends on third-party actors.** Job boards change their markup; when an Apify actor
   breaks, that board silently returns fewer results until the actor is updated.
-- **Scoring costs money and varies.** Each scan sends postings to an LLM. Results are not perfectly
-  reproducible between runs, which is why scores can shift slightly on a rescore.
+- **Scoring costs money and can vary a little.** Each scan sends postings to an LLM. The tier is
+  computed in code from the model's requirement checklist, but the checklist itself can differ
+  slightly between runs, so a job can occasionally move one tier on a rescore.
 
 ## Learn More
 
@@ -337,6 +360,15 @@ stored).
 - [Apify documentation](https://docs.apify.com)
 - [OpenRouter documentation](https://openrouter.ai/docs)
 
+## Data Sources
+
+`src/lib/geo/places-dach.json` is built from the [GeoNames](https://www.geonames.org) postal-code
+dumps for Germany, Austria and Switzerland, licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The data was modified: company and P.O.
+box postcodes were dropped, districts merged into their cities, outlying points removed, and
+places grouped by municipality. `npm run geo:build` (`scripts/build-places.mjs`) rebuilds it.
+
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). The place data in `src/lib/geo/places-dach.json` is not MIT: it is
+CC BY 4.0, © GeoNames (see [Data Sources](#data-sources)).

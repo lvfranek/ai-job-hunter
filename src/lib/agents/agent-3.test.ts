@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { chunk, condenseDescription, parseScoringResponse, toScoringResult } from "./agent-3";
+import { toCandidate, type CandidatePreferences } from "@/lib/scoring-rules";
+import {
+  chunk,
+  condenseDescription,
+  isCompleteEntry,
+  parseScoringResponse,
+  toChanceResult,
+} from "./agent-3";
 
 describe("condenseDescription", () => {
   it("returns a placeholder for null input", () => {
@@ -57,9 +64,17 @@ describe("parseScoringResponse", () => {
     expect(parseScoringResponse(raw)).toEqual([{ job_id: "1" }]);
   });
 
-  it("salvages individual score objects from truncated/broken JSON", () => {
-    const raw = '[{"job_id":"1","match_score":80},{"job_id":"2","match_sc';
-    expect(parseScoringResponse(raw)).toEqual([{ job_id: "1", match_score: 80 }]);
+  it("salvages whole job entries, checklist included, from truncated JSON", () => {
+    const raw =
+      '[{"job_id":"1","requirements":[{"text":"React","kind":"skill","status":"met"}],"task_fit":"same"},' +
+      '{"job_id":"2","requirements":[{"text":"Vue","kind":"sk';
+    expect(parseScoringResponse(raw)).toEqual([
+      {
+        job_id: "1",
+        requirements: [{ text: "React", kind: "skill", status: "met" }],
+        task_fit: "same",
+      },
+    ]);
   });
 
   it("returns an empty array when nothing can be salvaged", () => {
@@ -67,49 +82,86 @@ describe("parseScoringResponse", () => {
   });
 });
 
-describe("toScoringResult", () => {
-  const base = {
+describe("isCompleteEntry", () => {
+  it("needs a checklist and a task fit", () => {
+    expect(isCompleteEntry({ job_id: "1", requirements: [], task_fit: "Same" })).toBe(true);
+    expect(isCompleteEntry({ job_id: "1", task_fit: "same" })).toBe(false);
+    expect(isCompleteEntry({ job_id: "1", requirements: [], task_fit: "unsure" })).toBe(false);
+  });
+});
+
+describe("toChanceResult", () => {
+  const prefs: CandidatePreferences = {
+    job_type: ["remote"],
+    excluded_employment_types: [],
+    work_time_models: [],
+    experience_years: 1,
+    target_levels: ["junior"],
+    max_required_years: null,
+    dealbreakers: "",
+    own_skills: "React, TypeScript",
+    basic_skills: "",
+  };
+  const job = { id: "1", title: "Frontend Developer", description: "x".repeat(1000) };
+  const entry = {
     job_id: "1",
-    match_score: 92,
-    skill_overlap_pct: 95,
-    seniority_fit: 80,
-    location_fit: 100,
-    employment_fit: 100,
-    reasoning: "Stack passt.",
+    requirements: [
+      { text: "React", kind: "skill", status: "met" },
+      { text: "TypeScript", kind: "skill", status: "met" },
+      { text: "CSS", kind: "skill", status: "met" },
+    ],
+    required_years: null,
+    posting_level: "junior",
+    task_fit: "same",
+    work_arrangement: "remote",
+    contract_form: "regular",
+    work_time: "fulltime",
+    core_languages: ["TypeScript"],
+    dealbreaker: null,
+    reasoning: "  React and TypeScript fit.  ",
   };
 
-  it("keeps the model's score when nothing is ruled out", () => {
-    const result = toScoringResult({ ...base, ruled_out: null, blocker: null });
-    expect(result.match_score).toBe(92);
-    expect(result.blocker).toBeNull();
-  });
-
-  it("forces a ruled-out posting into the blocked band and names the blocker", () => {
-    const result = toScoringResult({ ...base, ruled_out: "Senior-Stelle", blocker: null });
-    expect(result.match_score).toBe(30);
-    expect(result.blocker).toBe("Senior-Stelle");
-  });
-
-  it("prefers the model's own blocker text when both are given", () => {
-    const result = toScoringResult({
-      ...base,
-      match_score: 20,
-      ruled_out: "Senior",
-      blocker: "Nur Senior",
+  it("decides the tier in code from the checklist", () => {
+    expect(toChanceResult(entry, job, toCandidate(prefs))).toEqual({
+      job_id: "1",
+      chance: "very_good",
+      requirements: entry.requirements,
+      downgrades: [],
+      distance_km: null,
+      work_location: null,
+      blocker: null,
+      reasoning: "React and TypeScript fit.",
     });
-    expect(result.match_score).toBe(20);
-    expect(result.blocker).toBe("Nur Senior");
   });
 
-  it("does not cap the score on the model's own blocker alone", () => {
-    const result = toScoringResult({ ...base, ruled_out: null, blocker: "Werkstudentenjob" });
-    expect(result.match_score).toBe(92);
-    expect(result.blocker).toBe("Werkstudentenjob");
+  it("hands the model's cities to locate and measures the distance", () => {
+    const seen: string[][] = [];
+    const out = toChanceResult(
+      { ...entry, work_arrangement: "hybrid", work_locations: ["München"] },
+      job,
+      toCandidate({ ...prefs, job_type: ["remote", "hybrid"] }, [
+        { label: "Hamburg", points: [[53.55, 9.99]], radiusKm: 10 },
+      ]),
+      (cities) => {
+        seen.push(cities);
+        return [{ label: "München", points: [[48.14, 11.58]] }];
+      },
+    );
+    expect(seen).toEqual([["München"]]);
+    expect(out.chance).toBe("low");
+    expect(out.distance_km).toBe(612);
+    expect(out.work_location).toBe("München");
   });
 
-  it('treats the string "null" as no value', () => {
-    const result = toScoringResult({ ...base, ruled_out: "null", blocker: "null" });
-    expect(result.match_score).toBe(92);
-    expect(result.blocker).toBeNull();
+  it("names every broken rule as the blocker", () => {
+    const out = toChanceResult(
+      { ...entry, work_arrangement: "hybrid", required_years: 5 },
+      job,
+      toCandidate(prefs),
+    );
+    expect(out.chance).toBe("low");
+    expect(out.blocker).toBe(
+      "Hybrid with office days – you only want 100% remote; 5 years of experience required – you have 1 year",
+    );
   });
 });

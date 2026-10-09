@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { JobResults } from "@/components/JobResults";
 import { useBackgroundRuns } from "@/lib/background-runs";
+import { coverageOf } from "@/lib/chance";
 import { parseDbTimestamp } from "@/lib/db-time";
 import type { Job, JobStatus, Platform } from "@/lib/mock-data";
 import { SCORING_VERSION } from "@/lib/scoring-rules";
@@ -35,25 +36,29 @@ function toUiJob(row: JobWithMatch): Job {
     id: row.id,
     title: row.title,
     company: row.company,
-    matchScore: match?.match_score ?? 0,
+    chance: match?.chance ?? null,
+    coverage: match ? coverageOf(match.requirements ?? []) : null,
     postedDate: formatDaysAgo(daysAgo),
     daysAgo,
     platform: (row.platform as Platform) ?? "indeed",
     url: row.url ?? "", // the dashboard never lists manual applications, the only URL-less rows
     description: row.description,
+    location: match?.work_location ?? row.location ?? null,
+    distanceKm: match?.distance_km ?? null,
     status: (row.status as JobStatus | null) ?? null,
-    isStale: match != null && (match.stale_at != null || match.scoring_version < SCORING_VERSION),
-    isScored: match != null,
-    match: match
-      ? {
-          skillOverlap: match.skill_overlap_pct ?? 0,
-          seniorityFit: match.seniority_fit ?? 0,
-          locationFit: match.location_fit ?? 0,
-          employmentFit: match.employment_fit ?? 0,
-          reasoning: match.reasoning,
-          blocker: match.blocker ?? null,
-        }
-      : undefined,
+    isStale:
+      match?.chance != null && (match.stale_at != null || match.scoring_version < SCORING_VERSION),
+    // Rows from before the chance tiers have no tier — they count as unscored.
+    isScored: match?.chance != null,
+    match:
+      match?.chance != null
+        ? {
+            requirements: match.requirements ?? [],
+            downgrades: match.downgrades ?? [],
+            reasoning: match.reasoning,
+            blocker: match.blocker ?? null,
+          }
+        : undefined,
   };
 }
 
@@ -89,10 +94,24 @@ export default function DashboardPage() {
     };
   }, [jobsVersion]);
 
-  const highMatches = jobs.filter((job) => job.matchScore >= 80).length;
+  // The tiles count what's still in play — hidden jobs are out of the running.
+  const activeJobs = jobs.filter((job) => job.status !== "not_interested");
+  const tiles = [
+    { label: "Jobs found", value: activeJobs.length, color: "text-[#1E2A3D]" },
+    {
+      label: "Very good chance",
+      value: activeJobs.filter((job) => job.chance === "very_good").length,
+      color: "text-emerald-600",
+    },
+    {
+      label: "Good chance",
+      value: activeJobs.filter((job) => job.chance === "good").length,
+      color: "text-green-700",
+    },
+  ];
 
   async function updateJobStatus(jobId: string, status: JobStatus | null) {
-    const prev = jobs;
+    const previous = jobs.find((j) => j.id === jobId)?.status ?? null;
     setJobs((js) => js.map((j) => (j.id === jobId ? { ...j, status } : j)));
     try {
       const res = await fetch(`/api/jobs/${jobId}`, {
@@ -103,7 +122,11 @@ export default function DashboardPage() {
       if (!res.ok) throw new Error("Update failed");
     } catch (error) {
       console.error("Status update failed:", error);
-      setJobs(prev);
+      // Roll back only this job, and only if nothing changed it since — an
+      // Undo clicked while this request was in flight must survive.
+      setJobs((js) =>
+        js.map((j) => (j.id === jobId && j.status === status ? { ...j, status: previous } : j)),
+      );
     }
   }
 
@@ -117,15 +140,16 @@ export default function DashboardPage() {
         Job matches
       </h1>
 
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-4">
-        <div className="w-full rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-4 py-3 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)] sm:w-44 sm:px-5 sm:py-4">
-          <p className="text-[13px] text-text-faint">Jobs found</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-[#1E2A3D]">{jobs.length}</p>
-        </div>
-        <div className="w-full rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-4 py-3 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)] sm:w-44 sm:px-5 sm:py-4">
-          <p className="text-[13px] text-text-faint">High matches</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-emerald-600">{highMatches}</p>
-        </div>
+      <div className="mb-4 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-4">
+        {tiles.map((tile) => (
+          <div
+            key={tile.label}
+            className="w-full rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-3 py-3 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)] sm:w-44 sm:px-5 sm:py-4"
+          >
+            <p className="text-[12px] text-text-faint sm:text-[13px]">{tile.label}</p>
+            <p className={`mt-1 text-2xl font-semibold tabular-nums ${tile.color}`}>{tile.value}</p>
+          </div>
+        ))}
       </div>
 
       <JobResults

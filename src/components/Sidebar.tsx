@@ -25,6 +25,11 @@ const navItems = [
   { href: "/profile", label: "Cover Letter Profile", icon: UserCircle },
 ];
 
+// Every control in the bar: 44px square on desktop; on a phone it shares the
+// row (flex-1, at most 44px wide) so the whole bar fits any screen width.
+const controlSize =
+  "group relative flex h-11 max-w-11 min-w-0 flex-1 basis-0 items-center justify-center rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#101828]/30 max-[360px]:h-10 sm:size-11 sm:max-w-none sm:flex-none";
+
 // Stand-in "destination" for the unsaved-changes dialog when leaving via logout.
 const LOGOUT = "logout";
 
@@ -102,19 +107,25 @@ export function Sidebar() {
 
   return (
     <aside className="pointer-events-none sticky top-0 z-40 flex w-full shrink-0 px-4 py-3 sm:pointer-events-auto sm:top-(--banner-h) sm:h-[calc(100dvh-var(--banner-h))] sm:w-22 sm:items-stretch sm:p-4">
-      <div className="pointer-events-auto flex w-full items-center gap-2 max-[360px]:gap-1 rounded-[22px] border border-white/60 bg-[#F1FAFF] p-1.5 shadow-[0_8px_30px_-10px_rgba(30,64,120,0.28)] sm:flex-col sm:px-0">
+      {/* Mobile: eight controls in one row don't fit a phone at a fixed 44px, so
+          each one shrinks (flex-1, capped at 44px) and the bar always fits.
+          The nav gets six shares, one per item, so all controls stay the same size. */}
+      <div className="pointer-events-auto flex w-full items-center gap-1 rounded-[22px] border border-white/60 bg-[#F1FAFF] p-1.5 shadow-[0_8px_30px_-10px_rgba(30,64,120,0.28)] sm:flex-col sm:gap-2 sm:px-0">
         <Link
           href="/"
           onClick={(e) => guardNav(e, "/")}
           aria-label="AI Job Hunter — go to dashboard"
-          className="group relative flex size-11 shrink-0 max-[360px]:size-10 items-center justify-center rounded-2xl bg-linear-to-b from-white to-[#F3F9FD] text-[#1E2A3D] shadow-[0_2px_8px_rgba(30,64,120,0.15)] outline-none focus-visible:ring-2 focus-visible:ring-[#101828]/30"
+          className={`${controlSize} bg-linear-to-b from-white to-[#F3F9FD] text-[#1E2A3D] shadow-[0_2px_8px_rgba(30,64,120,0.15)]`}
         >
           <Lightning size={18} weight="fill" />
           <NavTooltip label="AI Job Hunter" align="start" />
         </Link>
 
-        <nav aria-label="Main" className="flex items-center gap-2 max-[360px]:gap-1 sm:flex-col">
-          {navItems.map(({ href, label, icon: Icon }) => {
+        <nav
+          aria-label="Main"
+          className="flex min-w-0 flex-[6_1_0%] items-center gap-1 sm:flex-none sm:flex-col sm:gap-2"
+        >
+          {navItems.map(({ href, label, icon: Icon }, i) => {
             const active = pathname === href;
             return (
               <Link
@@ -123,14 +134,15 @@ export function Sidebar() {
                 onClick={(e) => guardNav(e, href)}
                 aria-current={active ? "page" : undefined}
                 aria-label={label}
-                className={`group relative flex size-11 shrink-0 max-[360px]:size-10 items-center justify-center rounded-2xl outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#101828]/30 ${
+                className={`${controlSize} transition-colors ${
                   active
                     ? "bg-[#101828] text-white shadow-[0_4px_14px_rgba(16,24,40,0.35)]"
                     : "text-[#5B6B7F] hover:bg-[#C9DFEC] hover:text-[#101828]"
                 }`}
               >
                 <Icon size={18} weight={active ? "fill" : "regular"} />
-                <NavTooltip label={label} />
+                {/* The last item sits near the right edge of a phone. */}
+                <NavTooltip label={label} align={i === navItems.length - 1 ? "end" : "center"} />
               </Link>
             );
           })}
@@ -141,7 +153,7 @@ export function Sidebar() {
           onClick={requestLogout}
           disabled={loggingOut}
           aria-label="Log out"
-          className="group relative ml-auto flex size-11 shrink-0 max-[360px]:size-10 items-center justify-center rounded-2xl text-[#5B6B7F] outline-none transition-colors hover:bg-[#C9DFEC] hover:text-[#101828] focus-visible:ring-2 focus-visible:ring-[#101828]/30 disabled:opacity-50 sm:mt-auto sm:ml-0"
+          className={`${controlSize} ml-auto text-[#5B6B7F] transition-colors hover:bg-[#C9DFEC] hover:text-[#101828] disabled:opacity-50 sm:mt-auto sm:ml-0`}
         >
           <SignOut size={18} />
           <NavTooltip label="Log out" align="end" />

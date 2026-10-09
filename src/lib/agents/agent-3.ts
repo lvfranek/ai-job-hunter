@@ -264,7 +264,12 @@ export function toChanceResult(
     requirements: facts.requirements,
     downgrades,
     distance_km: distanceKm,
-    work_location: workLocation,
+    // Shown on every job card, even when no distance was measured.
+    work_location:
+      workLocation ??
+      facts.places[0]?.label ??
+      facts.workLocations[0] ??
+      (facts.arrangement === "remote" ? "Remote" : null),
     blocker: blockers.length > 0 ? blockers.join("; ") : null,
     reasoning: typeof entry.reasoning === "string" ? entry.reasoning.trim() : "",
   };

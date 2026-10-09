@@ -128,10 +128,27 @@ describe("toChanceResult", () => {
       requirements: entry.requirements,
       downgrades: [],
       distance_km: null,
-      work_location: null,
+      work_location: "Remote",
       blocker: null,
       reasoning: "React and TypeScript fit.",
     });
+  });
+
+  it("names where the job is even without a distance", () => {
+    const candidate = toCandidate(prefs);
+    const located = toChanceResult(
+      { ...entry, work_locations: ["Hamburg"] },
+      job,
+      candidate,
+      () => [{ label: "Hamburg", points: [[53.55, 9.99]] }],
+    );
+    expect(located.work_location).toBe("Hamburg");
+    expect(located.distance_km).toBeNull();
+    // The model's own words when the place data doesn't know the city.
+    expect(
+      toChanceResult({ ...entry, work_locations: ["Amsterdam"] }, job, candidate).work_location,
+    ).toBe("Amsterdam");
+    expect(toChanceResult(entry, job, candidate).work_location).toBe("Remote");
   });
 
   it("hands the model's cities to locate and measures the distance", () => {

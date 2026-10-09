@@ -61,19 +61,19 @@ async function scoreChunkResilient(
 }
 
 /**
- * The place data and the candidate's cities, once per run — only when office
- * work is accepted and cities are set. Otherwise the distance rule has nothing
- * to measure and the place data isn't loaded at all. A city that doesn't
- * resolve is skipped, never guessed: no city at all means no distance rule.
+ * The place data and the candidate's cities, once per run. The place data is
+ * always loaded — every job card shows where the job is — but cities only
+ * count when office work is accepted. A city that doesn't resolve is skipped,
+ * never guessed: no city at all means no distance rule.
  */
-async function scoringGeo(preferences: Preferences): Promise<ScoringGeo | null> {
-  if (!acceptsOfficeWork(preferences.job_type) || !preferences.work_locations?.length) return null;
+async function scoringGeo(preferences: Preferences): Promise<ScoringGeo> {
   const index = await getPlaceIndex();
-  const { homes, unresolved } = resolveHomes(index, preferences.work_locations);
+  if (!acceptsOfficeWork(preferences.job_type)) return { index, homes: [] };
+  const { homes, unresolved } = resolveHomes(index, preferences.work_locations ?? []);
   if (unresolved.length > 0) {
     console.warn(`Work locations not found, ignored: ${unresolved.join(", ")}`);
   }
-  return homes.length > 0 ? { index, homes } : null;
+  return { index, homes };
 }
 
 type JobWithMatchInfo = DbJob & {

@@ -24,7 +24,7 @@ import type { Preferences } from "@/lib/types";
  * the next run — otherwise a fix here would only ever reach newly scraped jobs.
  * Bump it whenever a change should re-score existing jobs.
  */
-export const SCORING_VERSION = 4;
+export const SCORING_VERSION = 5;
 
 export type WorkArrangement = "remote" | "hybrid" | "onsite";
 export type PostingLevel = "junior" | "mid" | "senior";

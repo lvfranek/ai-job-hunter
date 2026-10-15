@@ -3,11 +3,13 @@ import { MAX_BACKGROUND_CHARS } from "@/lib/preferences";
 import { normalizeBlockText } from "@/lib/text-format";
 import {
   computeChance,
+  confirmRemote,
   readPostingFacts,
   TASK_FITS,
   toCandidate,
   type Candidate,
   type ChanceResult,
+  verifyRequirements,
 } from "@/lib/scoring-rules";
 import type { Home, PlacePoints } from "@/lib/geo/distance";
 import { resolveJobPlaces, type PlaceIndex } from "@/lib/geo/places";
@@ -82,6 +84,7 @@ function candidateProfile(preferences: Preferences): string {
   const background = (preferences.background ?? "").trim().slice(0, MAX_BACKGROUND_CHARS);
   return `Target levels: ${levels.length > 0 ? levels.join(", ") : "not stated"}
 Years of relevant professional experience: ${preferences.experience_years ?? "not stated"}
+Main focus — what they most want to work with: ${orNone(preferences.focus_skills, "not stated")}
 Skills they are strong in: ${orNone(preferences.own_skills, "not listed")}
 Skills they know the basics of: ${orNone(preferences.basic_skills, "none listed")}
 Education: ${orNone(preferences.education, "not stated")}
@@ -129,6 +132,9 @@ in the posting.
   the posting lists them. Leave out years of experience (that is
   required_years), soft skills (communication, teamwork, reliability,
   Belastbarkeit, Teamfähigkeit, Eigeninitiative …) and every nice-to-have.
+  When the posting offers alternatives ("React oder OpenUI5", "React, OpenUI5
+  und andere Frameworks", "Java or Kotlin"), make them ONE requirement
+  ("React or OpenUI5") — met when the candidate has any one of them.
   Each entry:
     - text: a short label of at most 6 words. Keep the posting's own term for
       tools, software, technologies and certificates ("SAP S/4HANA", "React",
@@ -151,7 +157,17 @@ in the posting.
         - "partial": only a basic or adjacent version — listed under "basics",
           coursework, a hobby project, a closely related tool (Vue for React),
           a language one level below the one asked for.
-        - "missing": nothing related anywhere in the profile.
+        - "missing": nothing related anywhere in the profile. Being able to
+          learn it, or general talent, is NOT evidence — that is "missing".
+    - core: true for the 2-4 requirements the role is built around — its main
+      technologies or the qualification it can't do without — false for the
+      rest.
+    - evidence: for "met" and "partial", copy the words from the candidate
+      profile that prove it — a skill exactly as listed ("TypeScript",
+      "Next.js") or a short phrase from the CV, at most 8 words. null for
+      "missing". Code checks every quote against the profile word for word: a
+      quote that isn't there makes the requirement count as missing, so never
+      paraphrase or invent one.
 - required_years: the minimum years of professional experience the posting
   REQUIRES, as a number ("3+ years" → 3, "2-5 Jahre" → 2, "mehrjährige
   Erfahrung" → 2, "erste Berufserfahrung" → 1). null if it names none. Years
@@ -176,10 +192,11 @@ in the posting.
       prepares them for.
     - "different": tasks unrelated to anything in their profile.
 - work_arrangement: where the work happens, as the posting describes it.
-    - "remote": fully remote — "100% remote", "full remote", "remote-first",
-      "ortsunabhängig", "komplett aus dem Home-Office", or "Remote" in the
-      title with no office days in the text. A few on-site team events a year
-      still count as remote.
+    - "remote": ONLY when the posting explicitly says the job is fully remote —
+      "100% remote", "full remote", "remote-first", "ortsunabhängig",
+      "komplett aus dem Home-Office", or "Remote" in the title with no office
+      days in the text. A few on-site team events a year still count. Never
+      guess remote: if the posting doesn't say it, it is not "remote".
     - "hybrid": ANY regular office presence — "2 Tage Home-Office", "3 Tage im
       Büro", "bis zu 60% mobiles Arbeiten", "Home-Office möglich" without
       saying it's fully remote. "Mobiles Arbeiten" listed as a benefit is
@@ -187,10 +204,12 @@ in the posting.
     - "onsite": work on site with no home-office option mentioned.
     - "unknown": the posting says nothing about the workplace.
 - work_locations: the cities or towns this position is worked from, as the
-  posting names them ("Hamburg", "Norderstedt") — not the company's registered
-  seat, headquarters or other offices. Several if it can be done at any of
-  them. [] if fully remote or no place is named. The board's own location
-  field is given as "location" when known.
+  posting names them ("Hamburg", "Norderstedt"). When the job has office days
+  or is on site and the posting names no other office, the company's address
+  (often at the end: "Musterstraße 1, 93055 Regensburg") IS the workplace —
+  list it. Leave out other branches the posting merely mentions. Several if it
+  can be done at any of them. [] if fully remote or no place is named at all.
+  The board's own location field is given as "location" when known.
 - contract_form: the position itself, not experience it asks for
   ("Erfahrung aus einem Werkstudentenjob" is still "regular").
   "werkstudent", "ausbildung", "studium" (duales Studium), "praktikum"
@@ -202,6 +221,9 @@ in the posting.
   TypeScript …), the language behind a core framework (Spring → Java, .NET →
   C#, Laravel → PHP). Alternatives go in ONE entry joined by " or ". Leave out
   SQL, HTML/CSS, shell and nice-to-haves. [] for every other job.
+- focus_central: which items of the candidate's "Main focus" the role's daily
+  work is centred on, copied exactly as listed there. [] if none — a job that
+  merely mentions them on the side doesn't count. [] when no main focus is stated.
 - dealbreaker: if the posting clearly matches one of the candidate's
   dealbreakers, a short English phrase naming it ("Cold calling", "Shift
   work"); otherwise null. Always null when they listed none.
@@ -211,7 +233,7 @@ in the posting.
 ## Output
 Return ONLY a minified JSON array — no markdown fences, no commentary — with one
 object per posting, fields in this order:
-[{"job_id":"uuid","requirements":[{"text":"React","kind":"skill","status":"met"},{"text":"German C1","kind":"language","status":"met"},{"text":"Node.js","kind":"skill","status":"partial"}],"required_years":2,"posting_level":"mid","task_fit":"same","work_arrangement":"hybrid","work_locations":["Hamburg"],"contract_form":"regular","work_time":"fulltime","core_languages":["TypeScript"],"dealbreaker":null,"reasoning":"Your React and TypeScript work fits the core stack; Node.js on the backend is the biggest gap."}]
+[{"job_id":"uuid","requirements":[{"text":"React","kind":"skill","status":"met","evidence":"React","core":true},{"text":"German C1","kind":"language","status":"met","evidence":"Deutsch Muttersprache","core":false},{"text":"Node.js","kind":"skill","status":"partial","evidence":"Express","core":true},{"text":"Kubernetes","kind":"skill","status":"missing","evidence":null,"core":false}],"required_years":2,"posting_level":"mid","task_fit":"same","work_arrangement":"hybrid","work_locations":["Hamburg"],"contract_form":"regular","work_time":"fulltime","core_languages":["TypeScript"],"focus_central":["TypeScript"],"dealbreaker":null,"reasoning":"Your React and TypeScript work fits the core stack; Node.js on the backend is the biggest gap."}]
 
 ## Postings
 ${JSON.stringify(
@@ -248,11 +270,17 @@ export function isCompleteEntry(entry: Record<string, unknown>): boolean {
  */
 export function toChanceResult(
   entry: Record<string, unknown>,
-  job: Pick<DbJob, "id" | "title" | "description">,
+  job: Pick<DbJob, "id" | "title" | "description"> & { location?: string | null },
   candidate: Candidate,
   locate: (modelCities: string[]) => PlacePoints[] = () => [],
 ): ChanceResult {
   const facts = readPostingFacts(entry, job);
+  // The model's claims, checked against the profile and the posting itself.
+  facts.requirements = verifyRequirements(facts.requirements, candidate);
+  facts.arrangement = confirmRemote(
+    facts.arrangement,
+    [job.title, job.location, job.description].filter(Boolean).join("\n"),
+  );
   facts.places = locate(facts.workLocations);
   const { chance, blockers, downgrades, distanceKm, workLocation } = computeChance(
     facts,
@@ -270,6 +298,7 @@ export function toChanceResult(
       facts.places[0]?.label ??
       facts.workLocations[0] ??
       (facts.arrangement === "remote" ? "Remote" : null),
+    work_arrangement: facts.arrangement,
     blocker: blockers.length > 0 ? blockers.join("; ") : null,
     reasoning: typeof entry.reasoning === "string" ? entry.reasoning.trim() : "",
   };

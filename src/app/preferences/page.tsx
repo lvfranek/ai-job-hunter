@@ -83,6 +83,7 @@ function toForm(data: Record<string, unknown>): PreferencesForm {
     target_levels: list(data.target_levels),
     max_required_years: yearsText(data.max_required_years),
     background: text(data.background),
+    focus_skills: text(data.focus_skills),
     own_skills: text(data.own_skills),
     basic_skills: text(data.basic_skills),
     education: text(data.education),
@@ -417,6 +418,26 @@ export default function PreferencesPage() {
               </p>
             }
           >
+            <Field
+              label="Main focus"
+              htmlFor="prefs-focus-skills"
+              hint={
+                <p>
+                  What you most want to work with — a few items, comma-separated. Jobs built around
+                  something else stay at most Good, so these rank first. For programming jobs the
+                  core language decides.
+                </p>
+              }
+            >
+              <input
+                id="prefs-focus-skills"
+                value={form.focus_skills}
+                onChange={(e) => set("focus_skills", e.target.value)}
+                placeholder="e.g. TypeScript, React — or: Pflege, Intensivstation"
+                className={textInputClass}
+              />
+            </Field>
+
             <Field
               label="Skills you're strong in"
               htmlFor="prefs-own-skills"

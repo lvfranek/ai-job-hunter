@@ -45,6 +45,7 @@ function toUiJob(row: JobWithMatch): Job {
     description: row.description,
     location: match?.work_location ?? row.location ?? null,
     distanceKm: match?.distance_km ?? null,
+    arrangement: match?.work_arrangement ?? null,
     status: (row.status as JobStatus | null) ?? null,
     isStale:
       match?.chance != null && (match.stale_at != null || match.scoring_version < SCORING_VERSION),

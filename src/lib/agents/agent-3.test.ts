@@ -99,16 +99,25 @@ describe("toChanceResult", () => {
     target_levels: ["junior"],
     max_required_years: null,
     dealbreakers: "",
-    own_skills: "React, TypeScript",
+    own_skills: "React, TypeScript, CSS",
     basic_skills: "",
+    background: "",
+    education: "",
+    certifications: "",
+    spoken_languages: "",
+    focus_skills: "",
   };
-  const job = { id: "1", title: "Frontend Developer", description: "x".repeat(1000) };
+  const job = {
+    id: "1",
+    title: "Frontend Developer",
+    description: `Wir arbeiten 100% remote. ${"x".repeat(1000)}`,
+  };
   const entry = {
     job_id: "1",
     requirements: [
-      { text: "React", kind: "skill", status: "met" },
-      { text: "TypeScript", kind: "skill", status: "met" },
-      { text: "CSS", kind: "skill", status: "met" },
+      { text: "React", kind: "skill", status: "met", evidence: "React" },
+      { text: "TypeScript", kind: "skill", status: "met", evidence: "TypeScript" },
+      { text: "CSS", kind: "skill", status: "met", evidence: "CSS" },
     ],
     required_years: null,
     posting_level: "junior",
@@ -125,13 +134,43 @@ describe("toChanceResult", () => {
     expect(toChanceResult(entry, job, toCandidate(prefs))).toEqual({
       job_id: "1",
       chance: "very_good",
-      requirements: entry.requirements,
+      requirements: entry.requirements.map((r) => ({ ...r, core: false })),
       downgrades: [],
       distance_km: null,
       work_location: "Remote",
+      work_arrangement: "remote",
       blocker: null,
       reasoning: "React and TypeScript fit.",
     });
+  });
+
+  it("doesn't believe a skill the profile doesn't show", () => {
+    const out = toChanceResult(
+      {
+        ...entry,
+        requirements: [
+          ...entry.requirements,
+          { text: "Kubernetes", kind: "skill", status: "met", evidence: "Kubernetes" },
+          { text: "Power BI", kind: "skill", status: "met", evidence: null },
+        ],
+      },
+      job,
+      toCandidate(prefs),
+    );
+    expect(out.requirements.slice(3).map((r) => r.status)).toEqual(["missing", "missing"]);
+    // 3 of 5 must-haves are real: no longer a Very good on the strength of invented skills.
+    expect(out.chance).toBe("good");
+  });
+
+  it("doesn't believe remote when the posting never says it", () => {
+    const out = toChanceResult(
+      entry,
+      { ...job, description: "x".repeat(1000) },
+      toCandidate(prefs),
+    );
+    expect(out.work_arrangement).toBeNull();
+    expect(out.chance).toBe("low");
+    expect(out.blocker).toBe("Not clearly remote – the posting never says it's remote");
   });
 
   it("names where the job is even without a distance", () => {

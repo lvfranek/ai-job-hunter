@@ -65,6 +65,10 @@ export interface Requirement {
   text: string;
   kind: RequirementKind;
   status: RequirementStatus;
+  /** The words from the candidate's profile that prove met/partial — checked in code. */
+  evidence?: string | null;
+  /** One of the few requirements the role is built around; these weigh most. */
+  core?: boolean;
 }
 
 export const REQUIREMENT_STATUSES: RequirementStatus[] = ["met", "partial", "missing"];

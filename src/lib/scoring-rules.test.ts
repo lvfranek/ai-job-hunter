@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { Requirement } from "./chance";
 import type { Home, PlacePoints } from "./geo/distance";
 import {
+  confirmRemote,
+  evidenceIn,
+  normalizeEvidence,
+  verifyRequirements,
   candidateLanguages,
   checklistChance,
   computeChance,
@@ -24,6 +28,11 @@ const prefs = (overrides: Partial<CandidatePreferences> = {}): CandidatePreferen
   dealbreakers: "",
   own_skills: "Git, React, Next.js, TypeScript, JavaScript, Python, Django, HTML, CSS",
   basic_skills: "",
+  background: "",
+  education: "",
+  certifications: "",
+  spoken_languages: "",
+  focus_skills: "",
   ...overrides,
 });
 
@@ -47,6 +56,7 @@ const facts = (overrides: Partial<PostingFacts> = {}): PostingFacts => ({
   descriptionChars: 2000,
   workLocations: [],
   places: [],
+  focusCentral: null,
   ...overrides,
 });
 
@@ -85,11 +95,14 @@ describe("readPostingFacts", () => {
       contractForm: "werkstudent",
       workTime: null,
       taskFit: "adjacent",
-      requirements: [{ text: "Java", kind: "skill", status: "missing" }],
+      requirements: [
+        { text: "Java", kind: "skill", status: "missing", evidence: null, core: false },
+      ],
       dealbreaker: null,
       descriptionChars: 500,
       workLocations: ["Hamburg", "Kiel"],
       places: [],
+      focusCentral: null,
     });
   });
 
@@ -107,6 +120,32 @@ describe("readPostingFacts", () => {
 });
 
 describe("normalizeRequirements", () => {
+  it("drops soft skills but keeps language requirements", () => {
+    expect(
+      normalizeRequirements([
+        { text: "Teamfähigkeit", kind: "skill", status: "missing" },
+        { text: "sicheres Auftreten", kind: "skill", status: "missing" },
+        { text: "Hohes Maß an Eigeninitiative", kind: "skill", status: "met" },
+        {
+          text: "Kommunikationsfähigkeit auf Deutsch und Englisch",
+          kind: "language",
+          status: "met",
+        },
+        { text: "React", kind: "skill", status: "met" },
+      ]).map((r) => r.text),
+    ).toEqual(["Kommunikationsfähigkeit auf Deutsch und Englisch", "React"]);
+  });
+
+  it("keeps at most four requirements as core", () => {
+    const raw = Array.from({ length: 7 }, (_, i) => ({
+      text: `Skill ${i}`,
+      kind: "skill",
+      status: "met",
+      core: true,
+    }));
+    expect(normalizeRequirements(raw).filter((r) => r.core)).toHaveLength(4);
+  });
+
   it("drops years-of-experience entries, invalid statuses and duplicates", () => {
     expect(
       normalizeRequirements([
@@ -118,7 +157,7 @@ describe("normalizeRequirements", () => {
         { text: "  ", kind: "skill", status: "met" },
         "React",
       ]),
-    ).toEqual([{ text: "SAP", kind: "skill", status: "met" }]);
+    ).toEqual([{ text: "SAP", kind: "skill", status: "met", evidence: null, core: false }]);
   });
 
   it("keeps the first eight in posting order and shortens long text", () => {
@@ -195,8 +234,75 @@ describe("checklistChance", () => {
     expect(checklistChance([met("A"), met("B"), met("C"), missing("D")])).toBe("good");
   });
 
+  const core = (r: Requirement): Requirement => ({ ...r, core: true });
+
+  it("weighs the core requirements most", () => {
+    // Every core requirement met, one side requirement missing: still Very good.
+    expect(
+      checklistChance([
+        core(met("TypeScript")),
+        core(met("React or OpenUI5")),
+        core(met("JavaScript")),
+        met("PostgreSQL"),
+        met("Code review"),
+        met("Documentation"),
+        partial("Prompting"),
+        missing("Automated tests"),
+      ]),
+    ).toBe("very_good");
+    // One key requirement missing: never Very good, Good only when nearly all else fits.
+    const oneKeyGap = [
+      core(missing("Accessibility")),
+      core(met("HTML")),
+      core(met("JavaScript")),
+      met("SCSS"),
+      met("Tailwind"),
+      met("Vue.js"),
+      met("Git"),
+      met("Figma"),
+    ];
+    expect(checklistChance(oneKeyGap)).toBe("good");
+    expect(
+      checklistChance([
+        core(missing("TypeScript")),
+        core(met("React")),
+        met("Git"),
+        missing("SQL"),
+      ]),
+    ).toBe("fair");
+    // Two key requirements missing: Fair at best.
+    expect(
+      checklistChance([
+        core(missing("Java")),
+        core(missing("Spring")),
+        met("Git"),
+        met("SQL"),
+        met("Docker"),
+      ]),
+    ).toBe("fair");
+    // A core requirement only partly met: Good at most.
+    expect(
+      checklistChance([core(partial("TypeScript")), core(met("React")), met("Git"), met("CSS")]),
+    ).toBe("good");
+  });
+
+  it("takes the first requirements as core when the model marks none", () => {
+    // A gap in the first (core) requirement keeps it from Very good…
+    expect(checklistChance([missing("A"), met("B"), met("C"), met("D"), met("E")])).toBe("good");
+    // …and with a second gap elsewhere it's Fair.
+    expect(checklistChance([missing("A"), met("B"), met("C"), missing("D"), met("E")])).toBe(
+      "fair",
+    );
+    expect(checklistChance([met("A"), met("B"), met("C"), met("D"), missing("E")])).toBe(
+      "very_good",
+    );
+  });
+
   it("drops to Fair and Low as coverage falls", () => {
     expect(checklistChance([met("A"), met("B"), met("C"), missing("D"), missing("E")])).toBe(
+      "good",
+    );
+    expect(checklistChance([met("A"), missing("B"), met("C"), met("D"), missing("E")])).toBe(
       "fair",
     );
     expect(
@@ -270,8 +376,17 @@ describe("computeChance — blockers", () => {
     expect(out.blockers).toEqual(["Hybrid with office days – you only want 100% remote"]);
   });
 
-  it("does not block when the posting doesn't say where the work happens", () => {
-    expect(judge({ arrangement: null }).chance).toBe("very_good");
+  it("blocks a posting that never says it's remote for a remote-only candidate", () => {
+    const out = judge({ arrangement: null });
+    expect(out.chance).toBe("low");
+    expect(out.blockers).toEqual(["Not clearly remote – the posting never says it's remote"]);
+  });
+
+  it("doesn't hold back a posting that doesn't say how it's worked when office work is fine", () => {
+    const out = judge({ arrangement: null }, { job_type: ["remote", "hybrid"] });
+    expect(out.chance).toBe("very_good");
+    expect(judge({ arrangement: null }, { job_type: ["on-site"] }).chance).toBe("very_good");
+    expect(judge({ arrangement: null }, { job_type: [] }).chance).toBe("very_good");
   });
 
   it("does not block on arrangement when the candidate set no preference", () => {
@@ -440,11 +555,11 @@ describe("computeChance — distance", () => {
     );
   });
 
-  it("caps a far job at Fair when the posting doesn't say where it's worked", () => {
+  it("rates a far job Low even when the posting doesn't say how it's worked", () => {
     const out = judge({ arrangement: null, places: [munich] }, hybrid, [hamburg]);
-    expect(out.chance).toBe("fair");
-    expect(out.downgrades).toEqual([
-      "Based in München, 612 km away, remote not mentioned – at most Fair",
+    expect(out.chance).toBe("low");
+    expect(out.blockers).toEqual([
+      "Office in München, 612 km away – you want within 10 km of Hamburg",
     ]);
   });
 
@@ -467,15 +582,144 @@ describe("computeChance — distance", () => {
     expect(out.chance).toBe("low");
   });
 
+  it("only notes an unknown location — just a job that's provably too far is held back", () => {
+    const out = judge({ arrangement: "hybrid", places: [] }, hybrid, [hamburg, berlin]);
+    expect(out.chance).toBe("very_good");
+    expect(out.downgrades).toEqual(["Location unknown – check the distance yourself"]);
+  });
+
   it("has nothing to measure without places or cities", () => {
-    expect(judge({ arrangement: "onsite", places: [] }, office, [hamburg]).distanceKm).toBeNull();
+    expect(judge({ arrangement: "remote", places: [] }, office, [hamburg]).distanceKm).toBeNull();
     expect(judge({ arrangement: "onsite", places: [munich] }, office, []).chance).toBe("very_good");
   });
 
-  it("doesn't add a distance blocker on top of the arrangement blocker", () => {
-    const out = judge({ arrangement: "onsite", places: [munich] }, hybrid, [hamburg]);
-    expect(out.blockers).toEqual(["On-site, no home office – you only want 100% remote or hybrid"]);
+  it("decides by place, not hybrid or on-site, once cities are set", () => {
+    const near = judge({ arrangement: "onsite", places: [norderstedt] }, hybrid, [hamburg]);
+    expect(near.chance).toBe("very_good");
+    const far = judge({ arrangement: "onsite", places: [munich] }, hybrid, [hamburg]);
+    expect(far.blockers).toEqual([
+      "Office in München, 612 km away – you want within 10 km of Hamburg",
+    ]);
+  });
+
+  it("still blocks office jobs for a remote-only candidate", () => {
+    const out = judge({ arrangement: "hybrid", places: [norderstedt] }, { job_type: ["remote"] }, [
+      hamburg,
+    ]);
+    expect(out.blockers).toEqual(["Hybrid with office days – you only want 100% remote"]);
     expect(out.distanceKm).toBeNull();
+  });
+});
+
+describe("verifyRequirements — the model's claims need proof", () => {
+  const candidate = toCandidate(
+    prefs({
+      own_skills: "React, Next.js, TypeScript, KI-Tools (Claude Code, etc.)",
+      basic_skills: "Docker, n8n",
+      background: "2023–2025 Webentwickler bei Shopify-Agentur, Projekte mit Stripe",
+      spoken_languages: "Deutsch: Muttersprache C2, Englisch C1",
+    }),
+  );
+  const claim = (text: string, evidence: string | null, kind: Requirement["kind"] = "skill") =>
+    ({ text, kind, status: "met", evidence }) as Requirement;
+  const statuses = (reqs: Requirement[]) =>
+    verifyRequirements(reqs, candidate).map((r) => r.status);
+
+  it("keeps a claim whose quote is in the profile", () => {
+    expect(
+      statuses([
+        claim("React", "React"),
+        claim("Next.js", "next js"),
+        claim("Claude Code", "Claude Code"),
+        claim("E-Commerce", "Shopify-Agentur"),
+        claim("German C1", "Deutsch Muttersprache", "language"),
+      ]),
+    ).toEqual(["met", "met", "met", "partial", "met"]);
+  });
+
+  it("turns an invented or missing quote into missing", () => {
+    expect(
+      statuses([claim("Kubernetes", "Kubernetes"), claim("Power BI", null), claim("SQL", "")]),
+    ).toEqual(["missing", "missing", "missing"]);
+  });
+
+  it("counts a quote from the basics list as partly met", () => {
+    expect(statuses([claim("Docker", "Docker")])).toEqual(["partial"]);
+  });
+
+  it("leaves missing claims and unstated languages alone", () => {
+    const quiet = toCandidate(prefs({ spoken_languages: "" }));
+    const reqs = [
+      claim("German C1", null, "language"),
+      { ...claim("Go", null), status: "missing" },
+    ];
+    expect(verifyRequirements(reqs as Requirement[], quiet).map((r) => r.status)).toEqual([
+      "met",
+      "missing",
+    ]);
+  });
+
+  it("counts a neighbouring tool as partly met, not met", () => {
+    expect(
+      statuses([claim("Microsoft Azure", "React"), claim("Python-Kenntnisse", "React")]),
+    ).toEqual(["partial", "partial"]);
+    expect(statuses([claim("Sehr gute React-Kenntnisse", "React")])).toEqual(["met"]);
+  });
+
+  it("matches whole words, not fragments", () => {
+    const profile = normalizeEvidence("Tailwind, Vue.js");
+    expect(evidenceIn(profile, "AI")).toBe(false);
+    expect(evidenceIn(profile, "Vue")).toBe(true);
+  });
+});
+
+describe("confirmRemote — remote only when the posting says so", () => {
+  it.each([
+    ["Frontend Developer (100% remote)", "remote"],
+    ["Wir arbeiten komplett remote.", "remote"],
+    ["Ortsunabhängiges Arbeiten in ganz Deutschland", "remote"],
+    ["100% Home-Office möglich", "remote"],
+    ["Du arbeitest komplett aus dem Homeoffice", "remote"],
+    ["Home-Office möglich, Büro in Bremen", null],
+    ["Mobiles Arbeiten nach Absprache", null],
+    ["Moderne Büros in der Innenstadt", null],
+  ])("%s → %s", (text, expected) => {
+    expect(confirmRemote("remote", text)).toBe(expected);
+  });
+
+  it("never touches hybrid or on-site", () => {
+    expect(confirmRemote("hybrid", "")).toBe("hybrid");
+    expect(confirmRemote("onsite", "remote")).toBe("onsite");
+  });
+});
+
+describe("computeChance — main focus", () => {
+  const tsFocus = { focus_skills: "TypeScript, React" };
+
+  it("keeps jobs built on the focus language at the top", () => {
+    expect(judge({ coreLanguages: ["TypeScript"] }, tsFocus).chance).toBe("very_good");
+    expect(judge({ coreLanguages: ["Java or TypeScript"] }, tsFocus).chance).toBe("very_good");
+  });
+
+  it("holds jobs built on another language at Good", () => {
+    const out = judge({ coreLanguages: ["Python"], title: "Backend Developer" }, tsFocus);
+    expect(out.chance).toBe("good");
+    expect(out.downgrades).toEqual([
+      "Built on Python, not your main focus (TypeScript, React) – at most Good",
+    ]);
+  });
+
+  it("asks the model for jobs without a programming language", () => {
+    const pm = { coreLanguages: [], title: "Projektmanager (m/w/d)" };
+    expect(judge({ ...pm, focusCentral: [] }, tsFocus).chance).toBe("good");
+    expect(judge({ ...pm, focusCentral: ["react"] }, tsFocus).chance).toBe("very_good");
+    // Items the model makes up don't count.
+    expect(judge({ ...pm, focusCentral: ["Excel"] }, tsFocus).chance).toBe("good");
+    expect(judge({ ...pm, focusCentral: null }, tsFocus).chance).toBe("very_good");
+  });
+
+  it("does nothing without a main focus", () => {
+    expect(judge({ coreLanguages: ["Python"], focusCentral: [] }).chance).toBe("very_good");
   });
 });
 
@@ -543,7 +787,7 @@ describe("computeChance — caps", () => {
   it("never raises a tier and lists every cap that applies", () => {
     const out = judge(
       {
-        requirements: [met("A"), met("B"), met("C"), missing("D"), missing("E")],
+        requirements: [met("A"), missing("B"), met("C"), met("D"), missing("E")],
         taskFit: "adjacent",
         requiredYears: 2,
       },

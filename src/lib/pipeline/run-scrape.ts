@@ -14,6 +14,7 @@ import {
   mapArbeitsagenturJob,
   type ApifyRunInput,
   type ScrapedJob,
+  type ScrapedLocation,
 } from "@/lib/apify";
 import { runWithConcurrency } from "@/lib/pipeline/concurrency";
 import {
@@ -235,9 +236,13 @@ export async function runScrapePipeline(
     // already have from a previous run.
     let duplicates = scraped.length - uniqueJobs.length;
     let stored = 0;
+    // Listings we already have, but stored before job locations were kept.
+    const locationBackfill: { id: string; job: ScrapedLocation }[] = [];
     for (const job of candidates) {
       if (jobIds.has(job.url)) {
         duplicates++;
+        const id = jobIds.get(job.url);
+        if (id && (job.location || job.postal_code)) locationBackfill.push({ id, job });
         continue;
       }
       const { data: inserted, error } = await supabase
@@ -264,6 +269,23 @@ export async function runScrapePipeline(
         newUrls.add(job.url);
       }
     }
+
+    // A re-scrape fills in where older listings are — only rows that have no
+    // location yet, so a location is never overwritten. Best effort.
+    await runWithConcurrency(locationBackfill, 8, async ({ id, job }) => {
+      const { error } = await supabase
+        .from("jobs")
+        .update({
+          location: job.location,
+          postal_code: job.postal_code,
+          country_code: job.country_code,
+          latitude: job.latitude,
+          longitude: job.longitude,
+        })
+        .eq("id", id)
+        .is("location", null);
+      if (error) console.error("Location backfill failed:", error.message);
+    });
 
     // Keyword statistics are a nice-to-have — a failure here (e.g. migration
     // 028 not applied yet) must never fail the scrape itself.

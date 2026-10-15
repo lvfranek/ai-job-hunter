@@ -388,6 +388,7 @@ function buildMatch(seed: JobSeed): JobMatch {
     requirements: seed.requirements,
     downgrades: seed.downgrades ?? [],
     distance_km: seed.distanceKm ?? null,
+    work_arrangement: seed.location === "Remote" ? "remote" : "hybrid",
     work_location: seed.distanceKm !== undefined ? (seed.location ?? null) : null,
     blocker: seed.blocker ?? null,
     reasoning:
@@ -499,6 +500,7 @@ export const demoPreferences: Preferences = {
     "App Router; built the shared component library used by four product teams.\n" +
     "2020–2022  Junior Web Developer, Seeblick Media — React and Node.js for client dashboards.\n" +
     "2016–2020  B.Sc. Media Informatics, HTW Berlin.",
+  focus_skills: "TypeScript, React",
   own_skills:
     "React, TypeScript, JavaScript, Next.js, Node.js, Tailwind CSS, Git, PostgreSQL, Figma, " +
     "Storybook, design systems, web accessibility, frontend testing",

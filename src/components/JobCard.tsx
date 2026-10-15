@@ -21,6 +21,7 @@ import type { Chance, Requirement, RequirementKind, RequirementStatus } from "@/
 import type { Job, JobMatchDetail, JobStatus } from "@/lib/mock-data";
 import { JOB_STATUSES, jobStatusLabels, platformIconSlugs, platformLabels } from "@/lib/mock-data";
 import { ChanceBadge, ChancePill } from "@/components/ChanceBadge";
+import { coreRequirements } from "@/lib/scoring-rules";
 import { JobDescription } from "@/components/JobDescription";
 import { buttonSecondary, iconButton, Select } from "@/components/controls";
 
@@ -60,7 +61,7 @@ function RequirementChip({ requirement }: { requirement: Requirement }) {
   return (
     <li
       className={`inline-flex max-w-full items-center gap-1.5 rounded-lg border px-2 py-1 text-[12px] ${status.chip}`}
-      title={`${status.label}${kind ? ` · ${kind}` : ""}`}
+      title={`${status.label}${kind ? ` · ${kind}` : ""}${requirement.evidence ? ` — from your profile: "${requirement.evidence}"` : ""}`}
     >
       <status.Icon size={12} weight="bold" className={`shrink-0 ${status.icon}`} />
       <span className="sr-only">{status.label}:</span>
@@ -72,7 +73,13 @@ function RequirementChip({ requirement }: { requirement: Requirement }) {
 
 function ChanceBreakdown({ chance, match }: { chance: Chance; match: JobMatchDetail }) {
   const { requirements, downgrades, blocker, reasoning } = match;
-  const metCount = requirements.filter((r) => r.status === "met").length;
+  // The same split the tier is computed from (scoring-rules.ts): the key
+  // requirements weigh most, the rest counts as a share.
+  const key = coreRequirements(requirements);
+  const groups = [
+    { title: "Key requirements", items: key },
+    { title: "Other must-haves", items: requirements.filter((r) => !key.includes(r)) },
+  ].filter((group) => group.items.length > 0);
   return (
     <div className="mb-4 rounded-xl border border-[#D7E4ED] bg-white p-3.5">
       <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
@@ -97,16 +104,21 @@ function ChanceBreakdown({ chance, match }: { chance: Chance; match: JobMatchDet
       )}
 
       {requirements.length > 0 ? (
-        <>
-          <p className="mb-1.5 text-[12px] text-text-muted">
-            You meet {metCount} of {requirements.length} must-haves
-          </p>
-          <ul className="mb-3 flex flex-wrap gap-1.5">
-            {requirements.map((r) => (
-              <RequirementChip key={r.text} requirement={r} />
-            ))}
-          </ul>
-        </>
+        <div className="mb-3 space-y-2.5">
+          {groups.map((group) => (
+            <div key={group.title}>
+              <p className="mb-1.5 text-[12px] text-text-muted">
+                <span className="font-medium text-[#1E2A3D]">{group.title}</span> ·{" "}
+                {group.items.filter((r) => r.status === "met").length} of {group.items.length} met
+              </p>
+              <ul className="flex flex-wrap gap-1.5">
+                {group.items.map((r) => (
+                  <RequirementChip key={r.text} requirement={r} />
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       ) : (
         <p className="mb-3 text-[12px] text-text-faint">
           The posting names no concrete must-haves.
@@ -134,6 +146,16 @@ function ChanceBreakdown({ chance, match }: { chance: Chance; match: JobMatchDet
     </div>
   );
 }
+
+// How the job is worked, as the scorer confirmed it ("remote" only when the posting says so).
+const ARRANGEMENT_TAG: Record<
+  NonNullable<Job["arrangement"]>,
+  { label: string; className: string }
+> = {
+  remote: { label: "Remote", className: "border-sky-300 bg-sky-50 text-sky-900" },
+  hybrid: { label: "Hybrid", className: "border-violet-300 bg-violet-50 text-violet-900" },
+  onsite: { label: "On-site", className: "border-slate-300 bg-slate-100 text-slate-800" },
+};
 
 export const statusTier: Record<JobStatus, { text: string; bg: string; border: string }> = {
   interested: { text: "text-sky-900", bg: "bg-sky-200", border: "border-sky-400" },
@@ -209,7 +231,14 @@ export function JobCard({
           <h2 className="truncate text-[16px] font-semibold text-[#1E2A3D]">{job.title}</h2>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-text-muted">
             <span>{job.company}</span>
-            {job.location && (
+            {job.arrangement && (
+              <span
+                className={`rounded-md border px-1.5 py-0.5 text-[11px] font-medium ${ARRANGEMENT_TAG[job.arrangement].className}`}
+              >
+                {ARRANGEMENT_TAG[job.arrangement].label}
+              </span>
+            )}
+            {job.location && !(job.location === "Remote" && job.arrangement === "remote") && (
               <>
                 <span className="text-[#B8C4D1]">·</span>
                 <span className="flex min-w-0 items-center gap-1 text-[12px] text-text-faint">

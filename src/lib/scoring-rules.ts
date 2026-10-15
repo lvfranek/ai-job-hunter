@@ -24,7 +24,7 @@ import type { Preferences } from "@/lib/types";
  * the next run — otherwise a fix here would only ever reach newly scraped jobs.
  * Bump it whenever a change should re-score existing jobs.
  */
-export const SCORING_VERSION = 5;
+export const SCORING_VERSION = 8;
 
 export type WorkArrangement = "remote" | "hybrid" | "onsite";
 export type PostingLevel = "junior" | "mid" | "senior";
@@ -59,6 +59,8 @@ export interface PostingFacts {
   workLocations: string[];
   /** Where the job is, resolved on the server (geo/places.ts); [] when unknown. */
   places: PlacePoints[];
+  /** Which of the candidate's main-focus items the model says the role centres on; null when not reported. */
+  focusCentral: string[] | null;
 }
 
 export interface ChanceResult {
@@ -68,6 +70,7 @@ export interface ChanceResult {
   downgrades: string[];
   distance_km: number | null;
   work_location: string | null;
+  work_arrangement: WorkArrangement | null;
   blocker: string | null;
   reasoning: string;
 }
@@ -103,12 +106,23 @@ function textOrNull(value: unknown): string | null {
 }
 
 export const MAX_REQUIREMENTS = 8;
+const MAX_CORE = 4;
 const MAX_REQUIREMENT_CHARS = 60;
 
 // Years of experience are judged from required_years by the experience rule;
 // listing them again would count the same gap twice.
 const YEARS_REQUIREMENT =
   /\d\s*\+?\s*(?:-\s*\d+\s*)?(?:years?|yrs?|jahre?n?)\b|mehrjährig|langjährig|several years|many years/i;
+
+// Soft skills can't be checked against a CV and only ever count against the
+// candidate; the prompt leaves them out, and this catches the ones it lists anyway.
+const SOFT_SKILL =
+  /team(?:f(?:ae|ä)hig|geist|player|work|spieler)|kommunikations(?:f(?:ae|ä)hig|st(?:ae|ä)rk)|communication skills|eigeninitiative|eigenverantwort|selbstst(?:ae|ä)ndig|zuverl(?:ae|ä)ssig|belastbar|flexibilit|lernbereit|motivation|engagement|auftreten|analytisch|strukturiert|organisationstalent|hands-on|problem-?solving|teamwork|reliab|proactiv|initiative|empath|kundenorientier|sorgf(?:ae|ä)ltig|verantwortungsbewusst|interesse an|interest in|leidenschaft|passion/i;
+const LANGUAGE_WORD = /deutsch|englisch|german|english|sprach|language/i;
+
+function isSoftSkill(text: string): boolean {
+  return SOFT_SKILL.test(text) && !LANGUAGE_WORD.test(text);
+}
 
 /**
  * Clean up the model's checklist: drop entries without a valid status and
@@ -125,14 +139,19 @@ export function normalizeRequirements(raw: unknown): Requirement[] {
     const text = textOrNull(entry.text)?.replace(/\s+/g, " ");
     const status = pick<RequirementStatus>(entry.status, REQUIREMENT_STATUSES);
     if (!text || !status || YEARS_REQUIREMENT.test(text)) continue;
+    const kind = pick<RequirementKind>(entry.kind, REQUIREMENT_KINDS) ?? "skill";
+    if (kind !== "language" && isSoftSkill(text)) continue;
     const key = text.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
     requirements.push({
       text:
         text.length > MAX_REQUIREMENT_CHARS ? `${text.slice(0, MAX_REQUIREMENT_CHARS - 1)}…` : text,
-      kind: pick<RequirementKind>(entry.kind, REQUIREMENT_KINDS) ?? "skill",
+      kind,
       status,
+      evidence: textOrNull(entry.evidence)?.slice(0, 120) ?? null,
+      // The model sometimes calls nearly everything core; only the first few count.
+      core: entry.core === true && requirements.filter((r) => r.core).length < MAX_CORE,
     });
     if (requirements.length === MAX_REQUIREMENTS) break;
   }
@@ -168,7 +187,110 @@ export function readPostingFacts(
           .slice(0, 5)
       : [],
     places: [],
+    focusCentral: Array.isArray(entry.focus_central)
+      ? entry.focus_central.filter((f): f is string => typeof f === "string" && f.trim() !== "")
+      : null,
   };
+}
+
+// ---- checking the model's claims ------------------------------------------------
+
+/** Lower-case words only, so "Next.js", "next js" and "NEXT.JS" compare equal. */
+export function normalizeEvidence(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/ß/g, "ss")
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9+#]+/g, " ")
+    .trim();
+}
+
+// Filler words a quote may carry that prove nothing on their own.
+const EVIDENCE_FILLER = new Set([
+  "und",
+  "and",
+  "the",
+  "der",
+  "die",
+  "das",
+  "mit",
+  "with",
+  "von",
+  "for",
+  "fuer",
+]);
+
+/** Whether a requirement and its quote name the same thing ("Python-Kenntnisse" ↔ "Python"). */
+export function sharesWord(requirement: string, evidence: string): boolean {
+  const words = (text: string) =>
+    normalizeEvidence(text)
+      .split(" ")
+      .filter((w) => w.length >= 2 && !EVIDENCE_FILLER.has(w));
+  const asked = words(requirement);
+  return words(evidence).some((e) =>
+    asked.some(
+      (a) => a === e || (e.length >= 3 && a.includes(e)) || (a.length >= 3 && e.includes(a)),
+    ),
+  );
+}
+
+/** Whether a quote really appears in the profile — as a phrase, or every word of it. */
+export function evidenceIn(profile: string, evidence: string): boolean {
+  const quote = normalizeEvidence(evidence);
+  if (quote.length < 2) return false;
+  const haystack = ` ${profile} `;
+  if (haystack.includes(` ${quote} `)) return true;
+  const words = quote.split(" ").filter((w) => w.length >= 3 && !EVIDENCE_FILLER.has(w));
+  return words.length > 0 && words.every((w) => haystack.includes(` ${w} `));
+}
+
+/**
+ * The model claims a requirement is met; the code checks the profile words it
+ * quotes as proof. A small model marks Kubernetes or Power BI as "met" for a
+ * React developer often enough to put the wrong jobs on top — without a real
+ * quote a claim counts as missing, and a quote from the basics list only as
+ * partly met.
+ */
+export function verifyRequirements(
+  requirements: Requirement[],
+  candidate: Candidate,
+): Requirement[] {
+  return requirements.map((requirement) => {
+    if (requirement.status === "missing") return requirement;
+    // Nothing to check a language against when the profile names none.
+    if (requirement.kind === "language" && !candidate.languagesStated) return requirement;
+    const evidence = requirement.evidence ?? "";
+    if (evidence && evidenceIn(candidate.profile.strong, evidence)) {
+      // "Azure: met — Google Cloud" is a neighbouring tool, not the thing asked
+      // for. Fully met needs the quote to name it; languages translate freely.
+      const named = requirement.kind === "language" || sharesWord(requirement.text, evidence);
+      return requirement.status === "met" && !named
+        ? { ...requirement, status: "partial" }
+        : requirement;
+    }
+    if (evidence && evidenceIn(candidate.profile.basic, evidence)) {
+      return { ...requirement, status: "partial" };
+    }
+    return { ...requirement, status: "missing", evidence: null };
+  });
+}
+
+// What a posting has to say before "remote" is believed. "Home-Office möglich"
+// or "mobiles Arbeiten" alone is hybrid in German postings.
+const REMOTE_EVIDENCE =
+  /\bremote\b|ortsunabh(?:ae|ä)ngig|100\s?%\s?(?:home[\s-]?office|mobil)|(?:komplett|vollst(?:ae|ä)ndig|ausschlie(?:ss|ß)lich)\s+(?:im|aus dem|von zu hause|vom)\s*home[\s-]?office|work from (?:home|anywhere)|full[\s-]?home[\s-]?office/i;
+
+/** "remote" from the model only counts when the posting itself says so. */
+export function confirmRemote(
+  arrangement: WorkArrangement | null,
+  postingText: string,
+): WorkArrangement | null {
+  if (arrangement !== "remote") return arrangement;
+  return REMOTE_EVIDENCE.test(postingText) ? "remote" : null;
 }
 
 // ---- the candidate ------------------------------------------------------------
@@ -184,6 +306,11 @@ export type CandidatePreferences = Pick<
   | "dealbreakers"
   | "own_skills"
   | "basic_skills"
+  | "background"
+  | "education"
+  | "certifications"
+  | "spoken_languages"
+  | "focus_skills"
 >;
 
 /** The preferences, reduced to what the rules compare against. */
@@ -204,6 +331,11 @@ export interface Candidate {
   languages: Set<string>;
   /** Cities they'd commute to; empty when only remote is accepted or none were given. */
   homes: Home[];
+  /** Normalised profile text a requirement's evidence must appear in. */
+  profile: { strong: string; basic: string };
+  languagesStated: boolean;
+  /** What they most want to work with; jobs centred on something else stay at most Good. */
+  focus: { items: string[]; languages: Set<string> };
 }
 
 function yearsOrNull(value: unknown): number | null {
@@ -248,6 +380,29 @@ export function toCandidate(prefs: CandidatePreferences, homes: Home[] = []): Ca
     hasDealbreakers: Boolean(prefs.dealbreakers?.trim()),
     languages: candidateLanguages(prefs.own_skills, prefs.basic_skills),
     homes: officeAccepted ? homes : [],
+    profile: {
+      // Notes and dealbreakers are wishes, not abilities — never evidence.
+      strong: normalizeEvidence(
+        [
+          prefs.own_skills,
+          prefs.background,
+          prefs.education,
+          prefs.certifications,
+          prefs.spoken_languages,
+        ]
+          .filter(Boolean)
+          .join(" \n "),
+      ),
+      basic: normalizeEvidence(prefs.basic_skills ?? ""),
+    },
+    languagesStated: Boolean(prefs.spoken_languages?.trim()),
+    focus: {
+      items: (prefs.focus_skills ?? "")
+        .split(/[,;\n]+/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+      languages: candidateLanguages(prefs.focus_skills),
+    },
   };
 }
 
@@ -437,17 +592,50 @@ export const MIN_REQUIREMENTS_FOR_TOP = 3;
 const years = (n: number) => `${n} year${n === 1 ? "" : "s"}`;
 const cap = (tier: Chance) => (tier === "good" ? "at most Good" : "at most Fair");
 
-/** The tier the checklist alone earns, before any rule pulls it down. */
+/** Without the model's marks, the first requirements listed stand in for the core ones. */
+const FALLBACK_CORE = 3;
+
+/** The requirements the role is built around — marked by the model, else the first few. */
+export function coreRequirements(requirements: Requirement[]): Requirement[] {
+  const marked = requirements.filter((r) => r.core);
+  return marked.length > 0 ? marked : requirements.slice(0, FALLBACK_CORE);
+}
+
+/** Share of the must-haves covered, a partial counting half. */
+function coverage(requirements: Requirement[]): number {
+  if (requirements.length === 0) return 1;
+  const covered = requirements.reduce(
+    (sum, r) => sum + (r.status === "met" ? 1 : r.status === "partial" ? 0.5 : 0),
+    0,
+  );
+  return covered / requirements.length;
+}
+
+/**
+ * The tier the checklist alone earns, before any rule pulls it down. The core
+ * requirements — what the role is built around — weigh most; the rest counts
+ * as a share. Missing one side requirement out of eight still leaves a Very
+ * good; missing the main technology never does.
+ */
 export function checklistChance(requirements: Requirement[]): Chance {
-  const n = requirements.length;
+  const share = coverage(requirements);
+  const core = coreRequirements(requirements);
+  const coreMissing = core.filter((r) => r.status === "missing").length;
+  const coreAllMet = core.every((r) => r.status === "met");
   const missing = requirements.filter((r) => r.status === "missing").length;
-  const partial = requirements.filter((r) => r.status === "partial").length;
-  // Very good is a count, not a percentage: every must-have met, at most one
-  // only partly. One flipped status then moves a job one tier, never two.
-  if (n >= MIN_REQUIREMENTS_FOR_TOP && missing === 0 && partial <= 1) return "very_good";
-  const coverage = n === 0 ? 1 : (n - missing - partial / 2) / n;
-  if (coverage >= 0.65) return "good";
-  if (coverage >= 0.4) return "fair";
+  if (
+    requirements.length >= MIN_REQUIREMENTS_FOR_TOP &&
+    coreAllMet &&
+    missing <= 1 &&
+    share >= 0.8
+  ) {
+    return "very_good";
+  }
+  // One key gap is fine for Good when nearly everything else fits.
+  if ((coreMissing === 0 && share >= 0.55) || (coreMissing === 1 && share >= 0.75)) {
+    return "good";
+  }
+  if ((coreMissing <= 1 && share >= 0.4) || share >= 0.6) return "fair";
   return "low";
 }
 
@@ -477,6 +665,9 @@ function nearestHome(places: PlacePoints[], homes: Home[]) {
   return { ...best, within };
 }
 
+const wantedLabel = (wanted: WorkArrangement[]) =>
+  wanted.map((a) => ARRANGEMENT_WANTED_LABEL[a]).join(" or ");
+
 // Reasons are joined with "; " — a place name must never carry one.
 const asLabel = (text: string) => text.replace(/;/g, ",");
 
@@ -493,43 +684,51 @@ export function computeChance(facts: PostingFacts, candidate: Candidate): Chance
     downgrades.push(`${reason} – ${cap(tier)}`);
   };
 
-  // Where the work happens.
-  if (
-    candidate.arrangements.length > 0 &&
-    facts.arrangement !== null &&
-    !candidate.arrangements.includes(facts.arrangement)
-  ) {
-    const wanted = candidate.arrangements.map((a) => ARRANGEMENT_WANTED_LABEL[a]).join(" or ");
-    blockers.push(`${ARRANGEMENT_BLOCKED_LABEL[facts.arrangement]} – you only want ${wanted}`);
-  }
-  const arrangementBlocked = blockers.length > 0;
-
-  // Distance, for work that happens somewhere. Measured from the edge of each
-  // city's area (all its postcodes), so "Hamburg + 10 km" includes Norderstedt.
+  // Where the work happens. Remote is fine when remote is wanted. Anything
+  // else is decided by place once the candidate named cities: inside a radius
+  // is fine whether hybrid or on site, outside is Low. Without cities, the
+  // ticked arrangements decide.
   let distanceKm: number | null = null;
   let workLocation: string | null = null;
-  if (
-    !arrangementBlocked &&
-    facts.arrangement !== "remote" &&
-    candidate.homes.length > 0 &&
-    facts.places.length > 0
-  ) {
-    const nearest = nearestHome(facts.places, candidate.homes);
-    distanceKm = Math.round(nearest.km);
-    workLocation = asLabel(nearest.place);
-    if (!nearest.within) {
-      const wanted = candidate.homes
-        .map((h) => `${h.radiusKm} km of ${asLabel(h.label)}`)
-        .join(" or ");
-      if (facts.arrangement === null) {
-        // The posting never says where the work happens — maybe it's remote after all.
-        limitTo("fair", `Based in ${workLocation}, ${distanceKm} km away, remote not mentioned`);
-      } else {
+  const wanted = candidate.arrangements;
+  const remoteOnly = wanted.length > 0 && wanted.every((a) => a === "remote");
+  if (facts.arrangement === "remote") {
+    if (wanted.length > 0 && !wanted.includes("remote")) {
+      blockers.push(`${ARRANGEMENT_BLOCKED_LABEL.remote} – you only want ${wantedLabel(wanted)}`);
+    }
+  } else if (remoteOnly) {
+    blockers.push(
+      facts.arrangement === null
+        ? "Not clearly remote – the posting never says it's remote"
+        : `${ARRANGEMENT_BLOCKED_LABEL[facts.arrangement]} – you only want 100% remote`,
+    );
+  } else if (candidate.homes.length > 0) {
+    if (facts.places.length > 0) {
+      // Measured from the edge of each city's area (all its postcodes), so
+      // "Hamburg + 10 km" includes Norderstedt.
+      const nearest = nearestHome(facts.places, candidate.homes);
+      distanceKm = Math.round(nearest.km);
+      workLocation = asLabel(nearest.place);
+      if (!nearest.within) {
+        const radii = candidate.homes
+          .map((h) => `${h.radiusKm} km of ${asLabel(h.label)}`)
+          .join(" or ");
         blockers.push(
-          `Office in ${workLocation}, ${distanceKm} km away – you want within ${wanted}`,
+          `Office in ${workLocation}, ${distanceKm} km away – you want within ${radii}`,
         );
       }
+    } else {
+      // Not a cap: only a job that's provably too far is held back.
+      downgrades.push("Location unknown – check the distance yourself");
     }
+  } else if (
+    facts.arrangement !== null &&
+    wanted.length > 0 &&
+    !wanted.includes(facts.arrangement)
+  ) {
+    blockers.push(
+      `${ARRANGEMENT_BLOCKED_LABEL[facts.arrangement]} – you only want ${wantedLabel(wanted)}`,
+    );
   }
 
   // Contract form.
@@ -537,7 +736,9 @@ export function computeChance(facts: PostingFacts, candidate: Candidate): Chance
     if (CONTRACT_IN_TITLE[form].test(facts.title)) {
       blockers.push(`${CONTRACT_LABEL[form]} – you excluded this contract form`);
     } else if (facts.contractForm === form) {
-      limitTo("fair", `May be a ${CONTRACT_LABEL[form].toLowerCase()}, which you excluded`);
+      const label = CONTRACT_LABEL[form].toLowerCase();
+      const article = /^[aeiou]/.test(label) ? "an" : "a";
+      limitTo("fair", `May be ${article} ${label}, which you excluded`);
     }
   }
 
@@ -598,6 +799,29 @@ export function computeChance(facts: PostingFacts, candidate: Candidate): Chance
     candidate.languages.size > 0 ? missingCoreLanguages(core, candidate.languages) : [];
   if (missingLanguages.length > 0) {
     blockers.push(`${missingLanguages.join(", ")} as core language – not in your skills`);
+  }
+
+  // Main focus. For a programming job the core language decides, in code; for
+  // anything else the model says which focus items the work centres on.
+  const focus = candidate.focus;
+  if (focus.items.length > 0) {
+    const focusList = asLabel(focus.items.join(", "));
+    const coreWithLanguage = core.filter(
+      (entry) => missingCoreLanguages([entry], new Set()).length > 0,
+    );
+    if (focus.languages.size > 0 && coreWithLanguage.length > 0) {
+      // Off focus only when no core entry can be met by a focus language.
+      const offFocus = missingCoreLanguages(coreWithLanguage, focus.languages);
+      if (
+        coreWithLanguage.every((entry) => missingCoreLanguages([entry], focus.languages).length)
+      ) {
+        limitTo("good", `Built on ${offFocus.join(", ")}, not your main focus (${focusList})`);
+      }
+    } else if (facts.focusCentral !== null) {
+      const wanted = new Set(focus.items.map(normalizeEvidence));
+      const central = facts.focusCentral.filter((f) => wanted.has(normalizeEvidence(f)));
+      if (central.length === 0) limitTo("good", `Not centred on your main focus (${focusList})`);
+    }
   }
 
   // Mandatory credentials and spoken languages can't be learned on the job.

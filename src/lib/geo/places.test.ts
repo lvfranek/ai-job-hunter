@@ -3,6 +3,7 @@ import data from "./places-dach.json";
 import { closestKm, haversineKm } from "./distance";
 import {
   buildPlaceIndex,
+  findPlacesInText,
   resolveHomes,
   resolveJobPlaces,
   resolveLocationText,
@@ -16,6 +17,7 @@ const labels = (text: string, country?: "DE" | "AT" | "CH") =>
   resolveLocationText(index, text, country).map((p) => p.label);
 const place = (text: string) => resolvePlace(index, text)!;
 const job = (fields: Partial<Parameters<typeof resolveJobPlaces>[1]> = {}) => ({
+  description: null,
   location: null,
   postal_code: null,
   country_code: null,
@@ -134,7 +136,9 @@ describe("resolveJobPlaces", () => {
     ).toEqual([{ label: "Amsterdam", points: [[52.37, 4.9]] }]);
     // The model's cities only when the board said nothing usable.
     expect(
-      resolveJobPlaces(index, job({ location: "Germany" }), ["Köln"]).map((p) => p.label),
+      resolveJobPlaces(index, job({ location: "Germany", description: "Büro in Köln" }), [
+        "Köln",
+      ]).map((p) => p.label),
     ).toEqual(["Köln"]);
     expect(
       resolveJobPlaces(index, job({ location: "Hamburg" }), ["München"]).map((p) => p.label),
@@ -143,6 +147,61 @@ describe("resolveJobPlaces", () => {
 
   it("returns nothing when no source names a place", () => {
     expect(resolveJobPlaces(index, job({ location: "Remote" }))).toEqual([]);
+  });
+});
+
+describe("findPlacesInText", () => {
+  const footer = `Ihre Ansprechpartnerin: Dr. Anja Ebersbach
+CEO Finanzen & Personal Telefon: +49 (0)941 660 800
+
+Hallo Welt! GmbH Bruderwöhrdstraße 29 93055 Regensburg Germany`;
+
+  it("reads the address at the end of a posting", () => {
+    const [place] = findPlacesInText(index, footer);
+    expect(place.label).toBe("Regensburg");
+    expect(place.points).toHaveLength(1);
+  });
+
+  it("never takes a phone number or salary for a postcode", () => {
+    expect(findPlacesInText(index, "Telefon: +49 (0)941 660 800, Gehalt 55000 Euro")).toEqual([]);
+    // A real postcode, but the word after it isn't its city.
+    expect(findPlacesInText(index, "Bis zu 20095 Bewerbungen")).toEqual([]);
+  });
+
+  it("reads Standort lines and longer city names", () => {
+    expect(findPlacesInText(index, "Standort: Bremen").map((p) => p.label)).toEqual(["Bremen"]);
+    expect(
+      findPlacesInText(index, "Musterweg 1, 60311 Frankfurt am Main").map((p) => p.label),
+    ).toEqual(["Frankfurt am Main"]);
+    expect(findPlacesInText(index, "Arbeitsort: Oldenburg (Oldb)").map((p) => p.label)).toEqual([
+      "Oldenburg",
+    ]);
+  });
+
+  it("falls back to a city the model inferred when the posting has no address", () => {
+    const inferred = job({
+      description: "ansässig im Science Park der Universität des Saarlandes",
+    });
+    expect(resolveJobPlaces(index, inferred, ["Saarbrücken"]).map((p) => p.label)).toEqual([
+      "Saarbrücken",
+    ]);
+  });
+
+  it("prefers an address in the posting over a city the posting never names", () => {
+    const withAddress = job({ description: footer });
+    expect(resolveJobPlaces(index, withAddress).map((p) => p.label)).toEqual(["Regensburg"]);
+    // The model's city counts only when the posting names it.
+    expect(resolveJobPlaces(index, withAddress, ["Hamburg"]).map((p) => p.label)).toEqual([
+      "Regensburg",
+    ]);
+    expect(
+      resolveJobPlaces(index, { ...withAddress, description: `Standort Bremen. ${footer}` }, [
+        "Bremen",
+      ]).map((p) => p.label),
+    ).toEqual(["Bremen"]);
+    expect(
+      resolveJobPlaces(index, { ...withAddress, location: "Hamburg" }).map((p) => p.label),
+    ).toEqual(["Hamburg"]);
   });
 });
 

@@ -423,6 +423,60 @@ export interface JobLocationFields {
   country_code: string | null;
   latitude: number | null;
   longitude: number | null;
+  /** The posting itself — the model's cities must appear in it, and its address line is the last resort. */
+  title?: string | null;
+  description?: string | null;
+}
+
+/**
+ * Whether the posting names a city at all. The model has put "Hamburg" on a
+ * Regensburg posting that never mentions Hamburg — a city it reports only
+ * counts when the text really contains it.
+ */
+export function mentionedIn(text: string, city: string): boolean {
+  const haystacks = normalizeKeys(text).map((t) => ` ${t} `);
+  const name = city.split(/[,(]/)[0];
+  return normalizeKeys(name).some(
+    (k) => k.length >= 2 && haystacks.some((h) => h.includes(` ${k} `)),
+  );
+}
+
+// "93055 Regensburg", "D-28195 Bremen", "60311 Frankfurt am Main". The city
+// after the postcode has to match the postcode's own place, so a phone number
+// or a salary can never pass as an address.
+const POSTCODE_CITY =
+  /(?:^|[\s,(:])(?:D-?\s?)?(\d{5})\s+([A-ZÄÖÜ][\wÄÖÜäöüß.'-]*(?:\s+(?:am|an der|im|in|bei|ob der)\s+[A-ZÄÖÜ][\wÄÖÜäöüß.'-]*|\s*\([^)\n]{1,20}\))?)/g;
+// "Standort: Bremen", "Arbeitsort: Oldenburg (Oldb)", "am Standort Gauting".
+const PLACE_LABEL =
+  /(?:Standort|Standorte|Arbeitsort|Einsatzort|Dienstort|Location|Job location)(?:\s*[:：]\s*|\s+(?:in\s+)?(?=[A-ZÄÖÜ]))([^\n;|]{2,60})/g;
+const MAX_TEXT_PLACES = 3;
+
+/**
+ * Places a posting's text names outright: addresses with a postcode, and
+ * "Standort: …" lines. Read in code, not by the model — it skips a company
+ * address it takes for the head office even when that office is where the
+ * job is worked.
+ */
+export function findPlacesInText(
+  index: PlaceIndex,
+  text: string | null | undefined,
+): PlacePoints[] {
+  if (!text) return [];
+  const found: PlacePoints[] = [];
+  const add = (place: PlacePoints) => {
+    if (found.length < MAX_TEXT_PLACES && !found.some((f) => f.label === place.label)) {
+      found.push(place);
+    }
+  };
+  for (const match of text.matchAll(PLACE_LABEL)) {
+    for (const place of resolveLocationText(index, match[1], "DE")) add(place);
+  }
+  for (const match of text.matchAll(POSTCODE_CITY)) {
+    const hit = index.byPostcode.get(`DE:${match[1]}`);
+    const city = resolveName(index, match[2]);
+    if (hit && city && hit.place === city) add({ label: city.label, points: [hit.point] });
+  }
+  return found;
 }
 
 /**
@@ -430,7 +484,8 @@ export interface JobLocationFields {
  * never merged, so a "Hauptsitz Hamburg" in a posting's footer can't make a
  * Munich job look close. Order: the board's postcode (exact), the board's city
  * (all its points), the board's coordinates (only for a city the data lacks —
- * they are usually just the city centre), then the cities the model read.
+ * they are usually just the city centre), the cities the model read, and last
+ * the addresses written in the posting itself.
  */
 export function resolveJobPlaces(
   index: PlaceIndex,
@@ -452,13 +507,26 @@ export function resolveJobPlaces(
       },
     ];
   }
-  const fromModel: PlacePoints[] = [];
-  for (const city of modelCities) {
-    for (const place of resolveLocationText(index, city, country)) {
-      if (!fromModel.some((p) => p.label === place.label)) fromModel.push(place);
+  const postingText = [job.title, job.description].filter(Boolean).join("\n");
+  const placesOf = (cities: string[]) => {
+    const found: PlacePoints[] = [];
+    for (const city of cities) {
+      for (const place of resolveLocationText(index, city, country)) {
+        if (!found.some((p) => p.label === place.label)) found.push(place);
+      }
     }
-  }
-  return fromModel;
+    return found;
+  };
+  // A city the model read that the posting names outright is the best clue left.
+  const named = placesOf(modelCities.filter((c) => mentionedIn(postingText, c)));
+  if (named.length > 0) return named;
+  // Then an address written in the posting.
+  const written = findPlacesInText(index, job.description);
+  if (written.length > 0) return written;
+  // Last, a city the model inferred ("Universität des Saarlandes" → Saarbrücken).
+  // It once invented "Hamburg" for a Regensburg posting — but that posting had
+  // an address, which wins above; ignoring every inference left real jobs unplaced.
+  return placesOf(modelCities);
 }
 
 /** The candidate's cities as places; names that don't resolve are reported, never guessed. */

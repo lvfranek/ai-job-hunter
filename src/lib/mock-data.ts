@@ -57,6 +57,8 @@ export type Job = {
   location: string | null;
   /** From the closest of your cities; null for remote jobs or when unknown. */
   distanceKm: number | null;
+  /** How the job is worked, as the scorer confirmed it; null when the posting doesn't say. */
+  arrangement: "remote" | "hybrid" | "onsite" | null;
   status: JobStatus | null;
   isStale?: boolean;
   isScored: boolean;

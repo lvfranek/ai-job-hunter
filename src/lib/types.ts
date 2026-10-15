@@ -34,6 +34,8 @@ export interface Preferences {
   max_required_years: number | null; // jobs requiring more than this are Low
   // Who they are — the AI checks each posting's must-haves against this.
   background: string; // the CV as text: positions, education, projects
+  // free text: what they most want to work with — jobs centred on something else stay at most Good
+  focus_skills: string;
   own_skills: string; // free text: skills they're strong in (this or background is required before scoring)
   basic_skills: string; // free text: skills they know the basics of (count as partial)
   education: string;
@@ -107,6 +109,8 @@ export interface JobMatch {
   // candidate's cities; null when the distance rule didn't apply (remote, no data).
   distance_km: number | null;
   work_location: string | null;
+  // remote | hybrid | onsite as the scorer confirmed it; null when the posting doesn't say.
+  work_arrangement: "remote" | "hybrid" | "onsite" | null;
   reasoning: string | null;
   // Set only when a hard rule made the job Low ("Hybrid with office days – you
   // only want 100% remote"). Null means a Low tier is just a weak match.

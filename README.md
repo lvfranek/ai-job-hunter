@@ -3,7 +3,8 @@
 [![CI](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml/badge.svg)](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml)
 
 Scrapes job boards (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur), rates your chance at each
-job against your AI Scoring Preferences with an LLM, and writes a tailored cover letter for any job. An application tracker keeps every
+job against your AI Scoring Preferences with an LLM, and generates a tailored cover letter (German
+or English, as a Word file) for any job with one click. An application tracker keeps every
 job you applied to in one list — scraped ones and ones you found elsewhere, added by hand or
 imported from a spreadsheet. Built with Next.js and Supabase.
 
@@ -31,50 +32,68 @@ imported from a spreadsheet. Built with Next.js and Supabase.
 
 ## Tech Stack
 
-| Area      | Choice                                                            |
-| --------- | ----------------------------------------------------------------- |
-| Framework | Next.js 16 (App Router)                                           |
-| UI        | React 19                                                          |
-| Language  | TypeScript                                                        |
-| Styling   | Tailwind CSS v4                                                   |
-| Database  | [Supabase](https://supabase.com) (Postgres + RLS)                 |
-| Scraping  | [Apify](https://apify.com) job-board actors                       |
-| AI        | [OpenRouter](https://openrouter.ai) — LLM match scoring           |
-| Documents | `pdf-parse` / `mammoth` (CV upload), `docx` (cover letter export) |
-| Testing   | Vitest                                                            |
-| Icons     | Phosphor Icons                                                    |
-| Hosting   | Vercel                                                            |
+| Area      | Choice                                                                |
+| --------- | --------------------------------------------------------------------- |
+| Framework | Next.js 16 (App Router)                                               |
+| UI        | React 19                                                              |
+| Language  | TypeScript                                                            |
+| Styling   | Tailwind CSS v4                                                       |
+| Database  | [Supabase](https://supabase.com) (Postgres + RLS)                     |
+| Scraping  | [Apify](https://apify.com) job-board actors                           |
+| AI        | [OpenRouter](https://openrouter.ai) — chance scoring, cover letters   |
+| Documents | `pdf-parse` / `mammoth` (CV upload), `docx` (cover letter export)     |
+| Places    | Bundled [GeoNames](https://www.geonames.org) postcode data (DE/AT/CH) |
+| Testing   | Vitest                                                                |
+| Icons     | Phosphor Icons                                                        |
+| Hosting   | Vercel                                                                |
 
 ## Features
 
 - **Multi-board scraping** — Indeed, LinkedIn, Xing, Stepstone and Arbeitsagentur in a single scan.
 - **Chance tiers instead of a score** — every job lands in one of four tiers: Low, Fair, Good or
-  Very good chance. The LLM only reads the posting's facts and checks each must-have requirement
-  against your profile (met / partly / missing); the tier is computed from that checklist in code
-  with fixed rules, so tiers stay stable between runs instead of drifting. Hard blockers (work
-  arrangement, excluded contract forms, three or more years of experience missing, a mandatory
-  licence or language you don't have, your dealbreakers) make a job Low; smaller gaps cap it — one
-  year of experience short means at most Good, two years at most Fair. Each job shows its
-  checklist and every reason it was held back.
-- **Preferences for any profession** — years of experience and target levels, your
-  CV as text, strong and basic skills, education, certificates and spoken languages. Nothing is
-  specific to software jobs.
-- **Work locations with a radius** — for hybrid and on-site jobs, list the cities you'd commute
-  to, each with its own radius (e.g. Hamburg + 10 km, Berlin + 25 km). Anywhere in the city
-  counts, plus that distance around it as the crow flies; an office job further away is Low
-  chance and says how far it is. Remote jobs are never limited. Distances come from a bundled
-  place list (Germany, Austria, Switzerland), so no geocoding service is called. Each job card
-  shows where the job is and how far.
+  Very good chance. The LLM only reads the posting's facts and checks each must-have against your
+  profile (met / partly / missing); the tier is computed from that checklist in code with fixed
+  rules, so tiers stay stable between runs instead of drifting:
+  - **Key requirements weigh most.** The 2–4 things the role is built around are marked as key;
+    Very good needs every key requirement met and at least 80% of all must-haves, Good allows one
+    key gap when nearly everything else fits. Alternatives ("React or OpenUI5") count as one
+    requirement, and nice-to-haves and soft skills don't count at all.
+  - **Hard blockers make a job Low:** an office outside your radius, an excluded contract form,
+    three or more years of experience missing, a senior role you don't target, a mandatory licence
+    or language you don't have, or one of your dealbreakers. Smaller gaps cap the tier — one year
+    of experience short means at most Good, two years at most Fair.
+  - Each job card shows its key requirements and other must-haves with "x of y met", and every
+    reason it was held back.
+- **Claims are checked, not trusted** — for every must-have it marks as met, the AI has to quote
+  the words from your profile that prove it; code checks each quote word for word, so an invented
+  skill counts as missing, one from your basics list only as partly met, and a neighbouring tool
+  (Azure proven by "Google Cloud") as partly met. "Remote" only counts when the posting says so.
+- **Main focus** — name what you most want to work with (e.g. TypeScript, React); jobs built around
+  something else stay at most Good, so your focus ranks first.
+- **Preferences for any profession** — years of experience and target levels, main focus, your CV
+  as text, strong and basic skills, education, certificates, spoken languages and dealbreakers.
+  Nothing is specific to software jobs.
+- **Work locations with a radius** — list the cities you'd commute to, each with its own radius
+  (e.g. Oldenburg + 25 km, Bremen + 25 km). A remote job or one inside a radius is fine — hybrid or
+  on site alike; a job outside every radius is Low and says how far it is. Anywhere in the city
+  counts, plus that distance around it as the crow flies. Where a job is comes from the job board,
+  an address in the posting ("93055 Regensburg", "Standort: Bremen") or the city the AI reads; a
+  job whose location can't be found isn't held back, only flagged. Distances come from a bundled
+  place list (Germany, Austria, Switzerland), so no geocoding service is called.
+- **Filters that stay out of the way** — sort order and a single Filters button in the toolbar;
+  the panel (a bottom sheet on phones) filters by chance, workplace (remote, hybrid, on-site) and
+  status, each option showing how many jobs it leaves. Active filters show as removable chips.
+  Choices are remembered per browser.
 - **Hide what you're not interested in** — one click hides a job (with Undo); hidden jobs stay out
-  of the list until you show them again. Filters for chance, sort order and status are
-  remembered per browser.
+  of the list until you show them again from the Filters panel.
 - **Rescoring on demand** — score only new and outdated jobs or rescore everything, skipping
   jobs by status (e.g. not interested, applied) or age. Since every job costs AI credits, a run
   only starts after a second confirmation that unlocks after 3 seconds. Preferences can be
   written in English or German.
-- **Tailored cover letters** — one click on a job writes a cover letter for it, in German or
-  English, as a `.docx`. It's built from your Cover Letter Profile: contact details for the
-  header, plus a personal story, key achievements and motivation the AI adapts to each job.
+- **Cover letter generator** — the _Cover letter_ button on any job writes a cover letter for it,
+  in German or English, and downloads it as a Word file (`.docx`). It's built from your Cover
+  Letter Profile: contact details for the letter head, plus a personal story, key achievements and
+  motivation that the AI adapts to each job.
 - **Fill the profile from your CV** — optionally upload your CV (résumé) as PDF, Word or text and
   your name, contact details and address are filled in. The app doesn't create CVs, and the
   uploaded file isn't stored.
@@ -173,7 +192,8 @@ writes are persisted.
 
 2. **Create a Supabase project** at [supabase.com](https://supabase.com), then run every file in
    `supabase/migrations/` against it, in order (via the Supabase SQL editor, or `supabase db push`
-   if you use the Supabase CLI).
+   if you use the Supabase CLI). When you update an existing install, run the new migrations
+   before deploying the new code — it reads the columns they add.
 
 3. **Copy the env template** and fill in your Supabase project's URL and service role key
    (Project Settings → API in the Supabase dashboard):
@@ -238,10 +258,11 @@ Unit tests cover the pure logic that is easiest to get subtly wrong: the HTML-to
 conversion for scraped postings (`text-format`), the LLM scoring-response parser and chunking
 (`agents/agent-3`), the chance-tier rules (`scoring-rules`, `chance`), preference validation
 (`preferences`), place parsing and distances (`geo/places`), the job boards' location fields
-(`apify`), the keyword statistics
-(`keyword-stats`), the tracker's CSV import (`csv-import`), the rescoring filters (`rescore`), and
-`.docx` cover letter generation. They run
-in CI on every push and pull request.
+(`apify`), the dashboard filters (`job-filters`), the keyword statistics (`keyword-stats`), the
+tracker's CSV import (`csv-import`), the rescoring filters (`rescore`) and `.docx` cover letter
+generation. `scoring-scenarios` runs realistic postings end to end through everything but the
+model — the evidence check, the remote check, the real place data and the rules. They run in CI
+on every push and pull request.
 
 ```bash
 npm test
@@ -263,7 +284,7 @@ only meaningful over an encrypted connection.
 ## Automation (optional)
 
 `POST /api/cron/scrape` runs a full scrape + score pass and waits for it to finish before
-responding — unlike the "Scan now" button in the UI, which fires in the background. Point any
+responding — unlike the "Scrape now" button in the UI, which fires in the background. Point any
 scheduler at it: a cron job, [n8n](https://n8n.io), Zapier, a scheduled GitHub Action, whatever
 you already use. The app doesn't depend on a specific one.
 

@@ -7,6 +7,7 @@ import { Lightning } from "@phosphor-icons/react/dist/ssr";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -20,11 +21,11 @@ function LoginForm() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Incorrect password");
+        throw new Error(data.error || "Incorrect email or password");
       }
       router.push(searchParams.get("next") || "/");
       router.refresh();
@@ -69,6 +70,21 @@ function LoginForm() {
         )}
 
         <div>
+          <label htmlFor="email" className="mb-1.5 block text-[13px] font-medium text-text-muted">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="username"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+          />
+        </div>
+
+        <div>
           <label
             htmlFor="password"
             className="mb-1.5 block text-[13px] font-medium text-text-muted"
@@ -79,7 +95,6 @@ function LoginForm() {
             id="password"
             type="password"
             autoComplete="current-password"
-            autoFocus
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
@@ -88,7 +103,7 @@ function LoginForm() {
 
         <button
           type="submit"
-          disabled={submitting || !password}
+          disabled={submitting || !email || !password}
           className="w-full rounded-xl bg-[#101828] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
         >
           {submitting ? "Signing in…" : "Sign in"}

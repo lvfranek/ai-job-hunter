@@ -13,7 +13,32 @@ export const DEMO_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 // Set by POST /api/demo/score so GET /api/demo/jobs can return the "scored" fixtures.
 export const DEMO_SCORED_COOKIE_NAME = "job_hunter_demo_scored";
 
-export function verifyPassword(password: string): boolean {
+// Emails compare case- and whitespace-insensitively, so "Me@Example.com " still matches.
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function configuredEmail(): string {
+  const email = process.env.AUTH_EMAIL;
+  if (!email) throw new Error("AUTH_EMAIL is not set");
+  return normalizeEmail(email);
+}
+
+function verifyEmail(email: string): boolean {
+  // Hash both sides so timingSafeEqual always sees equal-length buffers.
+  const digest = (s: string) => crypto.createHash("sha256").update(s).digest();
+  return crypto.timingSafeEqual(digest(normalizeEmail(email)), digest(configuredEmail()));
+}
+
+// Always runs the scrypt check, even for a wrong email, so response timing doesn't
+// reveal whether the email was right.
+export function verifyLogin(email: string, password: string): boolean {
+  const emailOk = verifyEmail(email);
+  const passwordOk = verifyPassword(password);
+  return emailOk && passwordOk;
+}
+
+function verifyPassword(password: string): boolean {
   const raw = process.env.AUTH_PASSWORD_HASH;
   if (!raw) throw new Error("AUTH_PASSWORD_HASH is not set");
   const [salt, hashHex] = raw.split(":");
@@ -24,17 +49,18 @@ export function verifyPassword(password: string): boolean {
   return derived.length === expected.length && crypto.timingSafeEqual(derived, expected);
 }
 
-// Static token: HMAC(AUTH_PASSWORD_HASH, "session"). No per-login randomness — simplest
-// design for a single-password personal-tool gate. There's no server-side revocation
-// short of rotating AUTH_PASSWORD_HASH.
+// Static token: HMAC(AUTH_PASSWORD_HASH, "session:<email>"). No per-login randomness —
+// simplest design for a single-user personal-tool gate. There's no server-side revocation
+// short of changing AUTH_PASSWORD_HASH or AUTH_EMAIL.
 // ponytail: static signed cookie, no revocation — add a sessions table if that's ever needed
 export function sessionToken(): string {
   const raw = process.env.AUTH_PASSWORD_HASH || "";
-  return crypto.createHmac("sha256", raw).update("session").digest("hex");
+  const email = normalizeEmail(process.env.AUTH_EMAIL || "");
+  return crypto.createHmac("sha256", raw).update(`session:${email}`).digest("hex");
 }
 
 export function isValidSessionCookie(value: string | undefined): boolean {
-  if (!value || !process.env.AUTH_PASSWORD_HASH) return false;
+  if (!value || !process.env.AUTH_PASSWORD_HASH || !process.env.AUTH_EMAIL) return false;
   const expected = Buffer.from(sessionToken());
   const actual = Buffer.from(value);
   return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);

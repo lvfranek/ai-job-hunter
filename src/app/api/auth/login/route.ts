@@ -5,12 +5,12 @@ import {
   DEMO_COOKIE_NAME,
   DEMO_SCORED_COOKIE_NAME,
   sessionToken,
-  verifyPassword,
+  verifyLogin,
 } from "@/lib/auth";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 
 // This route is public (see src/proxy.ts), so it is the one brute-force target
-// in the app — a single password with no account lockout behind it.
+// in the app — a single login with no account lockout behind it.
 const MAX_ATTEMPTS = 10;
 const WINDOW_MS = 10 * 60 * 1000;
 
@@ -23,10 +23,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { password } = (await request.json()) as { password?: string };
+  const { email, password } = (await request.json()) as { email?: string; password?: string };
 
-  if (!password || !verifyPassword(password)) {
-    return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
+  if (!email || !password || !verifyLogin(email, password)) {
+    return NextResponse.json({ error: "Incorrect email or password" }, { status: 401 });
   }
 
   const res = NextResponse.json({ ok: true });

@@ -107,7 +107,7 @@ imported from a spreadsheet. Built with Next.js and Supabase.
 - **Scheduled scans** — `POST /api/cron/scrape` runs a full scrape + score pass, drivable from any
   scheduler (cron, n8n, GitHub Actions).
 - **Webhook notifications** — get a JSON summary of new high-fit jobs after each run.
-- **Single-user by design** — one password gate protects the whole deployment, with a read-only
+- **Single-user by design** — one email + password login protects the whole deployment, with a read-only
   demo mode for visitors.
 
 ## Application Tracker
@@ -202,7 +202,9 @@ writes are persisted.
    cp .env.local.example .env.local
    ```
 
-4. **Generate the two required app secrets** and paste them into `.env.local`:
+4. **Set your login and generate the two required app secrets** in `.env.local`:
+   - `AUTH_EMAIL` — the email you log in with (it is not verified or emailed, just compared).
+     Case doesn't matter.
    - `CREDENTIALS_ENCRYPTION_KEY` — encrypts any API keys you enter later via the Settings page:
      ```bash
      openssl rand -hex 32
@@ -213,7 +215,7 @@ writes are persisted.
      node -e "const c=require('crypto');const s=c.randomBytes(16).toString('hex');c.scrypt(process.argv[1],s,64,(e,k)=>console.log(s+':'+k.toString('hex')))" "your-password-here"
      ```
 
-5. **Start the app** and log in with the password you hashed in step 4:
+5. **Start the app** and log in with your `AUTH_EMAIL` and the password you hashed in step 4:
 
    ```bash
    npm run dev
@@ -231,6 +233,7 @@ writes are persisted.
 | ---------------------------- | ---------------------------------------------------------------------- | ------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`   | Supabase project URL                                                   | Yes                 |
 | `SUPABASE_SERVICE_ROLE_KEY`  | Supabase service role key — server-side only, never expose it          | Yes                 |
+| `AUTH_EMAIL`                 | Email you log in with (see Installation step 4)                        | Yes                 |
 | `AUTH_PASSWORD_HASH`         | `salt:hash` of your app password (see Installation step 4)             | Yes                 |
 | `CREDENTIALS_ENCRYPTION_KEY` | 32-byte hex key encrypting API keys stored in the database             | Yes                 |
 | `OPENROUTER_API_KEY`         | OpenRouter key for match scoring                                       | Or set in Settings  |
@@ -349,8 +352,9 @@ stored).
 
 ## Security Considerations
 
-- **Password gate** — a single hashed password (`AUTH_PASSWORD_HASH`, scrypt) protects every page
-  and API route via `src/proxy.ts`. Login attempts are rate limited to 10 per 10 minutes per IP.
+- **Login gate** — a single email (`AUTH_EMAIL`) plus hashed password (`AUTH_PASSWORD_HASH`,
+  scrypt) protects every page and API route via `src/proxy.ts`. Login attempts are rate limited to
+  10 per 10 minutes per IP. Changing either value invalidates all existing sessions.
 - **Database access** — all queries run server-side with the service role key; the Supabase
   anon key is deliberately not used anywhere in the app. Row Level Security is enabled on every
   table, scoped to the single hardcoded app user (`supabase/migrations/015_enable_rls.sql`).
@@ -358,14 +362,14 @@ stored).
   `CREDENTIALS_ENCRYPTION_KEY` (AES-256-GCM) before they touch the database.
 - **Security headers** — CSP, HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` and
   `Permissions-Policy` are set in `next.config.ts`.
-- **Cron endpoint** — bypasses the password gate (external schedulers can't hold a login cookie)
+- **Cron endpoint** — bypasses the login gate (external schedulers can't hold a login cookie)
   but requires its own bearer token instead; never expose `CRON_SECRET` in client-side code.
 - **Webhook URL** — `NOTIFICATION_WEBHOOK_URL` has no auth on the receiving end by default; treat
   the URL itself as a secret, since anyone who has it can see your job matches.
 
 ## Limitations
 
-- **Single user, one password.** There is no sign-up, no accounts and no multi-tenancy — the RLS
+- **Single user, one login.** There is no sign-up, no accounts and no multi-tenancy — the RLS
   policies are pinned to one hardcoded user id rather than `auth.uid()`. Making this multi-user
   would mean introducing Supabase Auth and rewriting those policies.
 - **Scraping depends on third-party actors.** Job boards change their markup; when an Apify actor

@@ -6,26 +6,23 @@ import { toCandidate, type CandidatePreferences } from "./scoring-rules";
 
 // End to end through everything but the model: a model answer goes through
 // the evidence check, the remote check, the real place data and the rules.
-// The profile is a real one — remote or hybrid near Oldenburg or Bremen,
-// main focus TypeScript.
+// The profile is a real one — remote or hybrid near Oldenburg or Bremen.
 
 const index = buildPlaceIndex(data);
 
 const prefs: CandidatePreferences = {
-  job_type: ["remote", "hybrid"],
+  remote_ok: true,
+  office_ok: true,
   excluded_employment_types: ["werkstudent", "praktikum", "ausbildung"],
   work_time_models: [],
   experience_years: 2,
-  target_levels: ["junior"],
-  max_required_years: null,
+  level: "junior",
   dealbreakers: "Kundenakquise, Vertrieb",
-  own_skills: "React, Next.js, TypeScript, JavaScript, Python, Django, Tailwind, Git, Supabase",
+  own_skills:
+    "React, Next.js, TypeScript, JavaScript, Python, Django, Tailwind, Git, Supabase, " +
+    "Full Stack Entwickler",
   basic_skills: "n8n, Docker",
-  background: "Qualifizierter Full Stack Web Entwickler, Developer Akademie",
-  education: "",
-  certifications: "Full Stack Entwickler",
   spoken_languages: "Deutsch: Muttersprache C2, Englisch: Verhandlungssicher C1",
-  focus_skills: "TypeScript, React",
 };
 
 const { homes } = resolveHomes(index, [
@@ -65,8 +62,6 @@ function score(
     work_locations: [],
     contract_form: "regular",
     work_time: "fulltime",
-    core_languages: ["TypeScript"],
-    focus_central: ["TypeScript", "React"],
     dealbreaker: null,
     reasoning: "",
     ...answer,
@@ -216,8 +211,8 @@ describe("remote work", () => {
   });
 });
 
-describe("main focus and honest skills", () => {
-  it("holds a Python job at Good even with every skill met", () => {
+describe("judged by the work, honestly", () => {
+  it("rates a Python job by its requirements, not by its language", () => {
     const out = score(
       {
         title: "Python Backend Developer (remote)",
@@ -226,8 +221,6 @@ describe("main focus and honest skills", () => {
       },
       {
         work_arrangement: "remote",
-        core_languages: ["Python"],
-        focus_central: [],
         requirements: [
           { text: "Python", kind: "skill", status: "met", evidence: "Python" },
           { text: "Django", kind: "skill", status: "met", evidence: "Django" },
@@ -235,7 +228,7 @@ describe("main focus and honest skills", () => {
         ],
       },
     );
-    expect(out.chance).toBe("good");
+    expect(out.chance).toBe("very_good");
   });
 
   it("doesn't let invented skills make a project manager job Very good", () => {
@@ -247,8 +240,6 @@ describe("main focus and honest skills", () => {
       },
       {
         work_arrangement: "remote",
-        core_languages: [],
-        focus_central: [],
         task_fit: "adjacent",
         requirements: [
           {

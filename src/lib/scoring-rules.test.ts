@@ -6,33 +6,27 @@ import {
   evidenceIn,
   normalizeEvidence,
   verifyRequirements,
-  candidateLanguages,
   checklistChance,
   computeChance,
-  missingCoreLanguages,
   normalizeRequirements,
   readPostingFacts,
-  titleLanguageRequirement,
   toCandidate,
   type CandidatePreferences,
   type PostingFacts,
 } from "./scoring-rules";
 
+// A remote-only, mid-level candidate unless a test says otherwise.
 const prefs = (overrides: Partial<CandidatePreferences> = {}): CandidatePreferences => ({
-  job_type: ["remote"],
+  remote_ok: true,
+  office_ok: false,
   excluded_employment_types: [],
   work_time_models: [],
   experience_years: null,
-  target_levels: [],
-  max_required_years: null,
+  level: "mid",
   dealbreakers: "",
   own_skills: "Git, React, Next.js, TypeScript, JavaScript, Python, Django, HTML, CSS",
   basic_skills: "",
-  background: "",
-  education: "",
-  certifications: "",
   spoken_languages: "",
-  focus_skills: "",
   ...overrides,
 });
 
@@ -47,7 +41,6 @@ const facts = (overrides: Partial<PostingFacts> = {}): PostingFacts => ({
   level: "junior",
   requiredYears: null,
   arrangement: "remote",
-  coreLanguages: ["TypeScript"],
   contractForm: "regular",
   workTime: "fulltime",
   taskFit: "same",
@@ -56,7 +49,6 @@ const facts = (overrides: Partial<PostingFacts> = {}): PostingFacts => ({
   descriptionChars: 2000,
   workLocations: [],
   places: [],
-  focusCentral: null,
   ...overrides,
 });
 
@@ -76,7 +68,6 @@ describe("readPostingFacts", () => {
           work_arrangement: "Hybrid",
           posting_level: "unknown",
           required_years: "3",
-          core_languages: ["Java", "", 4],
           contract_form: "Werkstudent",
           work_time: "sometimes",
           task_fit: "adjacent",
@@ -91,7 +82,6 @@ describe("readPostingFacts", () => {
       level: null,
       requiredYears: 3,
       arrangement: "hybrid",
-      coreLanguages: ["Java"],
       contractForm: "werkstudent",
       workTime: null,
       taskFit: "adjacent",
@@ -102,7 +92,6 @@ describe("readPostingFacts", () => {
       descriptionChars: 500,
       workLocations: ["Hamburg", "Kiel"],
       places: [],
-      focusCentral: null,
     });
   });
 
@@ -180,43 +169,22 @@ describe("normalizeRequirements", () => {
 
 describe("toCandidate", () => {
   it('reads "" as not given but keeps 0 years', () => {
+    expect(toCandidate(prefs({ experience_years: 0 })).experienceYears).toBe(0);
+    expect(
+      toCandidate(prefs({ experience_years: "" as unknown as null })).experienceYears,
+    ).toBeNull();
+  });
+
+  it("falls back to mid-level for an unknown level", () => {
+    expect(toCandidate(prefs({ level: "senior" })).level).toBe("senior");
+    expect(toCandidate(prefs({ level: "boss" })).level).toBe("mid");
+  });
+
+  it("uses only the skill chips and languages as evidence", () => {
     const c = toCandidate(
-      prefs({
-        experience_years: 0,
-        max_required_years: "" as unknown as null,
-      }),
+      prefs({ own_skills: "Excel", basic_skills: "SAP", spoken_languages: "German native" }),
     );
-    expect(c.experienceYears).toBe(0);
-    expect(c.maxRequiredYears).toBeNull();
-  });
-
-  it("maps the preferences page's on-site value", () => {
-    expect(toCandidate(prefs({ job_type: ["on-site", "hybrid"] })).arrangements).toEqual([
-      "onsite",
-      "hybrid",
-    ]);
-  });
-
-  it("derives target levels from experience when none are picked", () => {
-    expect(toCandidate(prefs({ experience_years: 1 })).targetLevels).toEqual(["junior"]);
-    expect(toCandidate(prefs({ experience_years: 3 })).targetLevels).toEqual(["junior", "mid"]);
-    expect(toCandidate(prefs({ experience_years: 6 })).targetLevels).toEqual([
-      "junior",
-      "mid",
-      "senior",
-    ]);
-    expect(toCandidate(prefs()).targetLevels).toEqual([]);
-  });
-
-  it("prefers the levels the candidate picked", () => {
-    const c = toCandidate(prefs({ experience_years: 1, target_levels: ["mid", "bogus"] }));
-    expect(c.targetLevels).toEqual(["mid"]);
-    expect(c.levelsDerived).toBe(false);
-  });
-
-  it("reads programming languages from basic skills too", () => {
-    const c = toCandidate(prefs({ own_skills: "Excel", basic_skills: "Java" }));
-    expect(c.languages).toEqual(new Set(["java"]));
+    expect(c.profile).toEqual({ strong: "excel german native", basic: "sap" });
   });
 });
 
@@ -331,13 +299,13 @@ describe("computeChance — the complaint that started this", () => {
   const posting = { requiredYears: 3, level: "mid" as const };
 
   it("is Fair with 1 year of experience", () => {
-    const out = judge(posting, { experience_years: 1, target_levels: ["junior"] });
+    const out = judge(posting, { experience_years: 1, level: "junior" });
     expect(out.chance).toBe("fair");
     expect(out.downgrades).toEqual(["Asks 3 years, you have 1 year – at most Fair"]);
   });
 
   it("is Good with 2 years of experience", () => {
-    expect(judge(posting, { experience_years: 2, target_levels: ["junior"] }).chance).toBe("good");
+    expect(judge(posting, { experience_years: 2, level: "junior" }).chance).toBe("good");
   });
 
   it("is Low when the posting asks for 4 years", () => {
@@ -346,16 +314,10 @@ describe("computeChance — the complaint that started this", () => {
     expect(out.blockers).toEqual(["4 years of experience required – you have 1 year"]);
   });
 
-  it("is Low above the candidate's own limit", () => {
-    const out = judge({ requiredYears: 3 }, { experience_years: 2, max_required_years: 2 });
+  it("is Low for a senior role below the senior level", () => {
+    const out = judge({ level: "senior" }, { experience_years: 1, level: "junior" });
     expect(out.chance).toBe("low");
-    expect(out.blockers).toEqual(["3 years of experience required – you accept up to 2"]);
-  });
-
-  it("is Low for a senior role when the candidate never picked levels", () => {
-    const out = judge({ level: "senior" }, { experience_years: 1 });
-    expect(out.chance).toBe("low");
-    expect(out.blockers).toEqual(["Senior role – you have 1 year of experience"]);
+    expect(out.blockers).toEqual(["Senior role – your level is Junior"]);
   });
 });
 
@@ -383,14 +345,17 @@ describe("computeChance — blockers", () => {
   });
 
   it("doesn't hold back a posting that doesn't say how it's worked when office work is fine", () => {
-    const out = judge({ arrangement: null }, { job_type: ["remote", "hybrid"] });
-    expect(out.chance).toBe("very_good");
-    expect(judge({ arrangement: null }, { job_type: ["on-site"] }).chance).toBe("very_good");
-    expect(judge({ arrangement: null }, { job_type: [] }).chance).toBe("very_good");
+    expect(judge({ arrangement: null }, { office_ok: true }).chance).toBe("very_good");
+    expect(judge({ arrangement: "onsite" }, { office_ok: true }).chance).toBe("very_good");
   });
 
-  it("does not block on arrangement when the candidate set no preference", () => {
-    expect(judge({ arrangement: "onsite" }, { job_type: [] }).chance).toBe("very_good");
+  it("blocks a remote job when remote isn't wanted", () => {
+    const out = judge({ arrangement: "remote" }, { remote_ok: false, office_ok: true });
+    expect(out.chance).toBe("low");
+    expect(out.blockers).toEqual(["Remote – you don't want fully remote jobs"]);
+    expect(judge({ arrangement: "hybrid" }, { remote_ok: false, office_ok: true }).chance).toBe(
+      "very_good",
+    );
   });
 
   it("blocks an excluded contract form the title names", () => {
@@ -399,7 +364,7 @@ describe("computeChance — blockers", () => {
       { excluded_employment_types: ["werkstudent"] },
     );
     expect(out.chance).toBe("low");
-    expect(out.blockers).toEqual(["Working student position – you excluded this contract form"]);
+    expect(out.blockers).toEqual(["Working student position – not a contract form you accept"]);
   });
 
   it("blocks on the title even when the model read it as regular", () => {
@@ -407,67 +372,51 @@ describe("computeChance — blockers", () => {
       { title: "Praktikum Marketing", contractForm: "regular" },
       { excluded_employment_types: ["praktikum"] },
     );
-    expect(out.blockers).toEqual(["Internship – you excluded this contract form"]);
+    expect(out.blockers).toEqual(["Internship – not a contract form you accept"]);
   });
 
-  it("only caps an excluded contract form the model alone reports", () => {
+  it("blocks an excluded contract form the model alone reports, too", () => {
     const out = judge(
       { contractForm: "werkstudent" },
       { excluded_employment_types: ["werkstudent"] },
     );
-    expect(out.chance).toBe("fair");
-    expect(out.downgrades).toEqual([
-      "May be a working student position, which you excluded – at most Fair",
-    ]);
+    expect(out.chance).toBe("low");
+    expect(out.blockers).toEqual(["Working student position – not a contract form you accept"]);
   });
 
-  it("blocks a senior title when senior is not a target level", () => {
-    const out = judge(
-      { title: "Senior Fullstack-Entwickler (m/w/d)", level: "mid" },
-      { target_levels: ["junior", "mid"] },
-    );
-    expect(out.blockers).toEqual(["Senior role – you're not looking for senior positions"]);
+  it("blocks a senior title below the senior level", () => {
+    const out = judge({ title: "Senior Fullstack-Entwickler (m/w/d)", level: "mid" });
+    expect(out.blockers).toEqual(["Senior role – your level is Mid-level"]);
   });
 
   it('leaves "(Senior)" titles to the model\'s level', () => {
-    const out = judge(
-      { title: "(Senior) Python Developer", level: "mid", coreLanguages: [] },
-      { target_levels: ["junior", "mid"] },
-    );
+    const out = judge({ title: "(Senior) Python Developer", level: "mid" }, { level: "mid" });
     expect(out.chance).toBe("very_good");
   });
 
-  it("allows senior roles when the candidate targets them", () => {
-    expect(judge({ level: "senior" }, { target_levels: ["senior"] }).chance).toBe("very_good");
+  it("allows senior roles at the senior level", () => {
+    expect(judge({ level: "senior" }, { level: "senior" }).chance).toBe("very_good");
   });
 
-  it("ignores seniority without levels or experience", () => {
-    expect(judge({ level: "senior" }).chance).toBe("very_good");
+  it("judges the work, not the title or its programming language", () => {
+    // "Solution Architect" can be anything: matching requirements keep it on top.
+    expect(judge({ title: "Solution Architect (m/w/d)" }).chance).toBe("very_good");
+    // A language you don't have is an ordinary missing requirement, not a blocker.
+    const java = judge({
+      title: "Java Fullstack Developer (all genders)",
+      requirements: [
+        { ...missing("Java"), core: true },
+        { ...met("React"), core: true },
+        met("SQL"),
+        met("Git"),
+        met("REST APIs"),
+      ],
+    });
+    expect(java.blockers).toEqual([]);
+    expect(java.chance).toBe("good");
   });
 
-  it("blocks a Java role when Java isn't in the skills", () => {
-    const out = judge({ coreLanguages: ["Java"] });
-    expect(out.blockers).toEqual(["Java as core language – not in your skills"]);
-  });
-
-  it("skips the language rule when the skills list names no language", () => {
-    expect(judge({ coreLanguages: ["Java"] }, { own_skills: "Git, Scrum" }).chance).toBe(
-      "very_good",
-    );
-  });
-
-  it("blocks a language named in the title even when the model missed it", () => {
-    const out = judge({ title: "Java Fullstack Developer (all genders)" });
-    expect(out.blockers).toEqual(["Java as core language – not in your skills"]);
-  });
-
-  it("treats several languages in a title as alternatives", () => {
-    expect(
-      judge({ title: "Fullstack-Entwickler – Java & Angular", coreLanguages: [] }).chance,
-    ).toBe("very_good");
-  });
-
-  it("blocks a missing mandatory qualification or language", () => {
+  it("blocks a missing language, not a missing qualification", () => {
     const out = judge({
       requirements: [
         ...ALL_MET,
@@ -475,10 +424,17 @@ describe("computeChance — blockers", () => {
         { text: "German C1", kind: "language", status: "missing" },
       ],
     });
-    expect(out.blockers).toEqual([
-      "Missing qualification: Pflegeexamen",
-      "Missing language: German C1",
-    ]);
+    expect(out.blockers).toEqual(["Missing language: German C1"]);
+    const degree = judge({
+      requirements: [
+        ...ALL_MET,
+        met("Git"),
+        met("SQL"),
+        { text: "B.Sc. Informatik", kind: "qualification", status: "missing", core: true },
+      ],
+    });
+    expect(degree.blockers).toEqual([]);
+    expect(degree.chance).toBe("good");
   });
 
   it("does not block a partly met language", () => {
@@ -495,10 +451,13 @@ describe("computeChance — blockers", () => {
   });
 
   it("lists every broken rule", () => {
-    const out = judge({ arrangement: "onsite", coreLanguages: ["Java"] });
+    const out = judge(
+      { arrangement: "onsite", workTime: "minijob" },
+      { work_time_models: ["vollzeit"] },
+    );
     expect(out.blockers).toEqual([
       "On-site, no home office – you only want 100% remote",
-      "Java as core language – not in your skills",
+      "Minijob – not a working time you accept",
     ]);
   });
 });
@@ -517,8 +476,8 @@ describe("computeChance — distance", () => {
   const norderstedt: PlacePoints = { label: "Norderstedt", points: [[53.7, 10.0]] };
   const munich: PlacePoints = { label: "München", points: [[48.14, 11.58]] };
   const potsdam: PlacePoints = { label: "Potsdam", points: [[52.4, 13.06]] };
-  const hybrid = { job_type: ["remote", "hybrid"] };
-  const office = { job_type: ["on-site", "hybrid"] };
+  const hybrid = { remote_ok: true, office_ok: true };
+  const office = { remote_ok: false, office_ok: true };
 
   it("blocks an office job outside every radius and says how far", () => {
     const out = judge({ arrangement: "hybrid", places: [munich] }, hybrid, [hamburg, berlin]);
@@ -569,17 +528,10 @@ describe("computeChance — distance", () => {
     expect(out.distanceKm).toBeNull();
   });
 
-  it("ignores the cities of a remote-only candidate", () => {
-    const out = judge({ arrangement: "remote", places: [munich] }, { job_type: ["remote"] }, [
-      hamburg,
-    ]);
-    expect(toCandidate(prefs({ job_type: ["remote"] }), [hamburg]).homes).toEqual([]);
+  it("ignores the cities when office jobs aren't wanted", () => {
+    const out = judge({ arrangement: "remote", places: [munich] }, {}, [hamburg]);
+    expect(toCandidate(prefs(), [hamburg]).homes).toEqual([]);
     expect(out.distanceKm).toBeNull();
-  });
-
-  it("treats no ticked arrangement as office work accepted", () => {
-    const out = judge({ arrangement: "onsite", places: [munich] }, { job_type: [] }, [hamburg]);
-    expect(out.chance).toBe("low");
   });
 
   it("only notes an unknown location — just a job that's provably too far is held back", () => {
@@ -589,7 +541,7 @@ describe("computeChance — distance", () => {
   });
 
   it("has nothing to measure without places or cities", () => {
-    expect(judge({ arrangement: "remote", places: [] }, office, [hamburg]).distanceKm).toBeNull();
+    expect(judge({ arrangement: "remote", places: [] }, hybrid, [hamburg]).distanceKm).toBeNull();
     expect(judge({ arrangement: "onsite", places: [munich] }, office, []).chance).toBe("very_good");
   });
 
@@ -602,10 +554,8 @@ describe("computeChance — distance", () => {
     ]);
   });
 
-  it("still blocks office jobs for a remote-only candidate", () => {
-    const out = judge({ arrangement: "hybrid", places: [norderstedt] }, { job_type: ["remote"] }, [
-      hamburg,
-    ]);
+  it("still blocks office jobs when office jobs aren't wanted", () => {
+    const out = judge({ arrangement: "hybrid", places: [norderstedt] }, {}, [hamburg]);
     expect(out.blockers).toEqual(["Hybrid with office days – you only want 100% remote"]);
     expect(out.distanceKm).toBeNull();
   });
@@ -614,9 +564,8 @@ describe("computeChance — distance", () => {
 describe("verifyRequirements — the model's claims need proof", () => {
   const candidate = toCandidate(
     prefs({
-      own_skills: "React, Next.js, TypeScript, KI-Tools (Claude Code, etc.)",
+      own_skills: "React, Next.js, TypeScript, KI-Tools (Claude Code, etc.), Shopify-Agentur",
       basic_skills: "Docker, n8n",
-      background: "2023–2025 Webentwickler bei Shopify-Agentur, Projekte mit Stripe",
       spoken_languages: "Deutsch: Muttersprache C2, Englisch C1",
     }),
   );
@@ -693,36 +642,6 @@ describe("confirmRemote — remote only when the posting says so", () => {
   });
 });
 
-describe("computeChance — main focus", () => {
-  const tsFocus = { focus_skills: "TypeScript, React" };
-
-  it("keeps jobs built on the focus language at the top", () => {
-    expect(judge({ coreLanguages: ["TypeScript"] }, tsFocus).chance).toBe("very_good");
-    expect(judge({ coreLanguages: ["Java or TypeScript"] }, tsFocus).chance).toBe("very_good");
-  });
-
-  it("holds jobs built on another language at Good", () => {
-    const out = judge({ coreLanguages: ["Python"], title: "Backend Developer" }, tsFocus);
-    expect(out.chance).toBe("good");
-    expect(out.downgrades).toEqual([
-      "Built on Python, not your main focus (TypeScript, React) – at most Good",
-    ]);
-  });
-
-  it("asks the model for jobs without a programming language", () => {
-    const pm = { coreLanguages: [], title: "Projektmanager (m/w/d)" };
-    expect(judge({ ...pm, focusCentral: [] }, tsFocus).chance).toBe("good");
-    expect(judge({ ...pm, focusCentral: ["react"] }, tsFocus).chance).toBe("very_good");
-    // Items the model makes up don't count.
-    expect(judge({ ...pm, focusCentral: ["Excel"] }, tsFocus).chance).toBe("good");
-    expect(judge({ ...pm, focusCentral: null }, tsFocus).chance).toBe("very_good");
-  });
-
-  it("does nothing without a main focus", () => {
-    expect(judge({ coreLanguages: ["Python"], focusCentral: [] }).chance).toBe("very_good");
-  });
-});
-
 describe("computeChance — caps", () => {
   it("caps a one-year gap at Good and leaves no gap alone", () => {
     expect(judge({ requiredYears: 2 }, { experience_years: 1 }).chance).toBe("good");
@@ -739,21 +658,17 @@ describe("computeChance — caps", () => {
   });
 
   it("caps by level only when the posting states no years", () => {
-    const juniorOnly = { target_levels: ["junior"] };
-    expect(judge({ level: "mid" }, juniorOnly).chance).toBe("fair");
+    const junior = { level: "junior" };
+    const out = judge({ level: "mid" }, junior);
+    expect(out.chance).toBe("fair");
+    expect(out.downgrades).toEqual(["Mid-level role, above your level – at most Fair"]);
     expect(
-      judge({ level: "mid", requiredYears: 2 }, { ...juniorOnly, experience_years: 1 }).chance,
+      judge({ level: "mid", requiredYears: 2 }, { ...junior, experience_years: 1 }).chance,
     ).toBe("good");
   });
 
-  it("caps a role below every target level at Good", () => {
-    const out = judge({ level: "junior" }, { target_levels: ["mid", "senior"] });
-    expect(out.chance).toBe("good");
-    expect(out.downgrades).toEqual(["Junior role, below the level you target – at most Good"]);
-  });
-
-  it("does not cap below-level roles for derived levels", () => {
-    expect(judge({ level: "junior" }, { experience_years: 6 }).chance).toBe("very_good");
+  it("never holds back a role below the candidate's level", () => {
+    expect(judge({ level: "junior" }, { level: "senior" }).chance).toBe("very_good");
   });
 
   it("caps tasks that only partly match or differ, whatever the title", () => {
@@ -770,9 +685,11 @@ describe("computeChance — caps", () => {
     expect(out.chance).toBe("fair");
   });
 
-  it("caps a working time the candidate doesn't want", () => {
+  it("blocks a working time the candidate doesn't accept", () => {
     const fullTime = { work_time_models: ["vollzeit"] };
-    expect(judge({ workTime: "parttime" }, fullTime).chance).toBe("fair");
+    expect(judge({ workTime: "parttime" }, fullTime).blockers).toEqual([
+      "Part-time – not a working time you accept",
+    ]);
     expect(judge({ workTime: "both" }, fullTime).chance).toBe("very_good");
     expect(judge({ workTime: null }, fullTime).chance).toBe("very_good");
   });
@@ -798,39 +715,5 @@ describe("computeChance — caps", () => {
       "Asks 2 years, you have 1 year – at most Good",
       "Tasks only partly match your experience – at most Good",
     ]);
-  });
-});
-
-describe("languages", () => {
-  it("maps frameworks to their language and TypeScript onto JavaScript", () => {
-    expect(candidateLanguages("Django, Next.js", "Typescript")).toEqual(
-      new Set(["python", "javascript"]),
-    );
-  });
-
-  it("does not confuse Java with JavaScript", () => {
-    expect(missingCoreLanguages(["Java"], candidateLanguages("JavaScript"))).toEqual(["Java"]);
-  });
-
-  it("accepts a requirement when any alternative is known", () => {
-    expect(missingCoreLanguages(["Java oder Python"], candidateLanguages("Python"))).toEqual([]);
-    expect(missingCoreLanguages(["Java or Python"], candidateLanguages("Python"))).toEqual([]);
-  });
-
-  it("ignores names that aren't programming languages", () => {
-    expect(missingCoreLanguages(["SQL", "HTML/CSS"], candidateLanguages("Python"))).toEqual([]);
-  });
-
-  it("treats Spring Boot as Java", () => {
-    expect(missingCoreLanguages(["Spring Boot"], candidateLanguages("Python"))).toEqual([
-      "Spring Boot",
-    ]);
-  });
-});
-
-describe("titleLanguageRequirement", () => {
-  it("ignores ambiguous words and titles without languages", () => {
-    expect(titleLanguageRequirement("Go-Live Manager (m/w/d)")).toBeNull();
-    expect(titleLanguageRequirement("Full Stack Developer (m/w/d)")).toBeNull();
   });
 });

@@ -58,24 +58,28 @@ imported from a spreadsheet. Built with Next.js and Supabase.
     Very good needs every key requirement met and at least 80% of all must-haves, Good allows one
     key gap when nearly everything else fits. Alternatives ("React or OpenUI5") count as one
     requirement, and nice-to-haves and soft skills don't count at all.
-  - **Hard blockers make a job Low:** an office outside your radius, an excluded contract form,
-    three or more years of experience missing, a senior role you don't target, a mandatory licence
-    or language you don't have, or one of your dealbreakers. Smaller gaps cap the tier — one year
-    of experience short means at most Good, two years at most Fair.
+  - **Hard blockers make a job Low:** an office outside your radius, a contract form or working
+    time you don't accept, three or more years of experience missing, a senior role below the
+    Senior level, a language you don't speak well enough, or one of your dealbreakers. A missing
+    degree or licence is not a blocker — it counts like any other missing requirement. Smaller
+    gaps cap the tier — one year of experience short means at most Good, two years at most Fair.
   - Each job card shows its key requirements and other must-haves with "x of y met", and every
     reason it was held back.
 - **Claims are checked, not trusted** — for every must-have it marks as met, the AI has to quote
   the words from your profile that prove it; code checks each quote word for word, so an invented
   skill counts as missing, one from your basics list only as partly met, and a neighbouring tool
   (Azure proven by "Google Cloud") as partly met. "Remote" only counts when the posting says so.
-- **Main focus** — name what you most want to work with (e.g. TypeScript, React); jobs built around
-  something else stay at most Good, so your focus ranks first.
-- **Preferences for any profession** — years of experience and target levels, main focus, your CV
-  as text, strong and basic skills, education, certificates, spoken languages and dealbreakers.
-  Nothing is specific to software jobs.
-- **Work locations with a radius** — list the cities you'd commute to, each with its own radius
-  (e.g. Oldenburg + 25 km, Bremen + 25 km). A remote job or one inside a radius is fine — hybrid or
-  on site alike; a job outside every radius is Low and says how far it is. Anywhere in the city
+- **Job titles don't matter** — a job is judged only by what it asks for and what the work is, so
+  a "Solution Engineer" that is really your kind of work still lands on top.
+- **Preferences for any profession** — what you bring as chips (strong and basics: tools,
+  experience, degrees, licences), years of experience, your level (Junior, Mid-level or Senior),
+  spoken languages and what you don't want. Nothing is specific to software jobs. _Fill in from a
+  CV_ suggests chips from a CV once; the CV itself is never stored or used for scoring, since most
+  people tailor it per application. Every setting explains itself behind an ⓘ.
+- **Work locations with a radius** — two switches say whether fully remote and office jobs are
+  fine; for office jobs, list the cities you'd commute to, each with its own radius (e.g.
+  Oldenburg + 25 km, Bremen + 25 km). A job inside a radius is fine — hybrid or on site alike; a
+  job outside every radius is Low and says how far it is. Anywhere in the city
   counts, plus that distance around it as the crow flies. Where a job is comes from the job board,
   an address in the posting ("93055 Regensburg", "Standort: Bremen") or the city the AI reads; a
   job whose location can't be found isn't held back, only flagged. Distances come from a bundled
@@ -153,7 +157,8 @@ umlauts. "Remove old posts" on the dashboard never deletes a job you applied to.
 The **Statistics** page (sidebar → chart icon) shows which of your search keywords actually find
 jobs worth applying to, so you can rotate keywords without losing track of the old ones. Every
 scrape records which keyword found which job; removed keywords stay listed as _paused_ with their
-full history. Requires migration `028_keyword_tracking.sql`.
+full history. Removing old posts on the dashboard deletes their keyword history with them.
+Requires migration `028_keyword_tracking.sql`.
 
 | Section               | What it shows                                                                                                                                                                                                                                      |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

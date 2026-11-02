@@ -95,10 +95,11 @@ export default function DashboardPage() {
     };
   }, [jobsVersion]);
 
-  // The tiles count what's still in play — hidden jobs are out of the running.
+  // "Jobs found" counts every job, hidden ones too; the chance tiles count only
+  // what's still in play — hidden jobs are out of the running.
   const activeJobs = jobs.filter((job) => job.status !== "not_interested");
   const tiles = [
-    { label: "Jobs found", value: activeJobs.length, color: "text-[#1E2A3D]" },
+    { label: "Jobs found", value: jobs.length, color: "text-[#1E2A3D]" },
     {
       label: "Very good chance",
       value: activeJobs.filter((job) => job.chance === "very_good").length,

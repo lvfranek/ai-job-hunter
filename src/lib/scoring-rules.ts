@@ -24,7 +24,7 @@ import type { Preferences } from "@/lib/types";
  * the next run — otherwise a fix here would only ever reach newly scraped jobs.
  * Bump it whenever a change should re-score existing jobs.
  */
-export const SCORING_VERSION = 8;
+export const SCORING_VERSION = 9;
 
 export type WorkArrangement = "remote" | "hybrid" | "onsite";
 export type PostingLevel = "junior" | "mid" | "senior";
@@ -45,8 +45,6 @@ export interface PostingFacts {
   requiredYears: number | null;
   /** null when the posting says nothing about where the work happens. */
   arrangement: WorkArrangement | null;
-  /** Core programming languages; one entry may list alternatives ("Java or Kotlin"). */
-  coreLanguages: string[];
   contractForm: ContractForm | null;
   workTime: WorkTime | null;
   taskFit: TaskFit | null;
@@ -59,8 +57,6 @@ export interface PostingFacts {
   workLocations: string[];
   /** Where the job is, resolved on the server (geo/places.ts); [] when unknown. */
   places: PlacePoints[];
-  /** Which of the candidate's main-focus items the model says the role centres on; null when not reported. */
-  focusCentral: string[] | null;
 }
 
 export interface ChanceResult {
@@ -172,9 +168,6 @@ export function readPostingFacts(
     requiredYears:
       entry.required_years != null && Number.isFinite(years) && years > 0 ? years : null,
     arrangement: pick(entry.work_arrangement, ARRANGEMENTS),
-    coreLanguages: Array.isArray(entry.core_languages)
-      ? entry.core_languages.filter((l): l is string => typeof l === "string" && l.trim() !== "")
-      : [],
     contractForm: pick(entry.contract_form, CONTRACT_FORMS),
     workTime: pick(entry.work_time, WORK_TIMES),
     taskFit: pick(entry.task_fit, TASK_FITS),
@@ -187,9 +180,6 @@ export function readPostingFacts(
           .slice(0, 5)
       : [],
     places: [],
-    focusCentral: Array.isArray(entry.focus_central)
-      ? entry.focus_central.filter((f): f is string => typeof f === "string" && f.trim() !== "")
-      : null,
   };
 }
 
@@ -297,45 +287,34 @@ export function confirmRemote(
 
 export type CandidatePreferences = Pick<
   Preferences,
-  | "job_type"
+  | "remote_ok"
+  | "office_ok"
   | "excluded_employment_types"
   | "work_time_models"
   | "experience_years"
-  | "target_levels"
-  | "max_required_years"
+  | "level"
   | "dealbreakers"
   | "own_skills"
   | "basic_skills"
-  | "background"
-  | "education"
-  | "certifications"
   | "spoken_languages"
-  | "focus_skills"
 >;
 
 /** The preferences, reduced to what the rules compare against. */
 export interface Candidate {
-  /** Empty = every arrangement is fine. */
-  arrangements: WorkArrangement[];
+  remoteOk: boolean;
+  officeOk: boolean;
   excludedContracts: ExcludableContract[];
   /** vollzeit | teilzeit | minijob; empty = every working time is fine. */
   workTimes: string[];
   experienceYears: number | null;
-  maxRequiredYears: number | null;
-  /** Empty = no level rules at all (no levels picked, no experience given). */
-  targetLevels: PostingLevel[];
-  /** True when targetLevels came from experienceYears rather than the candidate's own pick. */
-  levelsDerived: boolean;
+  /** The level they picked; jobs above it are held back. */
+  level: PostingLevel;
   hasDealbreakers: boolean;
-  /** Programming languages named anywhere in their skills. */
-  languages: Set<string>;
-  /** Cities they'd commute to; empty when only remote is accepted or none were given. */
+  /** Cities they'd commute to; empty when office work isn't wanted or none were given. */
   homes: Home[];
   /** Normalised profile text a requirement's evidence must appear in. */
   profile: { strong: string; basic: string };
   languagesStated: boolean;
-  /** What they most want to work with; jobs centred on something else stay at most Good. */
-  focus: { items: string[]; languages: Set<string> };
 }
 
 function yearsOrNull(value: unknown): number | null {
@@ -344,180 +323,29 @@ function yearsOrNull(value: unknown): number | null {
   return Number.isFinite(years) && years >= 0 ? years : null;
 }
 
-/**
- * Levels for a candidate who picked none: someone with a year of experience
- * isn't looking at senior roles even if they never said so — leaving it open is
- * exactly how a "4 years, Senior-Level" posting used to reach the top.
- */
-function levelsFromExperience(years: number | null): PostingLevel[] {
-  if (years === null) return [];
-  if (years < 2) return ["junior"];
-  if (years < 5) return ["junior", "mid"];
-  return ["junior", "mid", "senior"];
-}
-
 /** `homes` are the candidate's cities, already resolved to points on the server. */
 export function toCandidate(prefs: CandidatePreferences, homes: Home[] = []): Candidate {
-  const experienceYears = yearsOrNull(prefs.experience_years);
-  const picked = (prefs.target_levels ?? []).filter((l): l is PostingLevel =>
-    LEVELS.includes(l as PostingLevel),
-  );
-  // The preferences page stores "on-site"; the scorer says "onsite".
-  const arrangements = (prefs.job_type ?? [])
-    .map((t) => (t === "on-site" ? "onsite" : t))
-    .filter((t): t is WorkArrangement => ARRANGEMENTS.includes(t as WorkArrangement));
-  const officeAccepted = arrangements.length === 0 || arrangements.some((a) => a !== "remote");
+  const officeOk = prefs.office_ok !== false;
   return {
-    arrangements,
+    remoteOk: prefs.remote_ok !== false,
+    officeOk,
     excludedContracts: (prefs.excluded_employment_types ?? []).filter(
       (c): c is ExcludableContract => c in CONTRACT_IN_TITLE,
     ),
     workTimes: prefs.work_time_models ?? [],
-    experienceYears,
-    maxRequiredYears: yearsOrNull(prefs.max_required_years),
-    targetLevels: picked.length > 0 ? picked : levelsFromExperience(experienceYears),
-    levelsDerived: picked.length === 0,
+    experienceYears: yearsOrNull(prefs.experience_years),
+    level: pick(prefs.level, LEVELS) ?? "mid",
     hasDealbreakers: Boolean(prefs.dealbreakers?.trim()),
-    languages: candidateLanguages(prefs.own_skills, prefs.basic_skills),
-    homes: officeAccepted ? homes : [],
+    homes: officeOk ? homes : [],
     profile: {
-      // Notes and dealbreakers are wishes, not abilities — never evidence.
+      // Dealbreakers are wishes, not abilities — never evidence.
       strong: normalizeEvidence(
-        [
-          prefs.own_skills,
-          prefs.background,
-          prefs.education,
-          prefs.certifications,
-          prefs.spoken_languages,
-        ]
-          .filter(Boolean)
-          .join(" \n "),
+        [prefs.own_skills, prefs.spoken_languages].filter(Boolean).join(" \n "),
       ),
       basic: normalizeEvidence(prefs.basic_skills ?? ""),
     },
     languagesStated: Boolean(prefs.spoken_languages?.trim()),
-    focus: {
-      items: (prefs.focus_skills ?? "")
-        .split(/[,;\n]+/)
-        .map((item) => item.trim())
-        .filter(Boolean),
-      languages: candidateLanguages(prefs.focus_skills),
-    },
   };
-}
-
-// ---- programming languages ----------------------------------------------------
-
-// Everything a posting or a skills list might name, mapped to the language it
-// stands for. Frameworks count as their language, so "Spring Boot" in a posting
-// and "Django" in a skills list both land somewhere comparable. TypeScript and
-// JavaScript share one entry: whoever writes one can work in the other.
-const LANGUAGE_ALIASES: Record<string, string> = {
-  java: "java",
-  spring: "java",
-  springboot: "java",
-  jakartaee: "java",
-  j2ee: "java",
-  jee: "java",
-  kotlin: "kotlin",
-  scala: "scala",
-  "c#": "c#",
-  csharp: "c#",
-  ".net": "c#",
-  dotnet: "c#",
-  "asp.net": "c#",
-  "c++": "c++",
-  cpp: "c++",
-  c: "c",
-  go: "go",
-  golang: "go",
-  rust: "rust",
-  php: "php",
-  laravel: "php",
-  symfony: "php",
-  ruby: "ruby",
-  rails: "ruby",
-  rubyonrails: "ruby",
-  python: "python",
-  django: "python",
-  flask: "python",
-  fastapi: "python",
-  javascript: "javascript",
-  js: "javascript",
-  typescript: "javascript",
-  ts: "javascript",
-  node: "javascript",
-  nodejs: "javascript",
-  "node.js": "javascript",
-  react: "javascript",
-  reactnative: "javascript",
-  "next.js": "javascript",
-  nextjs: "javascript",
-  angular: "javascript",
-  vue: "javascript",
-  "vue.js": "javascript",
-  nuxt: "javascript",
-  swift: "swift",
-  "objective-c": "objective-c",
-  dart: "dart",
-  flutter: "dart",
-  elixir: "elixir",
-  abap: "abap",
-  cobol: "cobol",
-  delphi: "delphi",
-  vba: "vba",
-};
-
-function toLanguage(name: string): string | null {
-  return LANGUAGE_ALIASES[name.toLowerCase().replace(/\s+/g, "")] ?? null;
-}
-
-/** The languages a free-text skills list covers ("React, Python, Git, …"). */
-export function candidateLanguages(...skillTexts: (string | null | undefined)[]): Set<string> {
-  const languages = new Set<string>();
-  for (const text of skillTexts) {
-    for (const part of (text ?? "").split(/[,;\n/()]+/)) {
-      const language = toLanguage(part.trim());
-      if (language) languages.add(language);
-    }
-  }
-  return languages;
-}
-
-/**
- * Core language requirements the candidate can't meet. An entry with
- * alternatives ("Java or Python"; German "oder" works too) is met by any one of them. Names the model
- * returns that aren't programming languages (SQL, HTML, "Cloud") are ignored.
- */
-export function missingCoreLanguages(core: string[], candidate: Set<string>): string[] {
-  const missing = new Map<string, string>(); // canonical language -> name as written
-  for (const requirement of core) {
-    const options = requirement
-      .split(/\s+(?:oder|or)\s+|\s*[|/,]\s*/i)
-      .map((option) => option.trim())
-      .filter((option) => toLanguage(option) !== null);
-    if (options.length === 0 || options.some((o) => candidate.has(toLanguage(o)!))) continue;
-    const key = options.map((o) => toLanguage(o)).join("|");
-    if (!missing.has(key)) missing.set(key, options.join(" or "));
-  }
-  return [...missing.values()];
-}
-
-// Too ambiguous to read out of a title ("Go-Live", "C-Level").
-const NOT_IN_TITLES = new Set(["go", "c"]);
-
-/**
- * The languages a job title names, as one requirement whose alternatives are
- * all of them — "Java Fullstack Developer" needs Java, "Frontend Developer
- * Angular / React" is met by either. A backstop for when the model leaves the
- * title's language out of core_languages.
- */
-export function titleLanguageRequirement(title: string): string | null {
-  const named = title.split(/[\s,/&()|]+/).filter((word) => {
-    const language = toLanguage(word);
-    return language !== null && !NOT_IN_TITLES.has(word.toLowerCase());
-  });
-  return named.length > 0 ? named.join(" or ") : null;
 }
 
 // ---- the rules ----------------------------------------------------------------
@@ -526,12 +354,6 @@ const ARRANGEMENT_BLOCKED_LABEL: Record<WorkArrangement, string> = {
   remote: "Remote",
   hybrid: "Hybrid with office days",
   onsite: "On-site, no home office",
-};
-
-const ARRANGEMENT_WANTED_LABEL: Record<WorkArrangement, string> = {
-  remote: "100% remote",
-  hybrid: "hybrid",
-  onsite: "on-site",
 };
 
 const CONTRACT_LABEL: Record<ExcludableContract, string> = {
@@ -665,9 +487,6 @@ function nearestHome(places: PlacePoints[], homes: Home[]) {
   return { ...best, within };
 }
 
-const wantedLabel = (wanted: WorkArrangement[]) =>
-  wanted.map((a) => ARRANGEMENT_WANTED_LABEL[a]).join(" or ");
-
 // Reasons are joined with "; " — a place name must never carry one.
 const asLabel = (text: string) => text.replace(/;/g, ",");
 
@@ -684,19 +503,16 @@ export function computeChance(facts: PostingFacts, candidate: Candidate): Chance
     downgrades.push(`${reason} – ${cap(tier)}`);
   };
 
-  // Where the work happens. Remote is fine when remote is wanted. Anything
-  // else is decided by place once the candidate named cities: inside a radius
-  // is fine whether hybrid or on site, outside is Low. Without cities, the
-  // ticked arrangements decide.
+  // Where the work happens. Remote jobs count when remote is fine. Anything
+  // else needs office work to be fine, and then a place inside one of the
+  // candidate's radii — without cities, any place is fine.
   let distanceKm: number | null = null;
   let workLocation: string | null = null;
-  const wanted = candidate.arrangements;
-  const remoteOnly = wanted.length > 0 && wanted.every((a) => a === "remote");
   if (facts.arrangement === "remote") {
-    if (wanted.length > 0 && !wanted.includes("remote")) {
-      blockers.push(`${ARRANGEMENT_BLOCKED_LABEL.remote} – you only want ${wantedLabel(wanted)}`);
+    if (!candidate.remoteOk) {
+      blockers.push(`${ARRANGEMENT_BLOCKED_LABEL.remote} – you don't want fully remote jobs`);
     }
-  } else if (remoteOnly) {
+  } else if (!candidate.officeOk) {
     blockers.push(
       facts.arrangement === null
         ? "Not clearly remote – the posting never says it's remote"
@@ -721,24 +537,14 @@ export function computeChance(facts: PostingFacts, candidate: Candidate): Chance
       // Not a cap: only a job that's provably too far is held back.
       downgrades.push("Location unknown – check the distance yourself");
     }
-  } else if (
-    facts.arrangement !== null &&
-    wanted.length > 0 &&
-    !wanted.includes(facts.arrangement)
-  ) {
-    blockers.push(
-      `${ARRANGEMENT_BLOCKED_LABEL[facts.arrangement]} – you only want ${wantedLabel(wanted)}`,
-    );
   }
 
   // Contract form.
+  // What the candidate doesn't accept is Low, whether the title or only the
+  // text says so.
   for (const form of candidate.excludedContracts) {
-    if (CONTRACT_IN_TITLE[form].test(facts.title)) {
-      blockers.push(`${CONTRACT_LABEL[form]} – you excluded this contract form`);
-    } else if (facts.contractForm === form) {
-      const label = CONTRACT_LABEL[form].toLowerCase();
-      const article = /^[aeiou]/.test(label) ? "an" : "a";
-      limitTo("fair", `May be ${article} ${label}, which you excluded`);
+    if (CONTRACT_IN_TITLE[form].test(facts.title) || facts.contractForm === form) {
+      blockers.push(`${CONTRACT_LABEL[form]} – not a contract form you accept`);
     }
   }
 
@@ -746,90 +552,42 @@ export function computeChance(facts: PostingFacts, candidate: Candidate): Chance
   if (facts.workTime !== null && candidate.workTimes.length > 0) {
     const offered = WORK_TIME_OFFERS[facts.workTime];
     if (!offered.some((t) => candidate.workTimes.includes(t))) {
-      limitTo("fair", `${WORK_TIME_LABEL[facts.workTime]} – not a working time you want`);
+      blockers.push(`${WORK_TIME_LABEL[facts.workTime]} – not a working time you accept`);
     }
   }
 
-  // Experience. Years the posting states always win over its level label, so
-  // the same gap is never counted twice.
+  // Level. A senior role is Low unless the candidate's level is Senior.
   const senior = facts.level === "senior" || isSeniorTitle(facts.title);
-  const levels = candidate.targetLevels;
-  const seniorBlocked = senior && levels.length > 0 && !levels.includes("senior");
+  const seniorBlocked = senior && candidate.level !== "senior";
   if (seniorBlocked) {
-    blockers.push(
-      candidate.levelsDerived && candidate.experienceYears !== null
-        ? `Senior role – you have ${years(candidate.experienceYears)} of experience`
-        : "Senior role – you're not looking for senior positions",
-    );
+    blockers.push(`Senior role – your level is ${LEVEL_LABEL[candidate.level]}`);
   }
 
-  // A senior blocker already says it all; repeating the years would only add noise.
+  // Experience. Years the posting states always win over its level label, so
+  // the same gap is never counted twice; a senior blocker already says it all.
   const required = facts.requiredYears;
   if (!seniorBlocked) {
-    if (
-      required !== null &&
-      candidate.maxRequiredYears !== null &&
-      required > candidate.maxRequiredYears
-    ) {
-      blockers.push(
-        `${years(required)} of experience required – you accept up to ${candidate.maxRequiredYears}`,
-      );
-    } else if (required !== null && candidate.experienceYears !== null) {
+    if (required !== null && candidate.experienceYears !== null) {
       const gap = Math.ceil(required - candidate.experienceYears);
       const have = years(candidate.experienceYears);
       if (gap >= 3) blockers.push(`${years(required)} of experience required – you have ${have}`);
       else if (gap === 2) limitTo("fair", `Asks ${years(required)}, you have ${have}`);
       else if (gap === 1) limitTo("good", `Asks ${years(required)}, you have ${have}`);
-    } else if (required === null && facts.level !== null && levels.length > 0 && !senior) {
-      const rank = LEVEL_RANK[facts.level];
-      const ranks = levels.map((l) => LEVEL_RANK[l]);
-      if (rank > Math.max(...ranks)) {
-        limitTo("fair", `${LEVEL_LABEL[facts.level]} role, above the level you target`);
-      } else if (rank < Math.min(...ranks) && !candidate.levelsDerived) {
-        limitTo("good", `${LEVEL_LABEL[facts.level]} role, below the level you target`);
+    } else if (required === null && facts.level !== null && !senior) {
+      // Only a level above theirs holds a job back; below it is fine.
+      if (LEVEL_RANK[facts.level] > LEVEL_RANK[candidate.level]) {
+        limitTo("fair", `${LEVEL_LABEL[facts.level]} role, above your level`);
       }
     }
   }
 
-  // Core programming language. Without any language in the skills list there's
-  // nothing to compare against.
-  const titleRequirement = titleLanguageRequirement(facts.title);
-  const core = titleRequirement ? [...facts.coreLanguages, titleRequirement] : facts.coreLanguages;
-  const missingLanguages =
-    candidate.languages.size > 0 ? missingCoreLanguages(core, candidate.languages) : [];
-  if (missingLanguages.length > 0) {
-    blockers.push(`${missingLanguages.join(", ")} as core language – not in your skills`);
-  }
-
-  // Main focus. For a programming job the core language decides, in code; for
-  // anything else the model says which focus items the work centres on.
-  const focus = candidate.focus;
-  if (focus.items.length > 0) {
-    const focusList = asLabel(focus.items.join(", "));
-    const coreWithLanguage = core.filter(
-      (entry) => missingCoreLanguages([entry], new Set()).length > 0,
-    );
-    if (focus.languages.size > 0 && coreWithLanguage.length > 0) {
-      // Off focus only when no core entry can be met by a focus language.
-      const offFocus = missingCoreLanguages(coreWithLanguage, focus.languages);
-      if (
-        coreWithLanguage.every((entry) => missingCoreLanguages([entry], focus.languages).length)
-      ) {
-        limitTo("good", `Built on ${offFocus.join(", ")}, not your main focus (${focusList})`);
-      }
-    } else if (facts.focusCentral !== null) {
-      const wanted = new Set(focus.items.map(normalizeEvidence));
-      const central = facts.focusCentral.filter((f) => wanted.has(normalizeEvidence(f)));
-      if (central.length === 0) limitTo("good", `Not centred on your main focus (${focusList})`);
-    }
-  }
-
-  // Mandatory credentials and spoken languages can't be learned on the job.
+  // A spoken language can't be learned on the job. A missing degree or
+  // licence only counts like any other missing requirement: jobs are often
+  // given without the formal paper.
   for (const requirement of facts.requirements) {
-    if (requirement.status !== "missing") continue;
-    if (requirement.kind === "qualification")
-      blockers.push(`Missing qualification: ${requirement.text}`);
-    if (requirement.kind === "language") blockers.push(`Missing language: ${requirement.text}`);
+    if (requirement.status === "missing" && requirement.kind === "language") {
+      blockers.push(`Missing language: ${requirement.text}`);
+    }
   }
 
   // The model only names a dealbreaker; it counts only if the candidate wrote any.

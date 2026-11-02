@@ -2,11 +2,14 @@
 
 import { useState, type ReactNode } from "react";
 import { Check, CircleNotch, Info } from "@phosphor-icons/react/dist/ssr";
+import { InfoTip } from "@/components/InfoTip";
 
 // Building blocks for the settings-style pages (Scoring Preferences, Scraping
 // Settings, Cover Letter Profile): a page header, section cards with the
-// section's title/description on the left and its fields on the right, labelled
-// fields, and a sticky save bar.
+// section's title/description on the left and its fields on the right (or, with
+// no description, the title on top), labelled fields, and a sticky save bar.
+// `info` puts an explanation behind an ⓘ next to a title or label instead of
+// grey text under it.
 
 export const textInputClass =
   "h-9 w-full rounded-xl border border-[#B9CCDA] bg-white px-3 text-[13px] text-[#1E2A3D] outline-none transition-colors placeholder:text-text-faint hover:border-[#8FA8BD] focus:border-[#101828] focus-visible:ring-2 focus-visible:ring-[#101828]/20";
@@ -14,15 +17,28 @@ export const textInputClass =
 export const textareaClass =
   "w-full resize-y rounded-xl border border-[#B9CCDA] bg-white px-3 py-2.5 text-[13px] leading-relaxed text-[#1E2A3D] outline-none transition-colors placeholder:text-text-faint hover:border-[#8FA8BD] focus:border-[#101828] focus-visible:ring-2 focus-visible:ring-[#101828]/20";
 
-export const labelClass = "mb-1.5 block text-[13px] font-medium text-[#1E2A3D]";
+// A label, with room for an ⓘ beside it.
+const labelRowClass = "mb-1.5 flex items-center gap-1 text-[13px] font-medium text-[#1E2A3D]";
 
 const hintClass = "mt-1.5 space-y-1 text-[12px] leading-relaxed text-text-faint";
 
-export function PageHeader({ title, description }: { title: string; description?: ReactNode }) {
+export function PageHeader({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: ReactNode;
+  /** A control at the right end of the title row. */
+  action?: ReactNode;
+}) {
   return (
-    <div className="mb-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-text">{title}</h1>
-      {description && <p className="mt-1 text-[13px] text-text-faint">{description}</p>}
+    <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-text">{title}</h1>
+        {description && <p className="mt-1 text-[13px] text-text-faint">{description}</p>}
+      </div>
+      {action}
     </div>
   );
 }
@@ -38,21 +54,46 @@ export function ErrorBanner({ children }: { children: ReactNode }) {
 export function SettingsSection({
   title,
   description,
+  info,
+  action,
   children,
 }: {
   title: string;
   description?: ReactNode;
+  info?: ReactNode;
+  /** A control at the right end of the title row, e.g. an import button. */
+  action?: ReactNode;
   children: ReactNode;
 }) {
+  const card =
+    "rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-5 shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)] sm:p-6";
+  const heading = (
+    <div className="flex items-center gap-1">
+      <h2 className="text-[15px] font-semibold text-[#1E2A3D]">{title}</h2>
+      {info && <InfoTip label={`About ${title}`}>{info}</InfoTip>}
+    </div>
+  );
+
+  if (!description) {
+    return (
+      <section className={`${card} space-y-5`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {heading}
+          {action}
+        </div>
+        {children}
+      </section>
+    );
+  }
+
   return (
-    <section className="rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-5 shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)] sm:p-6 lg:grid lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-10">
+    <section className={`${card} lg:grid lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-10`}>
       <div className="mb-5 lg:mb-0">
-        <h2 className="text-[15px] font-semibold text-[#1E2A3D]">{title}</h2>
-        {description && (
-          <div className="mt-1 space-y-2 text-[12px] leading-relaxed text-text-faint">
-            {description}
-          </div>
-        )}
+        {heading}
+        <div className="mt-1 space-y-2 text-[12px] leading-relaxed text-text-faint">
+          {description}
+        </div>
+        {action && <div className="mt-3">{action}</div>}
       </div>
       <div className="min-w-0 space-y-5">{children}</div>
     </section>
@@ -63,20 +104,23 @@ export function Field({
   label,
   htmlFor,
   hint,
+  info,
   className = "",
   children,
 }: {
   label: string;
   htmlFor?: string;
   hint?: ReactNode;
+  info?: ReactNode;
   className?: string;
   children: ReactNode;
 }) {
   return (
     <div className={className}>
-      <label htmlFor={htmlFor} className={labelClass}>
-        {label}
-      </label>
+      <div className={labelRowClass}>
+        <label htmlFor={htmlFor}>{label}</label>
+        {info && <InfoTip label={`About ${label}`}>{info}</InfoTip>}
+      </div>
       {children}
       {hint && <div className={hintClass}>{hint}</div>}
     </div>
@@ -87,15 +131,20 @@ export function Field({
 export function FieldGroup({
   legend,
   hint,
+  info,
   children,
 }: {
   legend: string;
   hint?: ReactNode;
+  info?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <fieldset>
-      <legend className={labelClass}>{legend}</legend>
+    <fieldset className="min-w-0">
+      <legend className={labelRowClass}>
+        {legend}
+        {info && <InfoTip label={`About ${legend}`}>{info}</InfoTip>}
+      </legend>
       {children}
       {hint && <div className={hintClass}>{hint}</div>}
     </fieldset>

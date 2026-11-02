@@ -25,31 +25,25 @@ export interface Profile {
 export interface Preferences {
   id: string;
   user_id: string;
-  // What they're after — read by the AI scorer.
-  notes: string; // free text: the ideal job in their own words
-  dealbreakers: string; // free text: what they never want — a match makes the job Low
-  // Experience — applied in code (scoring-rules.ts), never left to the model.
-  experience_years: number | null; // years of RELEVANT professional experience
-  target_levels: string[]; // junior | mid | senior; empty = derived from experience_years
-  max_required_years: number | null; // jobs requiring more than this are Low
-  // Who they are — the AI checks each posting's must-haves against this.
-  background: string; // the CV as text: positions, education, projects
-  // free text: what they most want to work with — jobs centred on something else stay at most Good
-  focus_skills: string;
-  own_skills: string; // free text: skills they're strong in (this or background is required before scoring)
-  basic_skills: string; // free text: skills they know the basics of (count as partial)
-  education: string;
-  certifications: string; // licences and certificates
+  // What they bring — the ONLY source the AI checks a posting's must-haves and
+  // tasks against. Chips on the page, stored comma-separated.
+  own_skills: string; // strong: tools, experience, degrees, licences (counts as met)
+  basic_skills: string; // basics (count as partly met)
   spoken_languages: string; // e.g. "German native, English C1"
-  // Where and how.
-  job_type: string[]; // remote | hybrid | on-site
+  // Experience — applied in code (scoring-rules.ts), never left to the model.
+  experience_years: number | null; // years of professional experience
+  level: string; // junior | mid | senior, picked by hand
+  dealbreakers: string; // free text: what they never want — a match makes the job Low
+  // Where.
+  remote_ok: boolean; // fully remote jobs are fine
+  office_ok: boolean; // hybrid / on-site jobs are fine (within work_locations, if any)
   // Cities they'd commute to for hybrid or on-site work, each with its own
-  // radius. Ignored when only remote is accepted.
+  // radius. Ignored when office work isn't wanted; empty = any place.
   work_locations: WorkLocation[];
-  // Contract forms to FILTER OUT (freelance | ausbildung | studium | werkstudent | praktikum).
-  // An exclusion list, unlike every other preference here.
+  // Contract forms NOT accepted (freelance | ausbildung | studium | werkstudent |
+  // praktikum). The page shows the inverse, as the forms you accept.
   excluded_employment_types: string[];
-  work_time_models: string[]; // wanted: vollzeit | teilzeit | minijob
+  work_time_models: string[]; // accepted: vollzeit | teilzeit | minijob
   created_at: string;
   updated_at: string;
 }
@@ -92,7 +86,6 @@ export interface DbJob {
   latitude: number | null;
   longitude: number | null;
   created_at: string;
-  deleted_at: string | null;
 }
 
 export interface JobMatch {

@@ -92,20 +92,16 @@ describe("isCompleteEntry", () => {
 
 describe("toChanceResult", () => {
   const prefs: CandidatePreferences = {
-    job_type: ["remote"],
+    remote_ok: true,
+    office_ok: false,
     excluded_employment_types: [],
     work_time_models: [],
     experience_years: 1,
-    target_levels: ["junior"],
-    max_required_years: null,
+    level: "junior",
     dealbreakers: "",
     own_skills: "React, TypeScript, CSS",
     basic_skills: "",
-    background: "",
-    education: "",
-    certifications: "",
     spoken_languages: "",
-    focus_skills: "",
   };
   const job = {
     id: "1",
@@ -125,7 +121,6 @@ describe("toChanceResult", () => {
     work_arrangement: "remote",
     contract_form: "regular",
     work_time: "fulltime",
-    core_languages: ["TypeScript"],
     dealbreaker: null,
     reasoning: "  React and TypeScript fit.  ",
   };
@@ -195,7 +190,7 @@ describe("toChanceResult", () => {
     const out = toChanceResult(
       { ...entry, work_arrangement: "hybrid", work_locations: ["München"] },
       job,
-      toCandidate({ ...prefs, job_type: ["remote", "hybrid"] }, [
+      toCandidate({ ...prefs, office_ok: true }, [
         { label: "Hamburg", points: [[53.55, 9.99]], radiusKm: 10 },
       ]),
       (cities) => {

@@ -39,7 +39,6 @@ const job: DbJob = {
   latitude: null,
   longitude: null,
   created_at: "",
-  deleted_at: null,
 };
 
 function readZipEntry(buffer: Buffer, entry: string): string {

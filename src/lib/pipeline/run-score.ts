@@ -2,7 +2,6 @@ import { getSupabaseServerClient, CURRENT_USER_ID, selectAll } from "@/lib/supab
 import { CHUNK_SIZE, chunk, scoreChunk, type ScoringGeo } from "@/lib/agents/agent-3";
 import { getPlaceIndex } from "@/lib/geo/load";
 import { resolveHomes } from "@/lib/geo/places";
-import { acceptsOfficeWork } from "@/lib/preferences";
 import { parseDbTimestamp } from "@/lib/db-time";
 import { MANUAL_PLATFORM } from "@/lib/mock-data";
 import { scoreFilterIncludes, type ScoreOptions } from "@/lib/rescore";
@@ -68,7 +67,7 @@ async function scoreChunkResilient(
  */
 async function scoringGeo(preferences: Preferences): Promise<ScoringGeo> {
   const index = await getPlaceIndex();
-  if (!acceptsOfficeWork(preferences.job_type)) return { index, homes: [] };
+  if (!preferences.office_ok) return { index, homes: [] };
   const { homes, unresolved } = resolveHomes(index, preferences.work_locations ?? []);
   if (unresolved.length > 0) {
     console.warn(`Work locations not found, ignored: ${unresolved.join(", ")}`);
@@ -93,7 +92,6 @@ export async function getJobsNeedingScoring(
       .from("jobs")
       .select("*, job_matches(id, stale_at, scoring_version)")
       .eq("user_id", CURRENT_USER_ID)
-      .is("deleted_at", null)
       .neq("platform", MANUAL_PLATFORM), // tracked by hand, never AI-scored
   ]);
 
@@ -133,7 +131,6 @@ export async function markJobsForRescore(
       .from("jobs")
       .select("id, status, posted_date, created_at")
       .eq("user_id", CURRENT_USER_ID)
-      .is("deleted_at", null)
       .neq("platform", MANUAL_PLATFORM)
       .order("id")
       .range(from, to),

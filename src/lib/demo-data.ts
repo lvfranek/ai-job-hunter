@@ -423,7 +423,6 @@ function buildJob(seed: JobSeed, forceScored: boolean): JobWithMatch {
     latitude: null,
     longitude: null,
     created_at: daysAgoIso(seed.postedDaysAgo),
-    deleted_at: null,
   };
 
   if (!forceScored && seed.unscored) {
@@ -486,29 +485,17 @@ export const demoApplications: ApplicationRow[] = [
 export const demoPreferences: Preferences = {
   id: "demo-preferences",
   user_id: DEMO_USER_ID,
-  notes:
-    "Product companies with a real design culture that ship to users weekly. Open to Vue or " +
-    "Svelte teams. I'd like to grow towards a senior IC role, not management.",
-  dealbreakers:
-    "Django- or PHP-heavy backend roles, agency/consultancy client work, gambling or gaming.",
-  experience_years: 4,
-  target_levels: ["mid", "senior"],
-  max_required_years: null,
-  background:
-    "2022–today  Frontend Developer, Lumen Software GmbH (Berlin) — cut the main app's LCP from " +
-    "4.1s to 1.3s; led the migration of a 120k-line codebase from Create React App to the Next.js " +
-    "App Router; built the shared component library used by four product teams.\n" +
-    "2020–2022  Junior Web Developer, Seeblick Media — React and Node.js for client dashboards.\n" +
-    "2016–2020  B.Sc. Media Informatics, HTW Berlin.",
-  focus_skills: "TypeScript, React",
   own_skills:
     "React, TypeScript, JavaScript, Next.js, Node.js, Tailwind CSS, Git, PostgreSQL, Figma, " +
-    "Storybook, design systems, web accessibility, frontend testing",
+    "Storybook, Design systems, Web accessibility, Frontend testing, B.Sc. Media Informatics",
   basic_skills: "Vue, Docker, AWS, GitHub Actions, React Native",
-  education: "B.Sc. Media Informatics (HTW Berlin)",
-  certifications: "",
   spoken_languages: "German native, English C1",
-  job_type: ["remote", "hybrid"],
+  experience_years: 4,
+  level: "mid",
+  dealbreakers:
+    "Django- or PHP-heavy backend roles, agency/consultancy client work, gambling or gaming.",
+  remote_ok: true,
+  office_ok: true,
   work_locations: [{ place: "Berlin", radius_km: 25 }],
   excluded_employment_types: ["ausbildung", "werkstudent"],
   work_time_models: ["vollzeit", "teilzeit"],
@@ -563,6 +550,13 @@ export const demoProfile: Profile = {
 };
 
 /** Response shape of POST /api/profile/parse. */
+/** Response shape of POST /api/preferences/cv — chips suggested from a CV. */
+export const demoCvSkills = {
+  strong: ["Lighthouse audits", "Component libraries"],
+  basics: ["Playwright"],
+  languages: "German native, English C1",
+};
+
 export const demoParsedCv: ParsedProfile = {
   name: demoProfile.name,
   email: demoProfile.email,

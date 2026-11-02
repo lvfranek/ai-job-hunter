@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  acceptsOfficeWork,
   DEFAULT_PREFERENCES,
+  fromChips,
   isReadyForScoring,
-  MAX_BACKGROUND_CHARS,
   normalizePreferences,
+  toChips,
 } from "./preferences";
 
 describe("normalizePreferences", () => {
@@ -42,9 +42,13 @@ describe("normalizePreferences", () => {
       preferred_languages: "Go",
       target_roles: "Nurse",
       preferred_location: "Hamburg",
+      background: "My CV",
+      focus_skills: "React",
       id: 1,
     });
     expect(out).not.toHaveProperty("preferred_location");
+    expect(out).not.toHaveProperty("background");
+    expect(out).not.toHaveProperty("focus_skills");
     expect(out).not.toHaveProperty("preferred_languages");
     expect(out).not.toHaveProperty("target_roles");
     expect(out).not.toHaveProperty("id");
@@ -56,49 +60,60 @@ describe("normalizePreferences", () => {
     expect(normalizePreferences({ experience_years: 0 }).experience_years).toBe(0);
     expect(normalizePreferences({ experience_years: "1.5" }).experience_years).toBe(1.5);
     expect(normalizePreferences({ experience_years: -2 }).experience_years).toBeNull();
-    expect(normalizePreferences({ max_required_years: "abc" }).max_required_years).toBeNull();
-    expect(normalizePreferences({ max_required_years: 99 }).max_required_years).toBe(50);
+    expect(normalizePreferences({ experience_years: "abc" }).experience_years).toBeNull();
+    expect(normalizePreferences({ experience_years: 99 }).experience_years).toBe(50);
   });
 
   it("keeps only known options", () => {
     const out = normalizePreferences({
-      target_levels: ["senior", "intern", "junior"],
-      job_type: ["remote", "moon"],
+      level: "intern",
       excluded_employment_types: ["praktikum", "regular"],
       work_time_models: "vollzeit",
     });
-    expect(out.target_levels).toEqual(["junior", "senior"]);
-    expect(out.job_type).toEqual(["remote"]);
+    expect(out.level).toBe("mid");
     expect(out.excluded_employment_types).toEqual(["praktikum"]);
     expect(out.work_time_models).toEqual([]);
+    expect(normalizePreferences({ level: "senior" }).level).toBe("senior");
   });
 
-  it("trims text and caps the CV", () => {
-    const out = normalizePreferences({
-      notes: "  hello  ",
-      background: "x".repeat(MAX_BACKGROUND_CHARS + 100),
+  it("keeps the two location switches, on unless turned off", () => {
+    expect(normalizePreferences({})).toMatchObject({ remote_ok: true, office_ok: true });
+    expect(normalizePreferences({ remote_ok: false, office_ok: "no" })).toMatchObject({
+      remote_ok: false,
+      office_ok: true,
     });
-    expect(out.notes).toBe("hello");
-    expect(out.background).toHaveLength(MAX_BACKGROUND_CHARS);
+  });
+
+  it("stores skill chips as one clean comma-separated line", () => {
+    const out = normalizePreferences({
+      own_skills: [" React ", "react", "Führerschein B", ""],
+      basic_skills: "Python;\nSQL,  ",
+    });
+    expect(out.own_skills).toBe("React, Führerschein B");
+    expect(out.basic_skills).toBe("Python, SQL");
   });
 });
 
-describe("acceptsOfficeWork", () => {
-  it("is true unless only remote is ticked", () => {
-    expect(acceptsOfficeWork([])).toBe(true);
-    expect(acceptsOfficeWork(["remote", "hybrid"])).toBe(true);
-    expect(acceptsOfficeWork(["on-site"])).toBe(true);
-    expect(acceptsOfficeWork(["remote"])).toBe(false);
+describe("toChips / fromChips", () => {
+  it("round-trips, dropping blanks and case-blind duplicates", () => {
+    expect(toChips("React, TypeScript\nreact; Kundenservice,")).toEqual([
+      "React",
+      "TypeScript",
+      "Kundenservice",
+    ]);
+    expect(fromChips(["React", " SQL ", "sql"])).toBe("React, SQL");
+    expect(toChips(fromChips(["B.Sc. Media Informatics", "Excel"]))).toEqual([
+      "B.Sc. Media Informatics",
+      "Excel",
+    ]);
+    expect(toChips(null)).toEqual([]);
   });
 });
 
 describe("isReadyForScoring", () => {
-  it("needs skills or a CV to compare postings with", () => {
+  it("needs strong skills to compare postings with", () => {
     expect(isReadyForScoring(null)).toBe(false);
-    expect(isReadyForScoring({ own_skills: "  ", background: "" })).toBe(false);
-    expect(isReadyForScoring({ own_skills: "Excel", background: "" })).toBe(true);
-    expect(isReadyForScoring({ own_skills: "", background: "2020–2024 Pflegefachkraft" })).toBe(
-      true,
-    );
+    expect(isReadyForScoring({ own_skills: "  " })).toBe(false);
+    expect(isReadyForScoring({ own_skills: "Excel" })).toBe(true);
   });
 });

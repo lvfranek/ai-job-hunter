@@ -1,7 +1,7 @@
 import "server-only";
 import { getPlaceIndex } from "./load";
 import { resolvePlace, searchPlaces, suggestPlaces } from "./places";
-import { acceptsOfficeWork, type PreferencesInput } from "@/lib/preferences";
+import type { PreferencesInput } from "@/lib/preferences";
 import type { WorkLocation } from "@/lib/types";
 
 // What the API routes (real and demo) do with places: autocomplete, and
@@ -24,12 +24,12 @@ export async function placeSearch(
 /**
  * Checks the saved cities against the place data and stores each under its
  * proper name ("hamburg" → "Hamburg", "Vienna" → "Wien (AT)"). Skipped for a
- * remote-only candidate: the fields are hidden then and their values unused.
+ * candidate who doesn't want office work: the fields are hidden then and unused.
  */
 export async function withResolvedWorkLocations(
   preferences: PreferencesInput,
 ): Promise<{ preferences: PreferencesInput } | { error: string }> {
-  if (!acceptsOfficeWork(preferences.job_type) || preferences.work_locations.length === 0) {
+  if (!preferences.office_ok || preferences.work_locations.length === 0) {
     return { preferences };
   }
   const index = await getPlaceIndex();

@@ -220,7 +220,6 @@ export async function runScrapePipeline(
       applied_at: null,
       salary: null,
       created_at: "",
-      deleted_at: null,
     }));
 
     await heartbeat({ passed_prefilter: candidates.length });

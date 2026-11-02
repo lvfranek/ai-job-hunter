@@ -1,5 +1,4 @@
 import { generateText } from "@/lib/openrouter";
-import { MAX_BACKGROUND_CHARS } from "@/lib/preferences";
 import { normalizeBlockText } from "@/lib/text-format";
 import {
   computeChance,
@@ -69,7 +68,7 @@ export function condenseDescription(text: string | null): string {
     : head;
 }
 
-const TARGET_LEVEL_LABELS: Record<string, string> = {
+const LEVEL_LABELS: Record<string, string> = {
   junior: "junior / entry level",
   mid: "mid-level",
   senior: "senior / lead",
@@ -80,30 +79,15 @@ function orNone(value: string | null | undefined, fallback: string): string {
 }
 
 function candidateProfile(preferences: Preferences): string {
-  const levels = (preferences.target_levels ?? []).map((l) => TARGET_LEVEL_LABELS[l] ?? l);
-  const background = (preferences.background ?? "").trim().slice(0, MAX_BACKGROUND_CHARS);
-  return `Target levels: ${levels.length > 0 ? levels.join(", ") : "not stated"}
-Years of relevant professional experience: ${preferences.experience_years ?? "not stated"}
-Main focus — what they most want to work with: ${orNone(preferences.focus_skills, "not stated")}
-Skills they are strong in: ${orNone(preferences.own_skills, "not listed")}
-Skills they know the basics of: ${orNone(preferences.basic_skills, "none listed")}
-Education: ${orNone(preferences.education, "not stated")}
-Certificates and licences: ${orNone(preferences.certifications, "none listed")}
+  return `Level: ${LEVEL_LABELS[preferences.level] ?? "mid-level"}
+Years of professional experience: ${preferences.experience_years ?? "not stated"}
+What they bring — strong (tools, experience, degrees, licences): ${orNone(preferences.own_skills, "not listed")}
+What they bring — basics: ${orNone(preferences.basic_skills, "none listed")}
 Spoken languages: ${orNone(preferences.spoken_languages, "not stated")}
-
-The ideal job, in their own words:
-"""
-${orNone(preferences.notes, "Not described.")}
-"""
 
 Dealbreakers — what they never want:
 """
 ${orNone(preferences.dealbreakers, "None listed.")}
-"""
-
-Background / CV:
-"""
-${background || "Not provided — judge from the skills, education and certificates above."}
 """`;
 }
 
@@ -113,7 +97,9 @@ market. You do NOT rate the jobs. You report facts about each posting and check
 its must-have requirements against the profile; code decides everything else
 from your answers. Be literal and consistent: the same posting must always get
 the same answer. The candidate can work in any profession — read their profile
-for what it says, not as a software developer by default.
+for what it says, not as a software developer by default. Job titles say little
+("Solution Engineer" can be anything): always judge what the posting asks for
+and what the work is.
 
 ## The candidate
 ${candidateProfile(preferences)}
@@ -150,21 +136,19 @@ in the posting.
         - "skill": everything else — tools, methods, domain knowledge, kinds of
           experience.
     - status, judged ONLY from the candidate profile above:
-        - "met": the profile names it or an obvious equivalent (React.js ↔
-          React, MS Office ↔ Excel, Kundenberatung ↔ customer service) and they
-          used it in work, an Ausbildung, studies or real projects. Anything in
-          "Skills they are strong in" counts as met.
+        - "met": the strong list names it or an obvious equivalent (React.js ↔
+          React, MS Office ↔ Excel, Kundenberatung ↔ customer service).
         - "partial": only a basic or adjacent version — listed under "basics",
-          coursework, a hobby project, a closely related tool (Vue for React),
-          a language one level below the one asked for.
+          a closely related entry (Vue for React), a language one level below
+          the one asked for.
         - "missing": nothing related anywhere in the profile. Being able to
           learn it, or general talent, is NOT evidence — that is "missing".
     - core: true for the 2-4 requirements the role is built around — its main
       technologies or the qualification it can't do without — false for the
       rest.
-    - evidence: for "met" and "partial", copy the words from the candidate
-      profile that prove it — a skill exactly as listed ("TypeScript",
-      "Next.js") or a short phrase from the CV, at most 8 words. null for
+    - evidence: for "met" and "partial", copy the profile entry that proves it
+      exactly as listed ("TypeScript", "Kundenservice", "Führerschein B"), at
+      most 8 words. null for
       "missing". Code checks every quote against the profile word for word: a
       quote that isn't there makes the requirement count as missing, so never
       paraphrase or invent one.
@@ -183,13 +167,12 @@ in the posting.
     - "junior" for entry level, Berufseinsteiger, Absolventen, 0-1 years, or
       no experience requirement at all.
 - task_fit: how the posting's day-to-day TASKS ("Deine Aufgaben", "Your
-  tasks", what the job is actually about) compare with what the candidate has
-  done (background, skills) and the ideal job they describe. Ignore the job
-  title — judge the work.
-    - "same": they have done these tasks before, at work, in an Ausbildung,
-      studies or real projects.
-    - "adjacent": similar or neighbouring tasks their background clearly
-      prepares them for.
+  tasks", what the job is actually about) compare with what the candidate
+  brings (the strong list first, then basics). Ignore the job title — judge
+  the work.
+    - "same": the tasks are what their strong entries are about.
+    - "adjacent": similar or neighbouring tasks their entries clearly prepare
+      them for.
     - "different": tasks unrelated to anything in their profile.
 - work_arrangement: where the work happens, as the posting describes it.
     - "remote": ONLY when the posting explicitly says the job is fully remote —
@@ -216,14 +199,6 @@ in the posting.
   (internship), "freelance", or "regular" for ordinary employment.
 - work_time: "fulltime" (Vollzeit), "parttime" (Teilzeit), "both" (either is
   offered), "minijob", or "unknown".
-- core_languages: only for programming jobs — the general-purpose programming
-  languages the role is BUILT AROUND, canonical names (Java, C#, Python,
-  TypeScript …), the language behind a core framework (Spring → Java, .NET →
-  C#, Laravel → PHP). Alternatives go in ONE entry joined by " or ". Leave out
-  SQL, HTML/CSS, shell and nice-to-haves. [] for every other job.
-- focus_central: which items of the candidate's "Main focus" the role's daily
-  work is centred on, copied exactly as listed there. [] if none — a job that
-  merely mentions them on the side doesn't count. [] when no main focus is stated.
 - dealbreaker: if the posting clearly matches one of the candidate's
   dealbreakers, a short English phrase naming it ("Cold calling", "Shift
   work"); otherwise null. Always null when they listed none.
@@ -233,7 +208,7 @@ in the posting.
 ## Output
 Return ONLY a minified JSON array — no markdown fences, no commentary — with one
 object per posting, fields in this order:
-[{"job_id":"uuid","requirements":[{"text":"React","kind":"skill","status":"met","evidence":"React","core":true},{"text":"German C1","kind":"language","status":"met","evidence":"Deutsch Muttersprache","core":false},{"text":"Node.js","kind":"skill","status":"partial","evidence":"Express","core":true},{"text":"Kubernetes","kind":"skill","status":"missing","evidence":null,"core":false}],"required_years":2,"posting_level":"mid","task_fit":"same","work_arrangement":"hybrid","work_locations":["Hamburg"],"contract_form":"regular","work_time":"fulltime","core_languages":["TypeScript"],"focus_central":["TypeScript"],"dealbreaker":null,"reasoning":"Your React and TypeScript work fits the core stack; Node.js on the backend is the biggest gap."}]
+[{"job_id":"uuid","requirements":[{"text":"React","kind":"skill","status":"met","evidence":"React","core":true},{"text":"German C1","kind":"language","status":"met","evidence":"Deutsch Muttersprache","core":false},{"text":"Node.js","kind":"skill","status":"partial","evidence":"Express","core":true},{"text":"Kubernetes","kind":"skill","status":"missing","evidence":null,"core":false}],"required_years":2,"posting_level":"mid","task_fit":"same","work_arrangement":"hybrid","work_locations":["Hamburg"],"contract_form":"regular","work_time":"fulltime","dealbreaker":null,"reasoning":"Your React and TypeScript work fits the core stack; Node.js on the backend is the biggest gap."}]
 
 ## Postings
 ${JSON.stringify(

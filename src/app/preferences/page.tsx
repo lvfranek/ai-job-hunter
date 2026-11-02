@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Checkbox } from "@/components/Checkbox";
+import { useEffect, useRef, useState } from "react";
+import { Check, CircleNotch, Info, UploadSimple } from "@phosphor-icons/react/dist/ssr";
 import { ChancePill } from "@/components/ChanceBadge";
-import { WorkLocationsField, type LocationRow } from "@/components/WorkLocationsField";
+import { ChipInput } from "@/components/ChipInput";
+import { buttonSecondary, Switch, ToggleChip } from "@/components/controls";
 import {
-  CheckboxRow,
   DEMO_SAVE_MESSAGE,
   ErrorBanner,
   Field,
@@ -16,49 +16,80 @@ import {
   textareaClass,
   textInputClass,
 } from "@/components/form";
+import { InfoTip } from "@/components/InfoTip";
+import { WorkLocationsField, type LocationRow } from "@/components/WorkLocationsField";
+import type { Chance } from "@/lib/chance";
 import {
-  acceptsOfficeWork,
+  DEFAULT_LEVEL,
   DEFAULT_PREFERENCES,
-  EXCLUDABLE_CONTRACTS,
-  isReadyForScoring,
-  JOB_TYPES,
-  MAX_BACKGROUND_CHARS,
-  TARGET_LEVELS,
+  LEVELS,
+  toChips,
   WORK_TIME_MODELS,
-  type PreferencesInput,
 } from "@/lib/preferences";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
 
-// Years and radii are edited as text so a field can be empty and take "1.5";
-// the API parses them back into numbers.
-type PreferencesForm = Omit<
-  PreferencesInput,
-  "experience_years" | "max_required_years" | "work_locations"
-> & {
+/** The page's working copy: chips as lists, years and radii as text so a field can be cleared. */
+interface PreferencesForm {
+  own_skills: string[];
+  basic_skills: string[];
+  spoken_languages: string;
   experience_years: string;
-  max_required_years: string;
+  level: string;
+  dealbreakers: string;
+  remote_ok: boolean;
+  office_ok: boolean;
   work_locations: LocationRow[];
-};
-
-const OPTION_LABELS: Record<string, string> = {
-  junior: "Junior / entry level",
-  mid: "Mid-level",
-  senior: "Senior / lead",
-  freelance: "Freelance",
-  ausbildung: "Apprenticeship",
-  studium: "Dual study",
-  werkstudent: "Working student",
-  praktikum: "Internship",
-  vollzeit: "Full-time",
-  teilzeit: "Part-time",
-  minijob: "Minijob",
-};
+  excluded_employment_types: string[];
+  work_time_models: string[];
+}
 
 const DEFAULTS: PreferencesForm = {
   ...DEFAULT_PREFERENCES,
+  own_skills: [],
+  basic_skills: [],
   experience_years: "",
-  max_required_years: "",
   work_locations: [],
+};
+
+const LEVEL_LABELS: Record<string, string> = {
+  junior: "Junior",
+  mid: "Mid-level",
+  senior: "Senior",
+};
+
+// The best rating a job of each level can still get at your level — the rules
+// in scoring-rules.ts, in the dashboard's own tiers.
+const LEVEL_EFFECTS: Record<string, [string, Chance][]> = {
+  junior: [
+    ["Junior jobs", "very_good"],
+    ["Mid-level jobs", "fair"],
+    ["Senior jobs", "low"],
+  ],
+  mid: [
+    ["Junior jobs", "very_good"],
+    ["Mid-level jobs", "very_good"],
+    ["Senior jobs", "low"],
+  ],
+  senior: [
+    ["Junior jobs", "very_good"],
+    ["Mid-level jobs", "very_good"],
+    ["Senior jobs", "very_good"],
+  ],
+};
+
+// Shown as what you accept; stored as what you exclude (excluded_employment_types).
+const CONTRACT_OPTIONS: [string, string][] = [
+  ["freelance", "Freelance"],
+  ["werkstudent", "Working student"],
+  ["praktikum", "Internship"],
+  ["ausbildung", "Apprenticeship"],
+  ["studium", "Dual study"],
+];
+
+const WORK_TIME_LABELS: Record<string, string> = {
+  vollzeit: "Full-time",
+  teilzeit: "Part-time",
+  minijob: "Minijob",
 };
 
 const text = (value: unknown) => (typeof value === "string" ? value : "");
@@ -77,27 +108,29 @@ function locationRows(value: unknown): LocationRow[] {
 
 function toForm(data: Record<string, unknown>): PreferencesForm {
   return {
-    notes: text(data.notes),
-    dealbreakers: text(data.dealbreakers),
-    experience_years: yearsText(data.experience_years),
-    target_levels: list(data.target_levels),
-    max_required_years: yearsText(data.max_required_years),
-    background: text(data.background),
-    focus_skills: text(data.focus_skills),
-    own_skills: text(data.own_skills),
-    basic_skills: text(data.basic_skills),
-    education: text(data.education),
-    certifications: text(data.certifications),
+    own_skills: toChips(text(data.own_skills)),
+    basic_skills: toChips(text(data.basic_skills)),
     spoken_languages: text(data.spoken_languages),
-    job_type: list(data.job_type),
+    experience_years: yearsText(data.experience_years),
+    level: LEVELS.includes(text(data.level)) ? text(data.level) : DEFAULT_LEVEL,
+    dealbreakers: text(data.dealbreakers),
+    remote_ok: data.remote_ok !== false,
+    office_ok: data.office_ok !== false,
     work_locations: locationRows(data.work_locations),
     excluded_employment_types: list(data.excluded_employment_types),
-    work_time_models: list(data.work_time_models),
+    // A new profile accepts every working time.
+    work_time_models:
+      data.work_time_models === undefined ? [...WORK_TIME_MODELS] : list(data.work_time_models),
   };
 }
 
 function toggleValue(values: string[], value: string): string[] {
   return values.includes(value) ? values.filter((v) => v !== value) : [...values, value];
+}
+
+/** Chips added to a list, skipping ones it already has (case-blind). */
+function mergeChips(current: string[], added: string[]): string[] {
+  return toChips([...current, ...added].join(","));
 }
 
 function isYears(value: string): boolean {
@@ -106,56 +139,153 @@ function isYears(value: string): boolean {
   return Number.isFinite(n) && n >= 0;
 }
 
-/** What each tier means, so the badges on the dashboard never feel arbitrary. */
-function HowChancesWork() {
+/** What each tier means, behind a button so the page starts with the settings. */
+function HowRatingsWork() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: PointerEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const tiers: [Chance, string][] = [
+    ["very_good", "You meet every must-have and nothing holds it back."],
+    ["good", "Most must-haves met, or one small gap, like a year less experience."],
+    ["fair", "Clear gaps, but still possible."],
+    [
+      "low",
+      "A hard blocker: too far away, a dealbreaker, a contract form or working time you don't accept, a language you don't speak well enough. Or most must-haves missing.",
+    ],
+  ];
+
   return (
-    <SettingsSection
-      title="How your chance is decided"
-      description={
-        <p>
-          The AI checks each posting&apos;s must-have requirements against your profile below. The
-          tier itself is calculated from that checklist with fixed rules, so it stays stable instead
-          of drifting between runs.
-        </p>
-      }
-    >
-      <ul className="space-y-2.5 text-[13px] leading-relaxed text-[#1E2A3D]">
-        <li className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3">
-          <span className="shrink-0 sm:w-36">
-            <ChancePill chance="very_good" />
-          </span>
-          <span>You meet every must-have (at most one only partly) and nothing holds it back.</span>
-        </li>
-        <li className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3">
-          <span className="shrink-0 sm:w-36">
-            <ChancePill chance="good" />
-          </span>
-          <span>
-            You cover most must-haves, or one thing caps it — e.g. the posting asks for one year
-            more experience than you have.
-          </span>
-        </li>
-        <li className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3">
-          <span className="shrink-0 sm:w-36">
-            <ChancePill chance="fair" />
-          </span>
-          <span>
-            Clear gaps, but still possible — e.g. two years more experience asked, or tasks that
-            differ from what you&apos;ve done so far.
-          </span>
-        </li>
-        <li className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3">
-          <span className="shrink-0 sm:w-36">
-            <ChancePill chance="low" />
-          </span>
-          <span>
-            A hard blocker — wrong work arrangement or contract form, three or more years of
-            experience missing, a mandatory licence or language you don&apos;t have, one of your
-            dealbreakers — or most must-haves missing.
-          </span>
-        </li>
-      </ul>
-    </SettingsSection>
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls="how-ratings-work"
+        className={buttonSecondary}
+      >
+        <Info size={16} />
+        How ratings work
+      </button>
+      {open && (
+        <div
+          id="how-ratings-work"
+          role="dialog"
+          aria-label="How ratings work"
+          className="absolute top-full right-0 z-40 mt-2 w-[min(390px,calc(100vw-2rem))] rounded-2xl border border-[#D7E4ED] bg-white p-4 shadow-[0_20px_44px_-16px_rgba(30,64,120,0.45)]"
+        >
+          <h2 className="mb-3 text-[13px] font-semibold text-[#1E2A3D]">How each job is rated</h2>
+          <ul className="space-y-2.5">
+            {tiers.map(([chance, meaning]) => (
+              <li
+                key={chance}
+                className="grid grid-cols-[8.5rem_1fr] items-start gap-2 text-[12.5px] leading-relaxed text-[#1E2A3D]"
+              >
+                <span>
+                  <ChancePill chance={chance} />
+                </span>
+                <span>{meaning}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3.5 border-t border-[#D7E4ED] pt-3 text-[12px] text-text-muted">
+            Saving this page marks every rating as outdated. Rescore from the dashboard whenever you
+            like.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Reads a CV once and suggests chips; neither the file nor its text is kept. */
+function FillFromCv({
+  onSkills,
+  onError,
+}: {
+  onSkills: (skills: { strong: string[]; basics: string[]; languages: string }) => number;
+  onError: (message: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [state, setState] = useState<"idle" | "reading" | "done">("idle");
+  const [added, setAdded] = useState(0);
+
+  useEffect(() => {
+    if (state !== "done") return;
+    const t = setTimeout(() => setState("idle"), 4000);
+    return () => clearTimeout(t);
+  }, [state]);
+
+  async function read(file: File) {
+    setState("reading");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/preferences/cv", { method: "POST", body });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || "Couldn't read the CV");
+      setAdded(
+        onSkills({
+          strong: list(data?.strong),
+          basics: list(data?.basics),
+          languages: text(data?.languages),
+        }),
+      );
+      setState("done");
+    } catch (e) {
+      setState("idle");
+      onError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={state === "reading"}
+        className={buttonSecondary}
+      >
+        {state === "reading" ? (
+          <CircleNotch size={16} className="animate-spin" />
+        ) : state === "done" ? (
+          <Check size={16} weight="bold" />
+        ) : (
+          <UploadSimple size={16} />
+        )}
+        {state === "reading"
+          ? "Reading CV…"
+          : state === "done"
+            ? `Added ${added} from your CV`
+            : "Fill in from a CV"}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".pdf,.docx,.txt"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) read(file);
+          e.target.value = "";
+        }}
+      />
+    </>
   );
 }
 
@@ -166,9 +296,6 @@ export default function PreferencesPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Set from the saved row, not the form: the banner is about what the scorer
-  // sees, and shouldn't vanish the moment you start typing.
-  const [needsUpgrade, setNeedsUpgrade] = useState(false);
 
   useDirtyGuard(!loading && JSON.stringify(form) !== savedSnapshot);
 
@@ -179,7 +306,6 @@ export default function PreferencesPage() {
         const next = toForm(data && typeof data === "object" ? data : {});
         setForm(next);
         setSavedSnapshot(JSON.stringify(next));
-        setNeedsUpgrade(!next.experience_years.trim() || !isReadyForScoring(next));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -193,14 +319,34 @@ export default function PreferencesPage() {
   const set = <K extends keyof PreferencesForm>(key: K, value: PreferencesForm[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
+  /** Merges chips suggested from a CV; returns how many were new. */
+  function addFromCv(skills: { strong: string[]; basics: string[]; languages: string }): number {
+    const strong = mergeChips(form.own_skills, skills.strong);
+    // Something already listed as strong never comes back as a basic.
+    const known = new Set(strong.map((s) => s.toLowerCase()));
+    const basics = mergeChips(
+      form.basic_skills,
+      skills.basics.filter((b) => !known.has(b.toLowerCase())),
+    );
+    setForm((f) => ({
+      ...f,
+      own_skills: strong,
+      basic_skills: basics,
+      spoken_languages: f.spoken_languages.trim() ? f.spoken_languages : skills.languages,
+    }));
+    return strong.length - form.own_skills.length + (basics.length - form.basic_skills.length);
+  }
+
   async function handleSave() {
     setError(null);
-    if (!isReadyForScoring(form))
-      return setError("Add your skills or paste your CV — the AI needs something to compare with");
+    if (form.own_skills.length === 0)
+      return setError("Add at least one strong skill — the AI needs something to compare with");
     if (!form.experience_years.trim())
-      return setError("Add your years of relevant experience (0 is fine)");
-    if (!isYears(form.experience_years) || !isYears(form.max_required_years))
-      return setError("Years must be a number, e.g. 1 or 1.5");
+      return setError("Add your years of work experience (0 is fine)");
+    if (!isYears(form.experience_years)) return setError("Years must be a number, e.g. 1 or 1.5");
+    if (!form.remote_ok && !form.office_ok)
+      return setError("Turn on remote jobs, office jobs or both — otherwise every job is Low");
+    if (form.work_time_models.length === 0) return setError("Pick at least one working time");
 
     setSaving(true);
     try {
@@ -210,7 +356,6 @@ export default function PreferencesPage() {
         body: JSON.stringify({
           ...form,
           experience_years: form.experience_years.replace(",", "."),
-          max_required_years: form.max_required_years.replace(",", "."),
           work_locations: form.work_locations
             .filter((row) => row.place.trim())
             .map((row) => ({ place: row.place, radius_km: row.radius })),
@@ -223,7 +368,6 @@ export default function PreferencesPage() {
       const saved = { ...form, work_locations: locationRows(data?.work_locations) };
       setForm(saved);
       setSavedSnapshot(JSON.stringify(saved));
-      setNeedsUpgrade(false);
       setMessage(data?.demo ? DEMO_SAVE_MESSAGE : "Preferences saved");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -236,403 +380,225 @@ export default function PreferencesPage() {
 
   return (
     <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0">
-      <PageHeader
-        title="AI Scoring Preferences"
-        description="Your profile for judging every job — works for any profession. Changing it marks all scores as outdated; rescore anytime from the dashboard."
-      />
+      <PageHeader title="AI Scoring Preferences" action={<HowRatingsWork />} />
 
       {error && <ErrorBanner>{error}</ErrorBanner>}
-
-      {!loading && needsUpgrade && (
-        <div className="mb-4 rounded-xl border border-sky-300 bg-sky-100 px-3.5 py-2.5 text-[13px] text-sky-900">
-          Jobs are now rated by chance, based on the profile below. Fill in your experience, skills
-          and CV, and move anything you don&apos;t want into Dealbreakers — scoring starts once your
-          skills or CV are filled in.
-        </div>
-      )}
 
       {loading ? (
         <p className="text-[13px] text-text-faint">Loading…</p>
       ) : (
         <div className="space-y-4">
-          <HowChancesWork />
-
           <SettingsSection
-            title="What you're looking for"
-            description={
-              <p>
-                Job titles don&apos;t matter here — the AI compares what a job actually involves
-                with your CV and with what you describe. English or German both work.
-              </p>
-            }
+            title="What you bring"
+            info="The only place the AI learns what you can do. A job's requirements count as met only if they're here: tools, experience, degrees, licences. The job title doesn't matter."
+            action={<FillFromCv onSkills={addFromCv} onError={setError} />}
           >
             <Field
-              label="Your ideal job, in your own words"
-              htmlFor="prefs-notes"
-              hint={<p>Optional. The kind of work, industries, kind of company.</p>}
+              label="Strong"
+              htmlFor="prefs-strong"
+              info="What you've used at work, in training or in real projects. Counts as met when a job asks for it."
             >
-              <textarea
-                id="prefs-notes"
-                value={form.notes}
-                onChange={(e) => set("notes", e.target.value)}
-                rows={4}
-                placeholder="e.g. A product company where I build user-facing features, ideally in e-commerce or health."
-                className={textareaClass}
+              <ChipInput
+                id="prefs-strong"
+                values={form.own_skills}
+                onChange={(values) => set("own_skills", values)}
+                placeholder="Add a tool, a degree, an experience… then press Enter"
               />
             </Field>
 
             <Field
-              label="Dealbreakers"
-              htmlFor="prefs-dealbreakers"
-              hint={
-                <p>
-                  What you never want. A posting that clearly matches one is rated Low chance and
-                  says why.
-                </p>
-              }
+              label="Basics"
+              htmlFor="prefs-basics"
+              info="Courses, hobby projects, things you've touched but not used at work. Counts as partly met."
             >
-              <textarea
-                id="prefs-dealbreakers"
-                value={form.dealbreakers}
-                onChange={(e) => set("dealbreakers", e.target.value)}
-                rows={3}
-                placeholder="e.g. No cold calling or sales targets, no shift work, nothing in gambling."
-                className={textareaClass}
+              <ChipInput
+                id="prefs-basics"
+                values={form.basic_skills}
+                onChange={(values) => set("basic_skills", values)}
+                placeholder="Add a skill… then press Enter"
+                soft
               />
             </Field>
-          </SettingsSection>
 
-          <SettingsSection
-            title="Experience & level"
-            description={
-              <p>
-                Applied as fixed rules: one year short of what a posting asks caps it at Good, two
-                years at Fair, three or more makes it Low.
-              </p>
-            }
-          >
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <Field
-                label="Years of relevant experience"
+                label="Years of work experience"
                 htmlFor="prefs-experience-years"
-                hint={
-                  <p>
-                    Professional experience in the kind of job you&apos;re looking for. A relevant
-                    working-student job counts too; as a career changer, count only what transfers.
-                  </p>
-                }
+                info="Professional experience in total; a working-student job counts. One year short of what a job asks caps it at Good, two at Fair, three or more makes it Low."
               >
-                <input
-                  id="prefs-experience-years"
-                  inputMode="decimal"
-                  value={form.experience_years}
-                  onChange={(e) => set("experience_years", e.target.value)}
-                  placeholder="e.g. 1.5"
-                  className={`${textInputClass} max-w-40`}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    id="prefs-experience-years"
+                    inputMode="decimal"
+                    value={form.experience_years}
+                    onChange={(e) => set("experience_years", e.target.value)}
+                    placeholder="e.g. 2"
+                    className={`${textInputClass} max-w-20 text-right tabular-nums`}
+                  />
+                  <span className="text-[13px] text-text-muted">years</span>
+                </div>
               </Field>
 
               <Field
-                label="Most years a job may require"
-                htmlFor="prefs-max-required-years"
-                hint={
-                  <p>
-                    Optional hard limit in years. A posting that requires more is always Low chance.
-                  </p>
-                }
+                label="Languages"
+                htmlFor="prefs-spoken-languages"
+                info="A language level a job requires and you don't have makes it Low."
               >
                 <input
-                  id="prefs-max-required-years"
-                  inputMode="decimal"
-                  value={form.max_required_years}
-                  onChange={(e) => set("max_required_years", e.target.value)}
-                  placeholder="e.g. 2"
-                  className={`${textInputClass} max-w-40`}
+                  id="prefs-spoken-languages"
+                  value={form.spoken_languages}
+                  onChange={(e) => set("spoken_languages", e.target.value)}
+                  placeholder="e.g. German native, English C1"
+                  className={textInputClass}
                 />
               </Field>
             </div>
 
             <FieldGroup
-              legend="Levels you're targeting"
-              hint={
-                <p>
-                  A senior role is Low chance unless you tick Senior. Tick nothing and the levels
-                  follow from your experience: under 2 years junior, under 5 up to mid-level.
-                </p>
-              }
+              legend="Your level"
+              info="The level of job you're ready for. Jobs at or below it aren't held back; jobs above it are rated lower, as shown below."
             >
-              <CheckboxRow>
-                {TARGET_LEVELS.map((level) => (
-                  <Checkbox
+              <div className="inline-flex flex-wrap gap-0.5 rounded-xl bg-[#E9F2F8] p-[3px]">
+                {LEVELS.map((level) => (
+                  <button
                     key={level}
-                    label={OPTION_LABELS[level]}
-                    checked={form.target_levels.includes(level)}
-                    onChange={() => set("target_levels", toggleValue(form.target_levels, level))}
-                  />
+                    type="button"
+                    aria-pressed={form.level === level}
+                    onClick={() => set("level", level)}
+                    className={`h-7.5 rounded-[9px] px-3 text-[13px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#101828]/30 ${
+                      form.level === level
+                        ? "bg-white font-medium text-[#101828] shadow-[0_1px_3px_rgba(30,64,120,0.18)]"
+                        : "text-text-muted hover:text-[#101828]"
+                    }`}
+                  >
+                    {LEVEL_LABELS[level]}
+                  </button>
                 ))}
-              </CheckboxRow>
+              </div>
+              <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[12.5px]">
+                <span className="w-full font-medium text-[#1E2A3D]">Best possible rating:</span>
+                {(LEVEL_EFFECTS[form.level] ?? LEVEL_EFFECTS[DEFAULT_LEVEL]).map(
+                  ([jobs, chance]) => (
+                    <span key={jobs} className="inline-flex items-center gap-1.5">
+                      <span className="text-text-muted">{jobs}</span>
+                      <ChancePill chance={chance} />
+                    </span>
+                  ),
+                )}
+              </div>
             </FieldGroup>
           </SettingsSection>
 
           <SettingsSection
-            title="Your background"
-            description={
-              <p>
-                Paste your CV here — each position with the tasks you did, education, projects,
-                volunteering. The AI compares every job&apos;s tasks and requirements with it, so
-                the more concrete, the better.
-              </p>
-            }
+            title="What you don't want"
+            info="A posting that clearly matches one of these is rated Low, with the reason shown. Also the place for work you could do but don't want, e.g. pure backend jobs."
           >
-            <Field
-              label="CV / work history"
-              htmlFor="prefs-background"
-              hint={
-                <p>
-                  {form.background.length.toLocaleString("en-US")} /{" "}
-                  {MAX_BACKGROUND_CHARS.toLocaleString("en-US")} characters
-                </p>
-              }
-            >
-              <textarea
-                id="prefs-background"
-                value={form.background}
-                onChange={(e) => set("background", e.target.value.slice(0, MAX_BACKGROUND_CHARS))}
-                rows={12}
-                placeholder={
-                  "e.g.\n2023–today  Junior Frontend Developer, Acme GmbH — built the customer portal in React/TypeScript, " +
-                  "ran usability tests\n2020–2023  B.Sc. Media Informatics, HTW Berlin\n2019  Internship, local agency — WordPress sites"
-                }
-                className={textareaClass}
-              />
-            </Field>
+            <textarea
+              id="prefs-dealbreakers"
+              aria-label="What you don't want"
+              value={form.dealbreakers}
+              onChange={(e) => set("dealbreakers", e.target.value)}
+              rows={3}
+              placeholder="e.g. No cold calling or sales targets, no shift work, nothing in gambling."
+              className={textareaClass}
+            />
           </SettingsSection>
 
-          <SettingsSection
-            title="Skills & qualifications"
-            description={
-              <p>
-                Each posting&apos;s must-haves are checked against this. Strong skills count as met,
-                basics as partly met. A mandatory licence or language you don&apos;t list makes a
-                job Low chance.
-              </p>
-            }
-          >
-            <Field
-              label="Main focus"
-              htmlFor="prefs-focus-skills"
-              hint={
-                <p>
-                  What you most want to work with — a few items, comma-separated. Jobs built around
-                  something else stay at most Good, so these rank first. For programming jobs the
-                  core language decides.
-                </p>
-              }
-            >
-              <input
-                id="prefs-focus-skills"
-                value={form.focus_skills}
-                onChange={(e) => set("focus_skills", e.target.value)}
-                placeholder="e.g. TypeScript, React — or: Pflege, Intensivstation"
-                className={textInputClass}
-              />
-            </Field>
+          <SettingsSection title="Location">
+            <Switch checked={form.remote_ok} onChange={(on) => set("remote_ok", on)}>
+              Fully remote jobs are fine
+              <InfoTip label="About remote jobs">
+                Remote jobs count wherever the company is based. Off: they&apos;re rated Low.
+              </InfoTip>
+            </Switch>
+            <Switch checked={form.office_ok} onChange={(on) => set("office_ok", on)}>
+              Office jobs (hybrid / on-site) are fine
+              <InfoTip label="About office jobs">
+                Jobs with office days. Off: they&apos;re rated Low, so only remote jobs count.
+              </InfoTip>
+            </Switch>
 
-            <Field
-              label="Skills you're strong in"
-              htmlFor="prefs-own-skills"
-              hint={
-                <p>
-                  Tools, software, methods, machines, programming languages — what you can do today.
-                  If you list programming languages, a job built on one you don&apos;t list is Low
-                  chance.
-                </p>
-              }
-            >
-              <textarea
-                id="prefs-own-skills"
-                value={form.own_skills}
-                onChange={(e) => set("own_skills", e.target.value)}
-                rows={3}
-                placeholder="e.g. React, TypeScript, Figma, SQL — or: Wundversorgung, SAP MM, Staplerfahren"
-                className={textareaClass}
-              />
-            </Field>
-
-            <Field
-              label="Skills you know the basics of"
-              htmlFor="prefs-basic-skills"
-              hint={
-                <p>Courses, hobby projects, things you&apos;ve touched but not used at work.</p>
-              }
-            >
-              <textarea
-                id="prefs-basic-skills"
-                value={form.basic_skills}
-                onChange={(e) => set("basic_skills", e.target.value)}
-                rows={2}
-                placeholder="e.g. Node.js, Docker, Python"
-                className={textareaClass}
-              />
-            </Field>
-
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <Field label="Education" htmlFor="prefs-education">
-                <input
-                  id="prefs-education"
-                  value={form.education}
-                  onChange={(e) => set("education", e.target.value)}
-                  placeholder="e.g. B.Sc. Computer Science; Ausbildung Kauffrau für Büromanagement"
-                  className={textInputClass}
-                />
-              </Field>
-
-              <Field label="Certificates & licences" htmlFor="prefs-certifications">
-                <input
-                  id="prefs-certifications"
-                  value={form.certifications}
-                  onChange={(e) => set("certifications", e.target.value)}
-                  placeholder="e.g. Führerschein B, Staplerschein, AWS Cloud Practitioner"
-                  className={textInputClass}
-                />
-              </Field>
-            </div>
-
-            <Field label="Languages you speak" htmlFor="prefs-spoken-languages">
-              <input
-                id="prefs-spoken-languages"
-                value={form.spoken_languages}
-                onChange={(e) => set("spoken_languages", e.target.value)}
-                placeholder="e.g. German native, English C1, Spanish A2"
-                className={textInputClass}
-              />
-            </Field>
-          </SettingsSection>
-
-          <SettingsSection
-            title="Location & job type"
-            description={<p>How you want to work — and for hybrid or on-site jobs, where.</p>}
-          >
-            <FieldGroup
-              legend="Job type"
-              hint={<p>A posting with any other arrangement is Low chance. Tick none for any.</p>}
-            >
-              <CheckboxRow>
-                {JOB_TYPES.map((type) => (
-                  <Checkbox
-                    key={type}
-                    label={type}
-                    checked={form.job_type.includes(type)}
-                    onChange={() => set("job_type", toggleValue(form.job_type, type))}
-                  />
-                ))}
-              </CheckboxRow>
-            </FieldGroup>
-
-            {acceptsOfficeWork(form.job_type) ? (
+            {form.office_ok && (
               <FieldGroup
-                legend="Where you'd work on site"
-                hint={
-                  <>
-                    <p>
-                      Anywhere in the city counts, plus this distance around it, as the crow flies.
-                      Hybrid and on-site jobs further away are Low chance; remote jobs are never
-                      limited. Add no city to accept any location.
-                    </p>
-                    <p>
-                      Place data ©{" "}
-                      <a
-                        href="https://www.geonames.org"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline underline-offset-2"
-                      >
-                        GeoNames
-                      </a>
-                      ,{" "}
-                      <a
-                        href="https://creativecommons.org/licenses/by/4.0/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline underline-offset-2"
-                      >
-                        CC BY 4.0
-                      </a>
-                      .
-                    </p>
-                  </>
-                }
+                legend="Cities you'd commute to"
+                info="For hybrid and on-site jobs: anywhere in the city plus this distance around it, as the crow flies. Further away is rated Low. Add none to accept any place."
               >
                 <WorkLocationsField
                   rows={form.work_locations}
                   onChange={(rows) => set("work_locations", rows)}
                 />
               </FieldGroup>
-            ) : (
-              <p className="text-[12px] text-text-faint">
-                Only fully remote jobs — no location needed.
-              </p>
             )}
           </SettingsSection>
 
-          <SettingsSection
-            title="Contract & working time"
-            description={<p>Filter out contract forms and working hours you don&apos;t want.</p>}
-          >
+          <SettingsSection title="Contract & working time">
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <FieldGroup
-                legend="Exclude contract forms"
-                hint={
-                  <p>
-                    Tick what you do <strong>not</strong> want — freelance, apprenticeship
-                    (Ausbildung), dual study (duales Studium), working student (Werkstudent),
-                    internship (Praktikum). Those postings are Low chance and say why. Tick nothing
-                    to accept every contract form.
-                  </p>
-                }
+                legend="Contract forms you accept"
+                info="Postings for any other contract form are rated Low."
               >
-                <CheckboxRow>
-                  {EXCLUDABLE_CONTRACTS.map((type) => (
-                    <Checkbox
-                      key={type}
-                      label={OPTION_LABELS[type]}
-                      checked={form.excluded_employment_types.includes(type)}
+                <div className="flex flex-wrap gap-2">
+                  <ToggleChip pressed disabled onChange={() => {}}>
+                    Regular job
+                  </ToggleChip>
+                  {CONTRACT_OPTIONS.map(([value, label]) => (
+                    <ToggleChip
+                      key={value}
+                      pressed={!form.excluded_employment_types.includes(value)}
                       onChange={() =>
                         set(
                           "excluded_employment_types",
-                          toggleValue(form.excluded_employment_types, type),
+                          toggleValue(form.excluded_employment_types, value),
                         )
                       }
-                    />
+                    >
+                      {label}
+                    </ToggleChip>
                   ))}
-                </CheckboxRow>
+                </div>
               </FieldGroup>
 
               <FieldGroup
-                legend="Working time"
-                hint={
-                  <p>
-                    Full-time (Vollzeit), part-time (Teilzeit), Minijob (marginal employment). A
-                    posting offering none of the ticked ones is at most Fair chance. Tick none to
-                    accept any.
-                  </p>
-                }
+                legend="Working time you accept"
+                info="A job offering none of these is rated Low."
               >
-                <CheckboxRow>
-                  {WORK_TIME_MODELS.map((type) => (
-                    <Checkbox
-                      key={type}
-                      label={OPTION_LABELS[type]}
-                      checked={form.work_time_models.includes(type)}
+                <div className="flex flex-wrap gap-2">
+                  {WORK_TIME_MODELS.map((value) => (
+                    <ToggleChip
+                      key={value}
+                      pressed={form.work_time_models.includes(value)}
                       onChange={() =>
-                        set("work_time_models", toggleValue(form.work_time_models, type))
+                        set("work_time_models", toggleValue(form.work_time_models, value))
                       }
-                    />
+                    >
+                      {WORK_TIME_LABELS[value]}
+                    </ToggleChip>
                   ))}
-                </CheckboxRow>
+                </div>
               </FieldGroup>
             </div>
           </SettingsSection>
+
+          <p className="px-2 text-[11.5px] text-text-faint">
+            Place data ©{" "}
+            <a
+              href="https://www.geonames.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2"
+            >
+              GeoNames
+            </a>
+            ,{" "}
+            <a
+              href="https://creativecommons.org/licenses/by/4.0/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2"
+            >
+              CC BY 4.0
+            </a>
+          </p>
         </div>
       )}
 

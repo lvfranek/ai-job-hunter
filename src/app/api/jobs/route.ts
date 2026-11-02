@@ -9,7 +9,6 @@ export async function GET() {
       .from("jobs")
       .select(`*, job_matches (*)`)
       .eq("user_id", CURRENT_USER_ID)
-      .is("deleted_at", null)
       // Manual applications live on /applications only, never in the match feed.
       .neq("platform", MANUAL_PLATFORM)
       .order("created_at", { ascending: false });
@@ -38,10 +37,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Bulk-prune old job posts: soft-deletes every non-deleted job whose effective
-// posted date (posted_date, falling back to created_at) is older than
-// `olderThanDays` days. Returns the number of jobs removed. Jobs you applied to
-// and manual applications are never pruned — they belong to the tracker.
+// Bulk-prune old job posts: deletes every job whose effective posted date
+// (posted_date, falling back to created_at) is older than `olderThanDays` days,
+// along with its score and keyword rows. Returns the number of jobs removed.
+// Jobs you applied to and manual applications are never pruned — they belong
+// to the tracker. A pruned job can be scraped again if a board still lists it.
 export async function DELETE(request: NextRequest) {
   const supabase = getSupabaseServerClient();
   try {
@@ -57,9 +57,8 @@ export async function DELETE(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("jobs")
-      .update({ deleted_at: new Date().toISOString() })
+      .delete()
       .eq("user_id", CURRENT_USER_ID)
-      .is("deleted_at", null)
       .neq("platform", MANUAL_PLATFORM)
       .or(`status.is.null,status.not.in.(${APPLIED_STATUSES.join(",")})`)
       .or(`posted_date.lt.${cutoff},and(posted_date.is.null,created_at.lt.${cutoff})`)

@@ -10,6 +10,7 @@ import {
   demoPreferences,
   demoSettings,
   demoProfile,
+  demoCvSkills,
   demoParsedCv,
   demoCredentials,
   demoScrapeStatus,
@@ -135,6 +136,10 @@ async function handle(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(demoParsedCv);
   }
 
+  if (method === "POST" && path === "/preferences/cv") {
+    return NextResponse.json(demoCvSkills);
+  }
+
   // ---- writes: accepted, never persisted --------------------------------
   // Checked like the real save, so an unknown city shows the same hint.
   if (method === "POST" && path === "/preferences") {
@@ -158,7 +163,6 @@ async function handle(request: NextRequest): Promise<NextResponse> {
       id: `demo-job-${crypto.randomUUID()}`,
       user_id: "demo",
       created_at: new Date().toISOString(),
-      deleted_at: null,
       ...body,
       demo: true,
     });

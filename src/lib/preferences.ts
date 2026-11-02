@@ -4,16 +4,14 @@ import type { Preferences, WorkLocation } from "@/lib/types";
 // a saved body is cleaned up. Pure module — the preferences page, its API
 // route and the scorer all read from here.
 
-/** The CV text box; long enough for a full CV, short enough for every scoring request. */
-export const MAX_BACKGROUND_CHARS = 8000;
 const MAX_TEXT_CHARS = 2000;
 const MAX_YEARS = 50;
 export const MAX_WORK_LOCATIONS = 10;
 export const DEFAULT_RADIUS_KM = 25;
 const MAX_RADIUS_KM = 200;
 
-export const TARGET_LEVELS = ["junior", "mid", "senior"];
-export const JOB_TYPES = ["remote", "hybrid", "on-site"];
+export const LEVELS = ["junior", "mid", "senior"];
+export const DEFAULT_LEVEL = "mid";
 // German labour-market contract forms. Stored values stay German (existing rows
 // use them); the UI shows English labels and the scorer is told both names.
 export const EXCLUDABLE_CONTRACTS = [
@@ -28,26 +26,45 @@ export const WORK_TIME_MODELS = ["vollzeit", "teilzeit", "minijob"];
 export type PreferencesInput = Omit<Preferences, "id" | "user_id" | "created_at" | "updated_at">;
 
 export const DEFAULT_PREFERENCES: PreferencesInput = {
-  notes: "",
-  dealbreakers: "",
-  experience_years: null,
-  target_levels: [],
-  max_required_years: null,
-  background: "",
-  focus_skills: "",
   own_skills: "",
   basic_skills: "",
-  education: "",
-  certifications: "",
   spoken_languages: "",
-  job_type: [],
+  experience_years: null,
+  level: DEFAULT_LEVEL,
+  dealbreakers: "",
+  remote_ok: true,
+  office_ok: true,
   work_locations: [],
   excluded_employment_types: [],
-  work_time_models: [],
+  work_time_models: [...WORK_TIME_MODELS],
 };
+
+/** A stored skills text as chips: split on commas, semicolons or lines, without duplicates. */
+export function toChips(text: string | null | undefined): string[] {
+  const seen = new Set<string>();
+  const chips: string[] = [];
+  for (const part of (text ?? "").split(/[,;\n]+/)) {
+    const chip = part.trim();
+    if (!chip || seen.has(chip.toLowerCase())) continue;
+    seen.add(chip.toLowerCase());
+    chips.push(chip);
+  }
+  return chips;
+}
+
+/** Chips back into the stored text. */
+export function fromChips(chips: string[]): string {
+  return toChips(chips.join(",")).join(", ");
+}
 
 function text(value: unknown, max = MAX_TEXT_CHARS): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
+/** A skills field: chips (an array) or text, stored as one clean comma-separated line. */
+function skills(value: unknown): string {
+  const raw = Array.isArray(value) ? value.filter((v) => typeof v === "string").join(",") : value;
+  return text(fromChips(toChips(typeof raw === "string" ? raw : "")));
 }
 
 function years(value: unknown): number | null {
@@ -60,6 +77,10 @@ function years(value: unknown): number | null {
 function options(value: unknown, allowed: string[]): string[] {
   if (!Array.isArray(value)) return [];
   return allowed.filter((option) => value.includes(option));
+}
+
+function flag(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
 }
 
 function radius(value: unknown): number {
@@ -91,12 +112,6 @@ function workLocations(value: unknown): WorkLocation[] {
   return out;
 }
 
-/** Whether hybrid or on-site work is on the table — no arrangement ticked means any. */
-export function acceptsOfficeWork(jobType: string[] | null | undefined): boolean {
-  const types = jobType ?? [];
-  return types.length === 0 || types.some((t) => t !== "remote");
-}
-
 /**
  * A request body as a clean preferences row: only known fields, numbers parsed
  * ("" → null, 0 stays 0), option lists limited to known values, text trimmed
@@ -104,33 +119,31 @@ export function acceptsOfficeWork(jobType: string[] | null | undefined): boolean
  */
 export function normalizePreferences(raw: unknown): PreferencesInput {
   const body = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const level = typeof body.level === "string" && LEVELS.includes(body.level) ? body.level : null;
   return {
-    notes: text(body.notes),
-    dealbreakers: text(body.dealbreakers),
-    experience_years: years(body.experience_years),
-    target_levels: options(body.target_levels, TARGET_LEVELS),
-    max_required_years: years(body.max_required_years),
-    background: text(body.background, MAX_BACKGROUND_CHARS),
-    focus_skills: text(body.focus_skills, 300),
-    own_skills: text(body.own_skills),
-    basic_skills: text(body.basic_skills),
-    education: text(body.education),
-    certifications: text(body.certifications),
+    own_skills: skills(body.own_skills),
+    basic_skills: skills(body.basic_skills),
     spoken_languages: text(body.spoken_languages),
-    job_type: options(body.job_type, JOB_TYPES),
+    experience_years: years(body.experience_years),
+    level: level ?? DEFAULT_LEVEL,
+    dealbreakers: text(body.dealbreakers),
+    remote_ok: flag(body.remote_ok, true),
+    office_ok: flag(body.office_ok, true),
     work_locations: workLocations(body.work_locations),
     excluded_employment_types: options(body.excluded_employment_types, EXCLUDABLE_CONTRACTS),
-    work_time_models: options(body.work_time_models, WORK_TIME_MODELS),
+    // Not sent at all: every working time, as for a new profile.
+    work_time_models:
+      body.work_time_models === undefined
+        ? [...WORK_TIME_MODELS]
+        : options(body.work_time_models, WORK_TIME_MODELS),
   };
 }
 
 /**
- * Scoring needs something to check a posting's requirements and tasks against
- * — skills or a CV. Without either, every job would be judged against nothing,
- * and a version bump would re-score every job that way.
+ * Scoring needs something to check a posting's requirements and tasks against.
+ * Without any strong skills, every job would be judged against nothing, and a
+ * version bump would re-score every job that way.
  */
-export function isReadyForScoring(
-  prefs: Pick<Preferences, "own_skills" | "background"> | null,
-): boolean {
-  return Boolean(prefs?.own_skills?.trim() || prefs?.background?.trim());
+export function isReadyForScoring(prefs: Pick<Preferences, "own_skills"> | null): boolean {
+  return Boolean(prefs?.own_skills?.trim());
 }

@@ -89,8 +89,8 @@ describe("portal inputs per area", () => {
   it("uses each board's remote filter for the remote search", () => {
     expect(buildIndeedInputs(settings, remote)).toMatchObject({ location: "remote", limit: 20 });
     expect(buildLinkedinInputs(settings, remote)).toMatchObject({
+      keywords: "AI Developer remote",
       location: "Germany",
-      remote: ["2"],
     });
     expect(buildStepstoneInputs(settings, remote)).toMatchObject({ wfh: "2", radius: undefined });
     expect(buildXingInputs(settings, remote)).toMatchObject({ keyword: "AI Developer remote" });
@@ -103,8 +103,8 @@ describe("portal inputs per area", () => {
   it("searches a city with its radius and no remote filter", () => {
     expect(buildIndeedInputs(settings, hamburg)).toMatchObject({ location: "Hamburg", limit: 10 });
     expect(buildLinkedinInputs(settings, hamburg)).toMatchObject({
+      keywords: "AI Developer",
       location: "Hamburg",
-      remote: undefined,
     });
     expect(buildStepstoneInputs(settings, hamburg)).toMatchObject({
       location: "Hamburg",
@@ -124,7 +124,7 @@ describe("portal inputs per area", () => {
     });
   });
 
-  it("rounds a radius up to Stepstone's next choice", () => {
+  it("rounds a radius up to the board's next choice", () => {
     expect(stepstoneRadius(25)).toBe("30");
     expect(stepstoneRadius(10)).toBe("10");
     expect(stepstoneRadius(150)).toBe("100");

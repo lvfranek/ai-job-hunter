@@ -143,12 +143,25 @@ in the posting.
           the one asked for.
         - "missing": nothing related anywhere in the profile. Being able to
           learn it, or general talent, is NOT evidence — that is "missing".
+      A general requirement (specific: false) is judged against the WHOLE
+      profile, not one word: "Software engineering" is "met" when the profile
+      lists several programming languages and frameworks. The posting and the
+      profile may be in different languages (German ↔ English):
+      "Kundenberatung" is met by "Customer Success", "Webentwicklung" by "web
+      development".
+    - specific: true for a concretely named tool, technology, product,
+      certificate or degree ("React", "Kubernetes", "SAP S/4HANA", "AWS
+      Certified"); false for a general ability or kind of experience
+      ("Software engineering", "Full-stack development", "Customer service
+      experience", "Product experience", "Kundenberatung", "API integration",
+      "Automation").
     - core: true for the 2-4 requirements the role is built around — its main
       technologies or the qualification it can't do without — false for the
       rest.
     - evidence: for "met" and "partial", copy the profile entry that proves it
       exactly as listed ("TypeScript", "Kundenservice", "Führerschein B"), at
-      most 8 words. null for
+      most 8 words. For a general requirement quote the single profile entry
+      that fits it best ("TypeScript" for "Software engineering"). null for
       "missing". Code checks every quote against the profile word for word: a
       quote that isn't there makes the requirement count as missing, so never
       paraphrase or invent one.
@@ -210,7 +223,7 @@ in the posting.
 ## Output
 Return ONLY a minified JSON array — no markdown fences, no commentary — with one
 object per posting, fields in this order:
-[{"job_id":"uuid","requirements":[{"text":"React","kind":"skill","status":"met","evidence":"React","core":true},{"text":"German C1","kind":"language","status":"met","evidence":"Deutsch Muttersprache","core":false},{"text":"Node.js","kind":"skill","status":"partial","evidence":"Express","core":true},{"text":"Kubernetes","kind":"skill","status":"missing","evidence":null,"core":false}],"required_years":2,"posting_level":"mid","task_fit":"same","work_arrangement":"hybrid","work_locations":["Hamburg"],"contract_form":"regular","work_time":"fulltime","dealbreaker":null,"reasoning":"Your React and TypeScript work fits the core stack; Node.js on the backend is the biggest gap."}]
+[{"job_id":"uuid","requirements":[{"text":"React","kind":"skill","specific":true,"status":"met","evidence":"React","core":true},{"text":"Software engineering","kind":"skill","specific":false,"status":"met","evidence":"TypeScript","core":true},{"text":"German C1","kind":"language","specific":false,"status":"met","evidence":"Deutsch Muttersprache","core":false},{"text":"Node.js","kind":"skill","specific":true,"status":"partial","evidence":"Express","core":false},{"text":"Kubernetes","kind":"skill","specific":true,"status":"missing","evidence":null,"core":false}],"required_years":2,"posting_level":"mid","task_fit":"same","work_arrangement":"hybrid","work_locations":["Hamburg"],"contract_form":"regular","work_time":"fulltime","dealbreaker":null,"reasoning":"Your React and TypeScript work fits the core stack; Node.js on the backend is the biggest gap."}]
 
 ## Postings
 ${JSON.stringify(

@@ -69,6 +69,12 @@ export interface Requirement {
   evidence?: string | null;
   /** One of the few requirements the role is built around; these weigh most. */
   core?: boolean;
+  /**
+   * A named tool, technology, product, certificate or degree ("React", "AWS
+   * Certified") rather than a general ability ("Software engineering"). Only
+   * specific ones need a quote that names them; missing counts as true.
+   */
+  specific?: boolean;
 }
 
 export const REQUIREMENT_STATUSES: RequirementStatus[] = ["met", "partial", "missing"];

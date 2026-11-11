@@ -129,7 +129,7 @@ describe("toChanceResult", () => {
     expect(toChanceResult(entry, job, toCandidate(prefs))).toEqual({
       job_id: "1",
       chance: "very_good",
-      requirements: entry.requirements.map((r) => ({ ...r, core: false })),
+      requirements: entry.requirements.map((r) => ({ ...r, core: false, specific: true })),
       downgrades: [],
       distance_km: null,
       work_location: "Remote",

@@ -24,7 +24,7 @@ import type { Preferences } from "@/lib/types";
  * the next run — otherwise a fix here would only ever reach newly scraped jobs.
  * Bump it whenever a change should re-score existing jobs.
  */
-export const SCORING_VERSION = 10;
+export const SCORING_VERSION = 11;
 
 export type WorkArrangement = "remote" | "hybrid" | "onsite";
 export type PostingLevel = "junior" | "mid" | "senior";
@@ -148,6 +148,8 @@ export function normalizeRequirements(raw: unknown): Requirement[] {
       evidence: textOrNull(entry.evidence)?.slice(0, 120) ?? null,
       // The model sometimes calls nearly everything core; only the first few count.
       core: entry.core === true && requirements.filter((r) => r.core).length < MAX_CORE,
+      // Older answers have no flag; they get the strict check.
+      specific: entry.specific !== false,
     });
     if (requirements.length === MAX_REQUIREMENTS) break;
   }
@@ -241,9 +243,16 @@ export function evidenceIn(profile: string, evidence: string): boolean {
 /**
  * The model claims a requirement is met; the code checks the profile words it
  * quotes as proof. A small model marks Kubernetes or Power BI as "met" for a
- * React developer often enough to put the wrong jobs on top — without a real
- * quote a claim counts as missing, and a quote from the basics list only as
+ * React developer often enough to put the wrong jobs on top — so for a named
+ * tool, a claim without a real quote counts as missing, a quote from the
+ * basics list only as partly met, and a quote naming a different tool as
  * partly met.
+ *
+ * A general requirement ("Software engineering", "Kundenberatung") is judged
+ * against the whole profile, often across languages, so no shared word is
+ * needed: a quote from the strong list keeps the model's status, one from the
+ * basics is partly met, and one that isn't in the profile at all is still
+ * partly met rather than missing.
  */
 export function verifyRequirements(
   requirements: Requirement[],
@@ -253,11 +262,13 @@ export function verifyRequirements(
     if (requirement.status === "missing") return requirement;
     // Nothing to check a language against when the profile names none.
     if (requirement.kind === "language" && !candidate.languagesStated) return requirement;
+    const specific = requirement.specific !== false;
     const evidence = requirement.evidence ?? "";
     if (evidence && evidenceIn(candidate.profile.strong, evidence)) {
       // "Azure: met — Google Cloud" is a neighbouring tool, not the thing asked
       // for. Fully met needs the quote to name it; languages translate freely.
-      const named = requirement.kind === "language" || sharesWord(requirement.text, evidence);
+      const named =
+        !specific || requirement.kind === "language" || sharesWord(requirement.text, evidence);
       return requirement.status === "met" && !named
         ? { ...requirement, status: "partial" }
         : requirement;
@@ -265,6 +276,7 @@ export function verifyRequirements(
     if (evidence && evidenceIn(candidate.profile.basic, evidence)) {
       return { ...requirement, status: "partial" };
     }
+    if (!specific) return { ...requirement, status: "partial", evidence: null };
     return { ...requirement, status: "missing", evidence: null };
   });
 }

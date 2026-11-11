@@ -86,7 +86,14 @@ describe("readPostingFacts", () => {
       workTime: null,
       taskFit: "adjacent",
       requirements: [
-        { text: "Java", kind: "skill", status: "missing", evidence: null, core: false },
+        {
+          text: "Java",
+          kind: "skill",
+          status: "missing",
+          evidence: null,
+          core: false,
+          specific: true,
+        },
       ],
       dealbreaker: null,
       descriptionChars: 500,
@@ -146,7 +153,19 @@ describe("normalizeRequirements", () => {
         { text: "  ", kind: "skill", status: "met" },
         "React",
       ]),
-    ).toEqual([{ text: "SAP", kind: "skill", status: "met", evidence: null, core: false }]);
+    ).toEqual([
+      { text: "SAP", kind: "skill", status: "met", evidence: null, core: false, specific: true },
+    ]);
+  });
+
+  it("reads specific, treating a missing flag as specific", () => {
+    expect(
+      normalizeRequirements([
+        { text: "React", kind: "skill", status: "met", specific: true },
+        { text: "Software engineering", kind: "skill", status: "met", specific: false },
+        { text: "SAP", kind: "skill", status: "met" },
+      ]).map((r) => r.specific),
+    ).toEqual([true, false, true]);
   });
 
   it("keeps the first eight in posting order and shortens long text", () => {
@@ -590,6 +609,49 @@ describe("verifyRequirements — the model's claims need proof", () => {
     expect(
       statuses([claim("Kubernetes", "Kubernetes"), claim("Power BI", null), claim("SQL", "")]),
     ).toEqual(["missing", "missing", "missing"]);
+  });
+
+  describe("general requirements (specific: false)", () => {
+    const general = (text: string, evidence: string | null) =>
+      ({ ...claim(text, evidence), specific: false }) as Requirement;
+    const withSuccess = toCandidate(
+      prefs({
+        own_skills: "TypeScript, React, Next.js, Python, Django, Customer Success",
+        basic_skills: "Docker",
+      }),
+    );
+    const check = (reqs: Requirement[], c = withSuccess) =>
+      verifyRequirements(reqs, c).map((r) => r.status);
+
+    it("needs no shared word when the quote is in the strong list", () => {
+      expect(
+        check([
+          general("Software engineering", "TypeScript"),
+          general("Kundenberatung", "Customer Success"),
+        ]),
+      ).toEqual(["met", "met"]);
+    });
+
+    it("counts a quote from the basics as partly met", () => {
+      expect(check([general("DevOps experience", "Docker")])).toEqual(["partial"]);
+    });
+
+    it("counts a quote that isn't in the profile as partly met, not missing", () => {
+      expect(check([general("Automation", "Zapier"), general("API integration", null)])).toEqual([
+        "partial",
+        "partial",
+      ]);
+    });
+
+    it("keeps the strict check for named tools", () => {
+      const tool = (text: string, evidence: string | null) =>
+        ({ ...claim(text, evidence), specific: true }) as Requirement;
+      expect(check([tool("Kubernetes", "TypeScript"), tool("Power BI", "Power BI")])).toEqual([
+        "partial",
+        "missing",
+      ]);
+      expect(statuses([tool("Kubernetes", "Docker")])).toEqual(["partial"]);
+    });
   });
 
   it("counts a quote from the basics list as partly met", () => {

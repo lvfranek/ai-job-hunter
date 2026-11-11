@@ -4,6 +4,7 @@ import { closestKm, haversineKm } from "./distance";
 import {
   buildPlaceIndex,
   findPlacesInText,
+  isRemoteLocation,
   resolveHomes,
   resolveJobPlaces,
   resolveLocationText,
@@ -147,6 +148,21 @@ describe("resolveJobPlaces", () => {
 
   it("returns nothing when no source names a place", () => {
     expect(resolveJobPlaces(index, job({ location: "Remote" }))).toEqual([]);
+  });
+
+  it("never measures from a remote location's coordinates", () => {
+    for (const location of ["Home Office", "Homeoffice", "Remote", "Deutschlandweit"]) {
+      expect(resolveJobPlaces(index, job({ location, latitude: 10, longitude: -60 }))).toEqual([]);
+    }
+  });
+
+  it("tells a remote location from a city", () => {
+    expect(isRemoteLocation("Home Office")).toBe(true);
+    expect(isRemoteLocation("Remote, Germany")).toBe(true);
+    expect(isRemoteLocation("deutschlandweit")).toBe(true);
+    expect(isRemoteLocation("Hamburg (Remote)")).toBe(false);
+    expect(isRemoteLocation("Hamburg")).toBe(false);
+    expect(isRemoteLocation(null)).toBe(false);
   });
 });
 

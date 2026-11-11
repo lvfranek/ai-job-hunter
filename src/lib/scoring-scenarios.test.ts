@@ -196,7 +196,7 @@ describe("remote work", () => {
     expect(out.distance_km).toBeNull();
   });
 
-  it("doesn't believe remote the posting never states", () => {
+  it("counts a general home-office mention as remote", () => {
     const out = score(
       {
         title: "Frontend Developer",
@@ -205,7 +205,20 @@ describe("remote work", () => {
       },
       { work_arrangement: "remote" },
     );
-    expect(out.work_arrangement).toBeNull();
+    expect(out.work_arrangement).toBe("remote");
+    expect(out.distance_km).toBeNull();
+  });
+
+  it("doesn't believe remote when the posting names office days", () => {
+    const out = score(
+      {
+        title: "Frontend Developer",
+        description: text("Moderne Büros, 3 Tage im Büro und 2 Tage Home-Office"),
+        location: "München",
+      },
+      { work_arrangement: "remote" },
+    );
+    expect(out.work_arrangement).toBe("hybrid");
     // Not remote after all, and München is far outside both radii.
     expect(out.chance).toBe("low");
   });

@@ -126,6 +126,40 @@ const NO_CITY = new Set(
   ].flatMap(normalizeKeys),
 );
 
+// A board location that says "work from home" instead of naming a place.
+const REMOTE_LOCATION = new Set(
+  [
+    "Remote",
+    "Home Office",
+    "Homeoffice",
+    "Home-Office",
+    "Deutschlandweit",
+    "bundesweit",
+    "ortsunabhängig",
+    "Anywhere",
+    "Fully remote",
+    "Full remote",
+    "Remote work",
+  ].flatMap(normalizeKeys),
+);
+
+/**
+ * Whether a board's location field means remote — "Home Office", "Remote",
+ * "Deutschlandweit", optionally with a country ("Remote, Germany"). Such a
+ * value is a hint the job is remote and never a place to measure from.
+ */
+export function isRemoteLocation(text: string | null | undefined): boolean {
+  const parts = (text ?? "")
+    .replace(/\d+\s*%/g, " ")
+    .split(/[,;|/()]+/)
+    .map(key)
+    .filter(Boolean);
+  return (
+    parts.some((p) => REMOTE_LOCATION.has(p)) &&
+    parts.every((p) => REMOTE_LOCATION.has(p) || COUNTRY_NAMES[p] !== undefined)
+  );
+}
+
 // "City, State, Country" — the state picks the right Frankfurt and tells it
 // apart from a list of cities. German and English names; AT codes are GeoNames'.
 const STATE_NAMES: Record<string, { country: Country; code: string }> = Object.fromEntries(
@@ -499,7 +533,14 @@ export function resolveJobPlaces(
   }
   const fromBoard = resolveLocationText(index, job.location, country);
   if (fromBoard.length > 0) return fromBoard;
-  if (Number.isFinite(job.latitude) && Number.isFinite(job.longitude) && job.latitude !== null) {
+  // "Home Office" has no place, and the board's coordinates for it point
+  // anywhere — once 5,000 km away. Fall through to the posting's own text.
+  if (
+    !isRemoteLocation(job.location) &&
+    Number.isFinite(job.latitude) &&
+    Number.isFinite(job.longitude) &&
+    job.latitude !== null
+  ) {
     return [
       {
         label: job.location?.trim() || "the posting's location",

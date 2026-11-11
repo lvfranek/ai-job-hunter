@@ -24,7 +24,7 @@ import type { Preferences } from "@/lib/types";
  * the next run — otherwise a fix here would only ever reach newly scraped jobs.
  * Bump it whenever a change should re-score existing jobs.
  */
-export const SCORING_VERSION = 9;
+export const SCORING_VERSION = 10;
 
 export type WorkArrangement = "remote" | "hybrid" | "onsite";
 export type PostingLevel = "junior" | "mid" | "senior";
@@ -269,17 +269,55 @@ export function verifyRequirements(
   });
 }
 
-// What a posting has to say before "remote" is believed. "Home-Office möglich"
-// or "mobiles Arbeiten" alone is hybrid in German postings.
+// What a posting has to say before "remote" is believed. The candidate wants
+// to work from home as much as possible, so an unclear posting counts in their
+// favour: a general "Homeoffice möglich" or "mobiles Arbeiten" is remote as
+// long as the posting names no fixed office presence.
 const REMOTE_EVIDENCE =
-  /\bremote\b|ortsunabh(?:ae|ä)ngig|100\s?%\s?(?:home[\s-]?office|mobil)|(?:komplett|vollst(?:ae|ä)ndig|ausschlie(?:ss|ß)lich)\s+(?:im|aus dem|von zu hause|vom)\s*home[\s-]?office|work from (?:home|anywhere)|full[\s-]?home[\s-]?office/i;
+  /\bremote\b|home[\s-]?office|mobile[sn]?\s+(?:arbeiten|office|working)|ortsunabh(?:ae|ä)ngig|telearbeit|work(?:ing)? from (?:home|anywhere)/i;
 
-/** "remote" from the model only counts when the posting itself says so. */
+// Fixed office presence: office days, a share of the week, "regelmäßig vor
+// Ort", "Office-first". Any of these makes it hybrid, not remote.
+// Only a working week's worth of days, so "30 Tage Urlaub, Homeoffice" never counts.
+const NUMBER_WORD = String.raw`(?:[1-5](?:\s*(?:-|–|bis|or|to)\s*[1-5])?|ein(?:e[mn]?)?|zwei|drei|vier|f(?:ü|ue)nf|one|two|three|four)`;
+const OFFICE_PRESENCE = new RegExp(
+  [
+    // "3 Tage im Büro", "2 Tage Homeoffice", "1-2 Tage pro Woche ins Büro", "3 days in the office"
+    String.raw`(?<![\d,.])\b${NUMBER_WORD}\s*(?:tage?n?|days?)\b(?!\s*\w*urlaub)[^.,;\n]{0,40}?(?:b(?:ü|ue)ro|office|vor ort|pr(?:ä|ae)senz|home[\s-]?office|mobil|remote|on[\s-]?site|standort)`,
+    // "bis zu 50 % mobiles Arbeiten", "60% Home-Office" — anything short of 100 %
+    String.raw`(?<!\d)(?:[1-9]?\d)\s?%[^.,;\n]{0,30}?(?:home|mobil|remote|b(?:ü|ue)ro|office|pr(?:ä|ae)senz|vor ort)`,
+    // "Homeoffice-Anteil von 40 %"
+    String.raw`(?:home[\s-]?office|mobil\w*|remote)[^.,;\n]{0,30}?(?<!\d)(?:[1-9]?\d)\s?%`,
+    String.raw`regelm(?:ä|ae)(?:ss|ß)ig\w*\s+(?:vor ort|im b(?:ü|ue)ro|in the office|on[\s-]?site)`,
+    String.raw`office[\s-]?first|mostly on[\s-]?site|b(?:ü|ue)rotage|pr(?:ä|ae)senztage|office days`,
+    String.raw`rein\w*\s+remote[\s-]?t(?:ä|ae)tigkeit\w*\s+(?:ist\s+)?nicht|nicht\s+(?:rein|vollst(?:ä|ae)ndig|komplett|100\s?%)\s+remote`,
+    String.raw`hybride?[snr]?\s+(?:arbeit|work|modell|model)`,
+  ].join("|"),
+  "i",
+);
+
+// Home office ruled out: on-site.
+const NO_REMOTE = new RegExp(
+  [
+    String.raw`(?:remote|home[\s-]?office|mobile?s?\s+arbeiten|mobile office)[\w-]*[^.\n]{0,40}?\bnicht\s+(?:m(?:ö|oe)glich|vorgesehen|angeboten)`,
+    String.raw`\bkein(?:e|en)?\s+(?:remote|home[\s-]?office|mobile?s?\s+arbeiten)`,
+    String.raw`on[\s-]?site (?:position|role|only|job)|not (?:a )?remote|no remote|ausschlie(?:ss|ß)lich vor ort|100\s?%\s+vor ort`,
+  ].join("|"),
+  "i",
+);
+
+/**
+ * "remote" from the model only counts when the posting itself says so, and
+ * not when it also names fixed office days (then hybrid) or rules home office
+ * out (then on-site). Hybrid and on-site from the model are kept as they are.
+ */
 export function confirmRemote(
   arrangement: WorkArrangement | null,
   postingText: string,
 ): WorkArrangement | null {
   if (arrangement !== "remote") return arrangement;
+  if (OFFICE_PRESENCE.test(postingText)) return "hybrid";
+  if (NO_REMOTE.test(postingText)) return "onsite";
   return REMOTE_EVIDENCE.test(postingText) ? "remote" : null;
 }
 

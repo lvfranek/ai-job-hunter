@@ -622,23 +622,42 @@ describe("verifyRequirements — the model's claims need proof", () => {
   });
 });
 
-describe("confirmRemote — remote only when the posting says so", () => {
+describe("confirmRemote — remote unless the posting names office presence", () => {
   it.each([
     ["Frontend Developer (100% remote)", "remote"],
     ["Wir arbeiten komplett remote.", "remote"],
     ["Ortsunabhängiges Arbeiten in ganz Deutschland", "remote"],
     ["100% Home-Office möglich", "remote"],
     ["Du arbeitest komplett aus dem Homeoffice", "remote"],
-    ["Home-Office möglich, Büro in Bremen", null],
-    ["Mobiles Arbeiten nach Absprache", null],
+    // A general home-office mention is enough.
+    ["Flexible Arbeitszeiten und Homeoffice", "remote"],
+    ["Standort Essen (Homeoffice Option)", "remote"],
+    ["Home-Office möglich, Büro in Bremen", "remote"],
+    ["Mobiles Arbeiten nach Absprache", "remote"],
+    ["Benefits: 30 Tage Urlaub, Homeoffice, Jobrad", "remote"],
+    ["We offer remote work options.", "remote"],
+    // Fixed office presence makes it hybrid.
+    ["3 Tage Office, 2 Tage Homeoffice", "hybrid"],
+    ["bis zu 50 % Mobile Office", "hybrid"],
+    ["1-2 Tage pro Woche ins Büro, sonst Homeoffice", "hybrid"],
+    ["Homeoffice möglich, aber regelmäßig vor Ort im Team", "hybrid"],
+    ["Wir sind Office-first, Homeoffice nach Absprache", "hybrid"],
+    ["Eine reine Remote-Tätigkeit ist nicht vorgesehen.", "hybrid"],
+    ["Hybrid role, mostly on-site in Berlin", "hybrid"],
+    // Home office ruled out.
+    ["Remote-Arbeit nicht möglich", "onsite"],
+    ["Remote-Arbeit oder mobiles Arbeiten nicht möglich", "onsite"],
+    ["This is an on-site position in Munich.", "onsite"],
+    // Nothing about home office at all.
     ["Moderne Büros in der Innenstadt", null],
   ])("%s → %s", (text, expected) => {
     expect(confirmRemote("remote", text)).toBe(expected);
   });
 
-  it("never touches hybrid or on-site", () => {
+  it("never touches hybrid, on-site or unknown", () => {
     expect(confirmRemote("hybrid", "")).toBe("hybrid");
     expect(confirmRemote("onsite", "remote")).toBe("onsite");
+    expect(confirmRemote(null, "Homeoffice möglich")).toBeNull();
   });
 });
 

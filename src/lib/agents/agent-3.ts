@@ -11,7 +11,7 @@ import {
   verifyRequirements,
 } from "@/lib/scoring-rules";
 import type { Home, PlacePoints } from "@/lib/geo/distance";
-import { resolveJobPlaces, type PlaceIndex } from "@/lib/geo/places";
+import { isRemoteLocation, resolveJobPlaces, type PlaceIndex } from "@/lib/geo/places";
 import type { DbJob, Preferences } from "@/lib/types";
 
 export type { ChanceResult } from "@/lib/scoring-rules";
@@ -34,7 +34,7 @@ const MAX_DESCRIPTION_CHARS = 3000;
 // stored postings were longer than the cut). So the sentences around these
 // words survive the cut.
 const WORKPLACE_PATTERN =
-  /home.?office|remote|hybrid|mobile?s?\s+(?:arbeiten|working)|work(?:ing)?\s+from\s+home|vor ort|on-?site|in[- ]office|office[- ]?(?:tage|days)|präsenz|büro|campus/gi;
+  /home.?office|remote|hybrid|mobile?s?\s+(?:arbeiten|working|office)|work(?:ing)?\s+from\s+home|vor ort|on-?site|in[- ]office|office[- ]?(?:tage|days)|präsenz|büro|campus/gi;
 const WORKPLACE_CONTEXT_CHARS = 120;
 const MAX_WORKPLACE_CHARS = 800;
 
@@ -175,16 +175,18 @@ in the posting.
       them for.
     - "different": tasks unrelated to anything in their profile.
 - work_arrangement: where the work happens, as the posting describes it.
-    - "remote": ONLY when the posting explicitly says the job is fully remote —
-      "100% remote", "full remote", "remote-first", "ortsunabhängig",
-      "komplett aus dem Home-Office", or "Remote" in the title with no office
-      days in the text. A few on-site team events a year still count. Never
-      guess remote: if the posting doesn't say it, it is not "remote".
-    - "hybrid": ANY regular office presence — "2 Tage Home-Office", "3 Tage im
-      Büro", "bis zu 60% mobiles Arbeiten", "Home-Office möglich" without
-      saying it's fully remote. "Mobiles Arbeiten" listed as a benefit is
-      hybrid too.
-    - "onsite": work on site with no home-office option mentioned.
+    - "remote": the posting says the work can be done from home and names
+      no fixed office presence. A general mention is enough: "Homeoffice
+      möglich", "Home-Office-Option", "mobiles Arbeiten möglich", "flexible
+      Arbeitszeiten und Homeoffice", "Home Office" listed as a benefit,
+      "remote work options", "100% remote", "ortsunabhängig". If home office
+      is mentioned but the details are unclear, choose "remote". A few on-site team events a year still count.
+    - "hybrid": ONLY when the posting names a fixed office presence — "3 Tage
+      im Büro", "2 Tage Homeoffice", "bis zu 50 % mobiles Arbeiten", "1-2 Tage
+      pro Woche ins Büro", "regelmäßig vor Ort", "Office-first", "eine reine
+      Remote-Tätigkeit ist nicht vorgesehen", "mostly on-site".
+    - "onsite": home office is ruled out — "Remote-Arbeit oder mobiles
+      Arbeiten nicht möglich", "on-site position".
     - "unknown": the posting says nothing about the workplace.
 - work_locations: the cities or towns this position is worked from, as the
   posting names them ("Hamburg", "Norderstedt"). When the job has office days
@@ -252,6 +254,9 @@ export function toChanceResult(
   const facts = readPostingFacts(entry, job);
   // The model's claims, checked against the profile and the posting itself.
   facts.requirements = verifyRequirements(facts.requirements, candidate);
+  // A board location of "Home Office" or "Remote" says remote even when the
+  // model found nothing in the text; the posting can still overrule it.
+  if (facts.arrangement === null && isRemoteLocation(job.location)) facts.arrangement = "remote";
   facts.arrangement = confirmRemote(
     facts.arrangement,
     [job.title, job.location, job.description].filter(Boolean).join("\n"),

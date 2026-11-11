@@ -168,6 +168,29 @@ describe("toChanceResult", () => {
     expect(out.blocker).toBe("Not clearly remote – the posting never says it's remote");
   });
 
+  it("reads a board location of Home Office as remote, never as a place", () => {
+    const out = toChanceResult(
+      { ...entry, work_arrangement: "unknown" },
+      { ...job, description: "x".repeat(1000), location: "Home Office" },
+      toCandidate({ ...prefs, office_ok: true }, [
+        { label: "Hamburg", points: [[53.55, 9.99]], radiusKm: 10 },
+      ]),
+    );
+    expect(out.work_arrangement).toBe("remote");
+    expect(out.distance_km).toBeNull();
+    expect(out.blocker).toBeNull();
+    expect(out.work_location).toBe("Remote");
+  });
+
+  it("lets the posting overrule a Home Office location", () => {
+    const out = toChanceResult(
+      { ...entry, work_arrangement: "unknown" },
+      { ...job, description: `3 Tage im Büro. ${"x".repeat(1000)}`, location: "Home Office" },
+      toCandidate(prefs),
+    );
+    expect(out.work_arrangement).toBe("hybrid");
+  });
+
   it("names where the job is even without a distance", () => {
     const candidate = toCandidate(prefs);
     const located = toChanceResult(

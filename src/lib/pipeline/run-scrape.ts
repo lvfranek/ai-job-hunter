@@ -13,6 +13,7 @@ import {
   buildArbeitsagenturInputs,
   mapArbeitsagenturJob,
   type ApifyRunInput,
+  type PortalSearch,
   type ScrapedJob,
   type ScrapedLocation,
 } from "@/lib/apify";
@@ -23,6 +24,8 @@ import {
   type SearchResult,
 } from "@/lib/pipeline/keyword-tracking";
 import { getCredential } from "@/lib/credentials";
+import { loadSearchPlan } from "@/lib/pipeline/search-plan";
+import { areaLocation, resultsPerSearch } from "@/lib/search-plan";
 import type { DbJob, Settings } from "@/lib/types";
 
 type Portal = "indeed" | "linkedin" | "stepstone" | "xing" | "arbeitsagentur";
@@ -30,7 +33,7 @@ type Portal = "indeed" | "linkedin" | "stepstone" | "xing" | "arbeitsagentur";
 const PORTAL_DEFS: Record<
   Portal,
   {
-    buildInput: (settings: Settings, keyword: string) => ApifyRunInput;
+    buildInput: (settings: Settings, search: PortalSearch) => ApifyRunInput;
     mapJob: (raw: unknown) => ScrapedJob;
   }
 > = {
@@ -43,7 +46,7 @@ const PORTAL_DEFS: Record<
 
 // The portals expect ONE keyword per search — "kw1 OR kw2 OR kw3" returns
 // nothing on most of them. So a scrape fans out to one Apify run per active
-// board × per keyword. This caps how many run at once (25 boards×keywords is
+// board × keyword × search area (see search-plan.ts). This caps how many run at once (25 boards×keywords is
 // realistic) to avoid hammering Apify and stacking 25 concurrent 5-minute polls.
 const SCRAPE_CONCURRENCY = 4;
 
@@ -140,9 +143,12 @@ export async function runScrapePipeline(
   };
 
   try {
-    const [apiKey, portalScrapers] = await Promise.all([
+    const [apiKey, portalScrapers, plan] = await Promise.all([
       getCredential("apify_api_key"),
       buildPortalScrapers(),
+      // Where to search comes from the AI Scoring Preferences, so the scraper
+      // finds exactly what the scorer can accept.
+      loadSearchPlan(supabase),
     ]);
 
     const portals = (Object.keys(portalScrapers) as Portal[]).filter(
@@ -151,8 +157,16 @@ export async function runScrapePipeline(
 
     const keywords = (settings.scraper_search_keywords ?? []).map((k) => k.trim()).filter(Boolean);
 
-    // One task = one board searched for one keyword = one Apify run.
-    const tasks = portals.flatMap((portal) => keywords.map((keyword) => ({ portal, keyword })));
+    // One task = one board searched for one keyword in one area = one Apify run.
+    const resultsPerScan = Number(settings.scraper_results_per_scan) || 0;
+    const tasks = portals.flatMap((portal) =>
+      keywords.flatMap((keyword) =>
+        plan.areas.map((area) => ({
+          portal,
+          search: { keyword, area, limit: resultsPerSearch(area, resultsPerScan) },
+        })),
+      ),
+    );
 
     await heartbeat({ total_runs: tasks.length, completed_runs: 0, total_scraped: 0 });
 
@@ -165,22 +179,21 @@ export async function runScrapePipeline(
     const taskErrors: Record<string, string> = {};
     // Per-search results for the Statistics page — which keyword found what.
     const searchResults: SearchResult[] = [];
-    const resultCap = Number(settings.scraper_results_per_scan) || null;
-
-    await runWithConcurrency(tasks, SCRAPE_CONCURRENCY, async ({ portal, keyword }) => {
+    await runWithConcurrency(tasks, SCRAPE_CONCURRENCY, async ({ portal, search }) => {
       const { actorId, buildInput, mapJob } = portalScrapers[portal];
+      const { keyword } = search;
+      const location = areaLocation(search.area);
+      const resultCap = search.limit || null;
+      const label = location ? `${portal}:${keyword} @ ${location}` : `${portal}:${keyword}`;
       try {
-        const apifyRunId = await triggerApifyScraper(
-          actorId,
-          buildInput(settings, keyword),
-          apiKey,
-        );
+        const apifyRunId = await triggerApifyScraper(actorId, buildInput(settings, search), apiKey);
         const rawJobs = await pollApifyRun(apifyRunId, apiKey);
         const mapped = rawJobs.map(mapJob);
         scraped.push(...mapped);
         searchResults.push({
           portal,
           keyword,
+          location,
           urls: mapped.map((job) => job.url),
           resultCap,
           error: null,
@@ -188,9 +201,16 @@ export async function runScrapePipeline(
         portalCounts[portal] = (portalCounts[portal] ?? 0) + mapped.length;
         totalFound += mapped.length;
       } catch (reason) {
-        taskErrors[`${portal}:${keyword}`] = String(reason);
-        searchResults.push({ portal, keyword, urls: [], resultCap, error: String(reason) });
-        console.error(`Scraping ${portal} for "${keyword}" failed:`, reason);
+        taskErrors[label] = String(reason);
+        searchResults.push({
+          portal,
+          keyword,
+          location,
+          urls: [],
+          resultCap,
+          error: String(reason),
+        });
+        console.error(`Scraping ${label} failed:`, reason);
       } finally {
         // Count the task as done either way so "board N of M" always completes.
         completed += 1;

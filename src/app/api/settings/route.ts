@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
+import { loadSearchPlan } from "@/lib/pipeline/search-plan";
 
 export async function GET() {
   const supabase = getSupabaseServerClient();
@@ -14,10 +15,8 @@ export async function GET() {
 
     const defaultSettings = {
       scraper_search_keywords: [],
-      scraper_location: "",
       scraper_max_posting_age_days: 30,
       scraper_results_per_scan: 25,
-      remote_only: false,
       portal_toggles: {
         indeed: true,
         linkedin: true,
@@ -29,9 +28,11 @@ export async function GET() {
     };
 
     // Derived, not stored — never expose the webhook URL itself to the client.
+    // Where to search is set on the preferences page; shown here read-only.
     return NextResponse.json({
       ...(data || defaultSettings),
       webhook_configured: Boolean(process.env.NOTIFICATION_WEBHOOK_URL),
+      search_plan: await loadSearchPlan(supabase),
     });
   } catch (error) {
     const message =
@@ -43,7 +44,11 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const supabase = getSupabaseServerClient();
   try {
+    // Derived fields from GET, and columns that no longer exist, never reach the table.
     const body = await request.json();
+    for (const key of ["webhook_configured", "search_plan", "remote_only", "scraper_location"]) {
+      delete body[key];
+    }
     const { data, error } = await supabase
       .from("settings")
       .upsert({ ...body, user_id: CURRENT_USER_ID }, { onConflict: "user_id" })

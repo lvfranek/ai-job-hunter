@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/Checkbox";
 import {
@@ -17,6 +18,7 @@ import { Select } from "@/components/controls";
 import { chanceLabels } from "@/lib/chance";
 import { useDirtyGuard } from "@/lib/unsaved-changes";
 import { KEYWORD_SLOTS } from "@/lib/keyword-stats";
+import { describeSearchPlan, resultsPerSearch, type SearchPlan } from "@/lib/search-plan";
 import type { NotificationChance } from "@/lib/types";
 import { ApiKeysSection } from "./ApiKeysSection";
 
@@ -37,10 +39,8 @@ interface PortalToggles {
 
 interface SettingsForm {
   scraper_search_keywords: string[];
-  scraper_location: string;
   scraper_max_posting_age_days: number;
   scraper_results_per_scan: number;
-  remote_only: boolean;
   portal_toggles: PortalToggles;
   notification_min_chance: NotificationChance;
 }
@@ -55,10 +55,8 @@ const PORTALS: { key: keyof PortalToggles; label: string }[] = [
 
 const DEFAULTS: SettingsForm = {
   scraper_search_keywords: [],
-  scraper_location: "",
   scraper_max_posting_age_days: 30,
   scraper_results_per_scan: 25,
-  remote_only: false,
   portal_toggles: {
     indeed: true,
     linkedin: true,
@@ -77,12 +75,10 @@ function toForm(data: Record<string, unknown>): SettingsForm {
         KEYWORD_SLOTS,
       ),
     ),
-    scraper_location: (data.scraper_location as string) ?? DEFAULTS.scraper_location,
     scraper_max_posting_age_days:
       (data.scraper_max_posting_age_days as number) ?? DEFAULTS.scraper_max_posting_age_days,
     scraper_results_per_scan:
       (data.scraper_results_per_scan as number) ?? DEFAULTS.scraper_results_per_scan,
-    remote_only: (data.remote_only as boolean) ?? DEFAULTS.remote_only,
     portal_toggles: {
       ...DEFAULTS.portal_toggles,
       ...(data.portal_toggles as Partial<PortalToggles>),
@@ -101,6 +97,7 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [apiKeysDirty, setApiKeysDirty] = useState(false);
   const [webhookConfigured, setWebhookConfigured] = useState(false);
+  const [searchPlan, setSearchPlan] = useState<SearchPlan | null>(null);
 
   useDirtyGuard((!loading && JSON.stringify(form) !== savedSnapshot) || apiKeysDirty);
 
@@ -112,6 +109,7 @@ export default function SettingsPage() {
         setForm(next);
         setSavedSnapshot(JSON.stringify(next));
         setWebhookConfigured(Boolean(data.webhook_configured));
+        setSearchPlan((data.search_plan as SearchPlan | undefined) ?? null);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -130,7 +128,6 @@ export default function SettingsPage() {
       .filter(Boolean)
       .slice(0, KEYWORD_SLOTS);
     if (cleanedKeywords.length === 0) return setError("Add at least one search keyword");
-    if (!form.scraper_location.trim()) return setError("Add a scraper location");
     if (form.scraper_max_posting_age_days <= 0)
       return setError("Max posting age must be greater than 0");
     if (form.scraper_results_per_scan <= 0)
@@ -161,8 +158,17 @@ export default function SettingsPage() {
 
   const activeKeywordCount = form.scraper_search_keywords.filter((k) => k.trim()).length;
   const activeBoardCount = Object.values(form.portal_toggles).filter(Boolean).length;
-  const estimatedRuns = activeKeywordCount * activeBoardCount;
-  const estimatedMaxJobs = estimatedRuns * (form.scraper_results_per_scan || 0);
+  // Every keyword × board is searched once per area of the plan (remote across
+  // Germany, each preferred city); city searches fetch fewer results each.
+  const areas = searchPlan?.areas ?? [{ kind: "germany" as const }];
+  const estimatedRuns = activeKeywordCount * activeBoardCount * areas.length;
+  const estimatedMaxJobs =
+    activeKeywordCount *
+    activeBoardCount *
+    areas.reduce(
+      (sum, area) => sum + resultsPerSearch(area, form.scraper_results_per_scan || 0),
+      0,
+    );
 
   const dirty = !loading && JSON.stringify(form) !== savedSnapshot;
 
@@ -225,38 +231,15 @@ export default function SettingsPage() {
               </div>
             </FieldGroup>
 
-            <Field
-              label="Location"
-              htmlFor="settings-location"
-              hint={
-                <p>
-                  Where to search for jobs — still applies with Remote only on, e.g. &quot;remote
-                  jobs based in Germany&quot; rather than remote jobs worldwide
-                </p>
-              }
-            >
-              <input
-                id="settings-location"
-                value={form.scraper_location}
-                onChange={(e) => setForm({ ...form, scraper_location: e.target.value })}
-                placeholder="Hamburg, Germany"
-                className={textInputClass}
-              />
-            </Field>
-
-            <div>
-              <Checkbox
-                label="Remote only"
-                checked={form.remote_only}
-                onChange={() => setForm({ ...form, remote_only: !form.remote_only })}
-              />
-              <p className="mt-1.5 text-[12px] leading-relaxed text-text-faint">
-                Narrows to remote positions, on top of the location above — doesn&apos;t search
-                worldwide. Works on Indeed, LinkedIn, Stepstone, and Arbeitsagentur; on Xing
-                it&apos;s approximated by adding &quot;remote&quot; to the search keywords, since
-                that board has no dedicated remote filter.
+            <Field label="Where">
+              <p className="text-[13px] leading-relaxed text-text-muted">
+                {searchPlan ? describeSearchPlan(searchPlan) : "Loading…"} Change this under{" "}
+                <Link href="/preferences" className="underline underline-offset-2">
+                  AI Scoring Preferences
+                </Link>
+                .
               </p>
-            </div>
+            </Field>
           </SettingsSection>
 
           <SettingsSection
@@ -302,12 +285,13 @@ export default function SettingsPage() {
                   <>
                     <p>
                       Max jobs fetched per keyword, per board, per scan. A scan runs one search for
-                      every keyword × board combination.
+                      every keyword × board × area combination; searches around a city fetch half as
+                      many (at least 5).
                     </p>
                     <p className="text-text-muted">
                       {activeKeywordCount} keyword{activeKeywordCount === 1 ? "" : "s"} ×{" "}
-                      {activeBoardCount} board{activeBoardCount === 1 ? "" : "s"} ×{" "}
-                      {form.scraper_results_per_scan || 0} ={" "}
+                      {activeBoardCount} board{activeBoardCount === 1 ? "" : "s"} × {areas.length}{" "}
+                      area{areas.length === 1 ? "" : "s"} ={" "}
                       <span className="font-medium">
                         up to {estimatedMaxJobs.toLocaleString()} jobs per scan
                       </span>{" "}

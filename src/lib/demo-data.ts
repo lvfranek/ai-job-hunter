@@ -512,10 +512,8 @@ export const demoSettings: Settings = {
     "typescript engineer",
     "full-stack developer",
   ],
-  scraper_location: "Berlin, Germany",
   scraper_max_posting_age_days: 21,
   scraper_results_per_scan: 25,
-  remote_only: false,
   portal_toggles: {
     indeed: true,
     linkedin: true,

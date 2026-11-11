@@ -5,10 +5,12 @@ import { normalizeKeyword } from "@/lib/keyword-stats";
 // found which job, and what every board × keyword search returned. Called by the
 // scrape pipeline after it has stored a run's jobs.
 
-/** One board × keyword search: the job URLs it returned, or why it failed. */
+/** One board × keyword × area search: the job URLs it returned, or why it failed. */
 export interface SearchResult {
   portal: string;
   keyword: string;
+  /** The city the search was limited to; null for all of Germany. */
+  location: string | null;
   urls: string[];
   /** The result limit the search ran with — returned >= cap means there was more. */
   resultCap: number | null;
@@ -27,6 +29,8 @@ export interface ScrapeSearchRow {
   scrape_run_id: string;
   keyword: string;
   portal: string;
+  /** "" for a search across all of Germany (migration 037). */
+  location: string;
   returned: number;
   new_jobs: number;
   result_cap: number | null;
@@ -77,12 +81,14 @@ export function buildTrackingRows({
     }
 
     // Two settings entries can normalize to the same keyword — merge them.
-    const searchKey = `${search.portal}|${keyword}`;
+    const location = search.location ?? "";
+    const searchKey = `${search.portal}|${keyword}|${location}`;
     const prev = searchRows.get(searchKey);
     searchRows.set(searchKey, {
       scrape_run_id: runId,
       keyword,
       portal: search.portal,
+      location,
       returned: (prev?.returned ?? 0) + search.urls.length,
       new_jobs: (prev?.new_jobs ?? 0) + newJobs,
       result_cap: prev?.result_cap ?? search.resultCap,
@@ -110,7 +116,7 @@ export async function saveTrackingRows(
   for (let i = 0; i < rows.searches.length; i += BATCH_SIZE) {
     const { error } = await supabase.from("scrape_searches").upsert(
       rows.searches.slice(i, i + BATCH_SIZE).map((r) => ({ ...r, user_id: CURRENT_USER_ID })),
-      { onConflict: "scrape_run_id,keyword,portal", ignoreDuplicates: true },
+      { onConflict: "scrape_run_id,keyword,portal,location", ignoreDuplicates: true },
     );
     if (error) throw new Error(`Saving scrape_searches failed: ${error.message}`);
   }

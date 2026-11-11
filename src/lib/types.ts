@@ -57,10 +57,8 @@ export interface Settings {
   id: string;
   user_id: string;
   scraper_search_keywords: string[];
-  scraper_location: string;
   scraper_max_posting_age_days: number;
   scraper_results_per_scan: number;
-  remote_only: boolean; // query the scraper for remote-only jobs at the source, where supported
   portal_toggles: Record<string, boolean>;
   notification_min_chance: NotificationChance; // lowest tier that triggers a webhook notification
   created_at: string;

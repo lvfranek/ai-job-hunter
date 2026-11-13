@@ -289,27 +289,12 @@ describe("buildTrackingRows", () => {
         {
           portal: "linkedin",
           keyword: "AI Developer",
-          location: null,
           urls: ["u1", "u2", "u2", "u3"],
           resultCap: 20,
           error: null,
         },
-        {
-          portal: "xing",
-          keyword: "web developer",
-          location: null,
-          urls: ["u4"],
-          resultCap: 20,
-          error: null,
-        },
-        {
-          portal: "indeed",
-          keyword: "ai developer",
-          location: null,
-          urls: [],
-          resultCap: 20,
-          error: "failed",
-        },
+        { portal: "xing", keyword: "web developer", urls: ["u4"], resultCap: 20, error: null },
+        { portal: "indeed", keyword: "ai developer", urls: [], resultCap: 20, error: "failed" },
       ],
       jobIdByUrl: new Map([
         ["u1", "j1"],
@@ -334,35 +319,6 @@ describe("buildTrackingRows", () => {
       }),
       expect.objectContaining({ portal: "xing", returned: 1, new_jobs: 1 }),
       expect.objectContaining({ portal: "indeed", returned: 0, error: "failed" }),
-    ]);
-  });
-
-  it("keeps one search row per city, but one keyword row per job", () => {
-    const search = (location: string | null, urls: string[]) => ({
-      portal: "stepstone",
-      keyword: "AI Developer",
-      location,
-      urls,
-      resultCap: location ? 10 : 20,
-      error: null,
-    });
-    const rows = buildTrackingRows({
-      runId: "run",
-      searches: [search(null, ["u1"]), search("Hamburg", ["u1", "u2"])],
-      jobIdByUrl: new Map([
-        ["u1", "j1"],
-        ["u2", "j2"],
-      ]),
-      newUrls: new Set(["u1", "u2"]),
-      seenAt: "2026-10-05T10:00:00Z",
-    });
-    expect(rows.searches.map((s) => [s.location, s.returned, s.result_cap])).toEqual([
-      ["", 1, 20],
-      ["Hamburg", 2, 10],
-    ]);
-    expect(rows.jobKeywords.map((r) => [r.job_id, r.keyword])).toEqual([
-      ["j1", "ai developer"],
-      ["j2", "ai developer"],
     ]);
   });
 });

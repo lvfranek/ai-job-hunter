@@ -1,5 +1,3 @@
-import type { SearchArea } from "./search-plan";
-import { searchName } from "./search-plan";
 import type { Settings } from "./types";
 import { htmlToMarkdown, markdownFingerprint, normalizeBlockText } from "./text-format";
 
@@ -131,17 +129,6 @@ function scrapedLocation(fields: Partial<Record<keyof ScrapedLocation, unknown>>
   };
 }
 
-/** One search on one board: a keyword, where to look, and how many results to fetch. */
-export interface PortalSearch {
-  keyword: string;
-  area: SearchArea;
-  limit: number;
-}
-
-/** The location text a board is searched with; "Germany" for a nationwide search. */
-const placeOrGermany = (area: SearchArea) =>
-  area.kind === "place" ? searchName(area.place) : "Germany";
-
 // Each actor only offers a handful of fixed "posted within" buckets, not an
 // arbitrary day count. Pick the smallest bucket that still covers the requested
 // window; if the window is looser than every bucket, skip the filter (any time)
@@ -165,20 +152,16 @@ interface IndeedRawJob {
 }
 
 /** Build inputs for the valig/indeed-jobs-scraper Apify actor. */
-// The actor has no radius; a place search uses the city name alone.
-export function buildIndeedInputs(
-  settings: Settings,
-  { keyword, area, limit }: PortalSearch,
-): ApifyRunInput {
+export function buildIndeedInputs(settings: Settings, keyword: string): ApifyRunInput {
   return {
-    // Fixed — this is what keeps results scoped to Germany even when location
-    // below becomes the literal "remote".
+    // Fixed regardless of remote_only — this is what keeps results scoped to
+    // Germany even when location below becomes the literal "remote".
     country: "de",
     title: keyword,
     // The actor accepts the literal string "remote" as a location, filtering at
     // the source instead of scraping everything and discarding on-site jobs after.
-    location: area.kind === "remote" ? "remote" : placeOrGermany(area),
-    limit,
+    location: settings.remote_only ? "remote" : settings.scraper_location || "Germany",
+    limit: settings.scraper_results_per_scan,
     datePosted: pickDateFilter(settings.scraper_max_posting_age_days, [
       [1, "1"],
       [3, "3"],
@@ -219,17 +202,13 @@ interface LinkedinRawJob {
 }
 
 /** Build inputs for the valig/linkedin-jobs-scraper Apify actor. */
-// The actor has no radius; a place search uses the city name alone.
-export function buildLinkedinInputs(
-  settings: Settings,
-  { keyword, area, limit }: PortalSearch,
-): ApifyRunInput {
+export function buildLinkedinInputs(settings: Settings, keyword: string): ApifyRunInput {
   return {
     title: keyword,
-    location: placeOrGermany(area),
+    location: settings.scraper_location || "Germany",
     // "2" = Remote in the actor's own remote-work-option enum.
-    remote: area.kind === "remote" ? ["2"] : undefined,
-    limit,
+    remote: settings.remote_only ? ["2"] : undefined,
+    limit: settings.scraper_results_per_scan,
     datePosted: pickDateFilter(settings.scraper_max_posting_age_days, [
       [1, "r86400"],
       [7, "r604800"],
@@ -267,25 +246,13 @@ interface StepstoneRawJob {
 }
 
 /** Build inputs for the valig/stepstone-jobs-scraper Apify actor. */
-// The actor's own radius choices, in km.
-const STEPSTONE_RADII = [5, 10, 20, 30, 40, 50, 75, 100];
-
-/** The smallest radius that still covers the one asked for, at most 100 km. */
-export function stepstoneRadius(km: number): string {
-  return String(STEPSTONE_RADII.find((r) => r >= km) ?? STEPSTONE_RADII.at(-1));
-}
-
-export function buildStepstoneInputs(
-  settings: Settings,
-  { keyword, area, limit }: PortalSearch,
-): ApifyRunInput {
+export function buildStepstoneInputs(settings: Settings, keyword: string): ApifyRunInput {
   return {
     keywords: keyword,
-    location: placeOrGermany(area),
-    radius: area.kind === "place" ? stepstoneRadius(area.radiusKm) : undefined,
+    location: settings.scraper_location || "Germany",
     // "2" = Fully remote in the actor's own work-from-home-options enum.
-    wfh: area.kind === "remote" ? "2" : undefined,
-    limit,
+    wfh: settings.remote_only ? "2" : undefined,
+    limit: settings.scraper_results_per_scan,
     ag: pickDateFilter(settings.scraper_max_posting_age_days, [
       [1, "age_1"],
       [7, "age_7"],
@@ -346,17 +313,14 @@ interface XingRawJob {
 }
 
 /** Build inputs for the shahidirfan/xing-jobs-scraper Apify actor. */
-// The actor has no radius; a place search uses the city name alone.
-export function buildXingInputs(
-  settings: Settings,
-  { keyword, area, limit }: PortalSearch,
-): ApifyRunInput {
+export function buildXingInputs(settings: Settings, keyword: string): ApifyRunInput {
   return {
     // Xing's actor has no dedicated remote filter — append "remote" to the search
-    // term instead, same as the site's own "remote" job category search.
-    keyword: area.kind === "remote" ? `${keyword} remote` : keyword,
-    location: placeOrGermany(area),
-    results_wanted: limit,
+    // term instead, same as the site's own "remote" job category search. Location
+    // stays as configured — "remote only" narrows work mode, not country.
+    keyword: settings.remote_only ? `${keyword} remote` : keyword,
+    location: settings.scraper_location || "Germany",
+    results_wanted: settings.scraper_results_per_scan,
     date_posted: pickDateFilter(settings.scraper_max_posting_age_days, [
       [1, "LAST_24_HOURS"],
       [7, "LAST_WEEK"],
@@ -404,18 +368,20 @@ interface ArbeitsagenturRawJob {
 
 /** Build inputs for the blackfalcondata/arbeitsagentur-jobs-feed Apify actor. */
 // Unlike the international sites, this actor's location must be an actual German
-// city/region — the country name itself ("Germany") returns zero results. The
-// whole site is Germany-only anyway, so a nationwide search omits it.
-export function buildArbeitsagenturInputs(
-  settings: Settings,
-  { keyword, area, limit }: PortalSearch,
-): ApifyRunInput {
+// city/region — passing the country name itself ("Germany"/"Deutschland", the
+// common default here since every other portal treats that as valid) returns
+// zero results. Since the whole site is Germany-only anyway, just omit it.
+function isCountryLevelLocation(location: string): boolean {
+  return /^(germany|deutschland)$/i.test(location.trim());
+}
+
+export function buildArbeitsagenturInputs(settings: Settings, keyword: string): ApifyRunInput {
+  const location = settings.scraper_location?.trim();
   return {
     query: keyword,
-    location: area.kind === "place" ? searchName(area.place) : undefined,
-    radius: area.kind === "place" ? area.radiusKm : undefined,
-    maxResults: limit,
-    remoteOnly: area.kind === "remote",
+    location: location && !isCountryLevelLocation(location) ? location : undefined,
+    maxResults: settings.scraper_results_per_scan,
+    remoteOnly: settings.remote_only,
     // The actor caps this at 30 days itself; no bucket-mapping needed like the
     // other portals since it takes a raw day count.
     publishedSince: Math.min(settings.scraper_max_posting_age_days, 30),

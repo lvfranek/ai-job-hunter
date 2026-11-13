@@ -4,7 +4,6 @@
 // src/lib/demo-data.ts and runs the local, network-free .docx builder.
 import { NextRequest, NextResponse } from "next/server";
 import { DEMO_SCORED_COOKIE_NAME, DEMO_COOKIE_MAX_AGE } from "@/lib/auth";
-import { searchPlanFor } from "@/lib/pipeline/search-plan";
 import {
   demoJobs,
   demoJobsScored,
@@ -65,12 +64,7 @@ async function handle(request: NextRequest): Promise<NextResponse> {
       case "/preferences":
         return NextResponse.json(demoPreferences);
       case "/settings":
-        return NextResponse.json({
-          ...demoSettings,
-          webhook_configured: true,
-          // Local place data only — no network.
-          search_plan: await searchPlanFor(demoPreferences),
-        });
+        return NextResponse.json({ ...demoSettings, webhook_configured: true });
       case "/profile":
         return NextResponse.json(demoProfile);
       case "/credentials":

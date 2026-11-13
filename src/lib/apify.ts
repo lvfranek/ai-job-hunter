@@ -219,18 +219,16 @@ interface LinkedinRawJob {
 }
 
 /** Build inputs for the valig/linkedin-jobs-scraper Apify actor. */
-// The actor has no remote or radius filter. An old `remote` field and LinkedIn's
-// own f_WT=2 URL parameter were both silently ignored (tested Nov 2026: same
-// results with and without), so "remote" scans returned on-site jobs. Adding
-// "remote" to the search term does narrow it — the same approach as Xing. A
-// place search uses the city name alone.
+// The actor has no radius; a place search uses the city name alone.
 export function buildLinkedinInputs(
   settings: Settings,
   { keyword, area, limit }: PortalSearch,
 ): ApifyRunInput {
   return {
-    keywords: area.kind === "remote" ? `${keyword} remote` : keyword,
+    title: keyword,
     location: placeOrGermany(area),
+    // "2" = Remote in the actor's own remote-work-option enum.
+    remote: area.kind === "remote" ? ["2"] : undefined,
     limit,
     datePosted: pickDateFilter(settings.scraper_max_posting_age_days, [
       [1, "r86400"],

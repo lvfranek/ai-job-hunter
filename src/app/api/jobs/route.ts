@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient, CURRENT_USER_ID } from "@/lib/supabase";
+import { getSupabaseServerClient, CURRENT_USER_ID, selectAll } from "@/lib/supabase";
 import { APPLIED_STATUSES, MANUAL_PLATFORM } from "@/lib/mock-data";
 
 export async function GET() {
   const supabase = getSupabaseServerClient();
   try {
-    const { data, error } = await supabase
-      .from("jobs")
-      .select(`*, job_matches (*)`)
-      .eq("user_id", CURRENT_USER_ID)
-      // Manual applications live on /applications only, never in the match feed.
-      .neq("platform", MANUAL_PLATFORM)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
+    // Paged read: a plain select stops at Supabase's 1000-row cap.
+    const data = await selectAll((from, to) =>
+      supabase
+        .from("jobs")
+        .select(`*, job_matches (*)`)
+        .eq("user_id", CURRENT_USER_ID)
+        // Manual applications live on /applications only, never in the match feed.
+        .neq("platform", MANUAL_PLATFORM)
+        .order("created_at", { ascending: false })
+        .order("id") // tie-breaker so pages never overlap or skip rows
+        .range(from, to),
+    );
 
     return NextResponse.json(data);
   } catch (error) {

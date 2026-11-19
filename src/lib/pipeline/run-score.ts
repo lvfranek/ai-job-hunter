@@ -86,21 +86,26 @@ type JobWithMatchInfo = DbJob & {
 export async function getJobsNeedingScoring(
   supabase: ReturnType<typeof getSupabaseServerClient>,
 ): Promise<{ jobs: DbJob[]; preferences: Preferences | null }> {
-  const [{ data: preferences }, { data: jobs, error }] = await Promise.all([
+  const [{ data: preferences }, jobs] = await Promise.all([
     supabase.from("preferences").select("*").eq("user_id", CURRENT_USER_ID).single(),
-    supabase
-      .from("jobs")
-      .select("*, job_matches(id, stale_at, scoring_version)")
-      .eq("user_id", CURRENT_USER_ID)
-      .neq("platform", MANUAL_PLATFORM), // tracked by hand, never AI-scored
+    // Paged read: a plain select stops at Supabase's 1000-row cap.
+    // A failed query must not read as "nothing to score" — that is how a missing
+    // migration (job_matches.scoring_version) silently turned the Adjust score
+    // button into a no-op.
+    selectAll<JobWithMatchInfo>((from, to) =>
+      supabase
+        .from("jobs")
+        .select("*, job_matches(id, stale_at, scoring_version)")
+        .eq("user_id", CURRENT_USER_ID)
+        .neq("platform", MANUAL_PLATFORM) // tracked by hand, never AI-scored
+        .order("id")
+        .range(from, to),
+    ).catch((e: Error) => {
+      throw new Error(`Loading jobs to score failed: ${e.message}`);
+    }),
   ]);
 
-  // A failed query must not read as "nothing to score" — that is how a missing
-  // migration (job_matches.scoring_version) silently turned the Adjust score
-  // button into a no-op.
-  if (error) throw new Error(`Loading jobs to score failed: ${error.message}`);
-
-  const needsScoring = ((jobs ?? []) as JobWithMatchInfo[]).filter(
+  const needsScoring = jobs.filter(
     (job) =>
       job.job_matches === null ||
       job.job_matches.stale_at !== null ||

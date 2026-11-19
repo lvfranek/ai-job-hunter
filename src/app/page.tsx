@@ -65,6 +65,9 @@ function toUiJob(row: JobWithMatch): Job {
 
 export default function DashboardPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  // True only until the first answer arrives — later refreshes keep showing the
+  // current list instead of flashing back to placeholders.
+  const [loading, setLoading] = useState(true);
   const [lastScrapedAt, setLastScrapedAt] = useState<string | null>(null);
   // Bumped by the app-wide scrape/score runner whenever a run brings in new jobs
   // or scores — including runs that finished while you were on another page.
@@ -83,6 +86,10 @@ export default function DashboardPage() {
       .then((res) => res.json())
       .then((data) => {
         if (!ignore) setJobs(Array.isArray(data) ? data.map(toUiJob) : []);
+      })
+      .catch((error) => console.error("Loading jobs failed:", error))
+      .finally(() => {
+        if (!ignore) setLoading(false);
       });
     fetch("/api/scrape/status")
       .then((res) => (res.ok ? res.json() : null))
@@ -149,13 +156,23 @@ export default function DashboardPage() {
             className="w-full rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-3 py-3 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)] sm:w-44 sm:px-5 sm:py-4"
           >
             <p className="text-[12px] text-text-faint sm:text-[13px]">{tile.label}</p>
-            <p className={`mt-1 text-2xl font-semibold tabular-nums ${tile.color}`}>{tile.value}</p>
+            {loading ? (
+              <div
+                aria-hidden
+                className="mt-2 mb-1 h-6 w-12 animate-pulse rounded-md bg-[#D7E4ED]"
+              />
+            ) : (
+              <p className={`mt-1 text-2xl font-semibold tabular-nums ${tile.color}`}>
+                {tile.value}
+              </p>
+            )}
           </div>
         ))}
       </div>
 
       <JobResults
         jobs={jobs}
+        loading={loading}
         lastScraped={formatLastScraped(lastScrapedAt)}
         onRefresh={fetchJobs}
         onStatusChange={updateJobStatus}

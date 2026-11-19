@@ -51,11 +51,14 @@ type ToastState = { message: string; action?: { label: string; onClick: () => vo
 
 export function JobResults({
   jobs,
+  loading = false,
   lastScraped,
   onRefresh,
   onStatusChange,
 }: {
   jobs: Job[];
+  /** First load still running: show placeholder rows, not the empty state. */
+  loading?: boolean;
   lastScraped: string;
   onRefresh: () => void;
   onStatusChange: (jobId: string, status: JobStatus | null) => void;
@@ -468,7 +471,9 @@ export function JobResults({
         </div>
       )}
 
-      {jobs.length === 0 ? (
+      {loading && jobs.length === 0 ? (
+        <JobListSkeleton />
+      ) : jobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
           <Briefcase size={28} weight="regular" className="text-[#B8C4D1]" />
           <p className="text-[14px] text-text-muted">Click &quot;Scrape Now&quot; to find jobs.</p>
@@ -547,6 +552,35 @@ export function JobResults({
         }}
         onCancel={() => setScrapeConfirm(null)}
       />
+    </div>
+  );
+}
+
+// Placeholder rows shaped like a collapsed JobCard, shown while the first load runs.
+function JobListSkeleton() {
+  return (
+    <div role="status" aria-live="polite">
+      <span className="sr-only">Loading jobs…</span>
+      <div aria-hidden className="divide-y divide-[#D7E4ED]">
+        {Array.from({ length: 8 }, (_, i) => (
+          <div
+            key={i}
+            className="flex animate-pulse flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-6"
+          >
+            <div className="flex shrink-0 items-center gap-1.5">
+              <div className="h-8 w-24 rounded-xl bg-[#E3ECF2]" />
+              <div className="h-8 w-8 rounded-xl bg-[#E3ECF2]" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div
+                className="h-4 rounded-md bg-[#E3ECF2]"
+                style={{ width: `${[62, 48, 70, 55, 40, 66, 52, 58][i]}%` }}
+              />
+              <div className="h-3 w-1/3 rounded-md bg-[#EDF3F7]" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

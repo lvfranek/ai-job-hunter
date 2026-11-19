@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Briefcase,
+  CircleNotch,
   Lightning,
   Sparkle,
   Trash,
@@ -472,7 +473,7 @@ export function JobResults({
       )}
 
       {loading && jobs.length === 0 ? (
-        <JobListSkeleton />
+        <JobListLoading />
       ) : jobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
           <Briefcase size={28} weight="regular" className="text-[#B8C4D1]" />
@@ -556,31 +557,17 @@ export function JobResults({
   );
 }
 
-// Placeholder rows shaped like a collapsed JobCard, shown while the first load runs.
-function JobListSkeleton() {
+// Shown while the first load runs, in place of the empty state.
+function JobListLoading() {
   return (
-    <div role="status" aria-live="polite">
-      <span className="sr-only">Loading jobs…</span>
-      <div aria-hidden className="divide-y divide-[#D7E4ED]">
-        {Array.from({ length: 8 }, (_, i) => (
-          <div
-            key={i}
-            className="flex animate-pulse flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-6"
-          >
-            <div className="flex shrink-0 items-center gap-1.5">
-              <div className="h-8 w-24 rounded-xl bg-[#E3ECF2]" />
-              <div className="h-8 w-8 rounded-xl bg-[#E3ECF2]" />
-            </div>
-            <div className="min-w-0 flex-1 space-y-2">
-              <div
-                className="h-4 rounded-md bg-[#E3ECF2]"
-                style={{ width: `${[62, 48, 70, 55, 40, 66, 52, 58][i]}%` }}
-              />
-              <div className="h-3 w-1/3 rounded-md bg-[#EDF3F7]" />
-            </div>
-          </div>
-        ))}
-      </div>
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center"
+    >
+      <CircleNotch size={32} weight="bold" className="animate-spin text-[#1E2A3D]" />
+      <p className="text-[14px] font-medium text-[#1E2A3D]">Loading jobs…</p>
+      <p className="text-[12px] text-text-faint">This can take a few seconds</p>
     </div>
   );
 }

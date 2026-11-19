@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { CircleNotch } from "@phosphor-icons/react";
 import { JobResults } from "@/components/JobResults";
 import { useBackgroundRuns } from "@/lib/background-runs";
 import { coverageOf } from "@/lib/chance";
@@ -157,10 +158,9 @@ export default function DashboardPage() {
           >
             <p className="text-[12px] text-text-faint sm:text-[13px]">{tile.label}</p>
             {loading ? (
-              <div
-                aria-hidden
-                className="mt-2 mb-1 h-6 w-12 animate-pulse rounded-md bg-[#D7E4ED]"
-              />
+              <div aria-hidden className="mt-1 flex h-8 items-center">
+                <CircleNotch size={20} weight="bold" className="animate-spin text-text-faint" />
+              </div>
             ) : (
               <p className={`mt-1 text-2xl font-semibold tabular-nums ${tile.color}`}>
                 {tile.value}

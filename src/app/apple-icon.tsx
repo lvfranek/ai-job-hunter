@@ -12,10 +12,10 @@ export default function AppleIcon() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(to bottom, #ffffff, #F3F9FD)",
+        background: "#2fd472",
       }}
     >
-      <svg width="118" height="118" viewBox="0 0 256 256" fill="#1E2A3D">
+      <svg width="118" height="118" viewBox="0 0 256 256" fill="#04140a">
         <path d="M213.85,125.46l-112,120a8,8,0,0,1-13.69-7l14.66-73.33L45.19,143.49a8,8,0,0,1-3-13l112-120a8,8,0,0,1,13.69,7L153.18,90.9l57.63,21.61a8,8,0,0,1,3,12.95Z" />
       </svg>
     </div>,

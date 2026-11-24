@@ -2,192 +2,72 @@
 
 [![CI](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml/badge.svg)](https://github.com/lvfranek/ai-job-hunter/actions/workflows/ci.yml)
 
-Scrapes job boards (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur), rates your chance at each
-job against your AI Scoring Preferences with an LLM, and generates a tailored cover letter (German
-or English, as a Word file) for any job with one click. An application tracker keeps every
-job you applied to in one list — scraped ones and ones you found elsewhere, added by hand or
-imported from a spreadsheet. Built with Next.js and Supabase.
+Scrapes five German job boards, rates your chance at every job with an LLM and writes a cover
+letter for the ones you like. Works for any profession, not just software.
 
 ![AI Job Hunter](public/aijobhunter.jpeg)
-![AI Job Hunter](public/aijobhunter-2.jpeg)
-
-## Table of Contents
-
-- [Tech Stack](#tech-stack)
-- [Features](#features)
-- [Application Tracker](#application-tracker)
-- [Keyword Statistics](#keyword-statistics)
-- [Live Demo](#live-demo)
-- [Installation](#️-installation)
-- [Environment Variables](#environment-variables)
-- [Available Scripts](#available-scripts)
-- [Tests](#tests)
-- [Deployment](#deployment)
-- [Automation (optional)](#automation-optional)
-- [Security Considerations](#security-considerations)
-- [Limitations](#limitations)
-- [Learn More](#learn-more)
-- [Data Sources](#data-sources)
-- [License](#license)
 
 ## Tech Stack
 
-| Area      | Choice                                                                |
-| --------- | --------------------------------------------------------------------- |
-| Framework | Next.js 16 (App Router)                                               |
-| UI        | React 19                                                              |
-| Language  | TypeScript                                                            |
-| Styling   | Tailwind CSS v4                                                       |
-| Database  | [Supabase](https://supabase.com) (Postgres + RLS)                     |
-| Scraping  | [Apify](https://apify.com) job-board actors                           |
-| AI        | [OpenRouter](https://openrouter.ai) — chance scoring, cover letters   |
-| Documents | `pdf-parse` / `mammoth` (CV upload), `docx` (cover letter export)     |
-| Places    | Bundled [GeoNames](https://www.geonames.org) postcode data (DE/AT/CH) |
-| Testing   | Vitest                                                                |
-| Icons     | Phosphor Icons                                                        |
-| Hosting   | Vercel                                                                |
+| Area     | Choice                                                          |
+| -------- | --------------------------------------------------------------- |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4                |
+| Database | Supabase (Postgres, RLS)                                        |
+| Scraping | Apify (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur)       |
+| AI       | OpenRouter, `qwen3-next-80b-a3b-instruct`                       |
+| Quality  | Vitest (234 tests), GitHub Actions, an eval with the real model |
+| Hosting  | Vercel                                                          |
+
+## How Scoring Works
+
+Asked for a score, an LLM gives a different number every run. So here the model decides
+nothing: it only reads the posting and fills in a checklist. Code makes the call.
+
+```mermaid
+flowchart LR
+    A[Job posting] --> B[LLM reads the facts<br/>and checks each must-have]
+    B --> C[Code verifies every<br/>quoted proof]
+    C --> D[Fixed rules: location,<br/>contract, level, years]
+    D --> E[Low / Fair / Good / Very good]
+```
+
+If the model says you know Kubernetes, it has to quote the line in your profile that proves it.
+Code checks that quote word for word, so an invented skill counts as missing.
+
+## Evaluation
+
+30 made-up postings with traps (a working-student job hidden in the text, home office mentioned
+only at the very end), each scored 3 times by the real model.
+
+| Right tier | Same tier in all 3 runs | Cost per job |
+| ---------- | ----------------------- | ------------ |
+| 87 %       | 90 %                    | $0.0003      |
+
+What it found and how it works: [eval/README.md](eval/README.md).
 
 ## Features
 
-- **Multi-board scraping** — Indeed, LinkedIn, Xing, Stepstone and Arbeitsagentur in a single scan.
-- **Chance tiers instead of a score** — every job lands in one of four tiers: Low, Fair, Good or
-  Very good chance. The LLM only reads the posting's facts and checks each must-have against your
-  profile (met / partly / missing); the tier is computed from that checklist in code with fixed
-  rules, so tiers stay stable between runs instead of drifting:
-  - **Key requirements weigh most.** The 2–4 things the role is built around are marked as key;
-    Very good needs every key requirement met and at least 80% of all must-haves, Good allows one
-    key gap when nearly everything else fits. Alternatives ("React or OpenUI5") count as one
-    requirement, and nice-to-haves and soft skills don't count at all.
-  - **Hard blockers make a job Low:** an office outside your radius, a contract form or working
-    time you don't accept, three or more years of experience missing, a senior role below the
-    Senior level, a language you don't speak well enough, or one of your dealbreakers. A missing
-    degree or licence is not a blocker — it counts like any other missing requirement. Smaller
-    gaps cap the tier — one year of experience short means at most Good, two years at most Fair.
-  - Each job card shows its key requirements and other must-haves with "x of y met", and every
-    reason it was held back.
-- **Claims are checked, not trusted** — for every must-have it marks as met, the AI has to quote
-  the words from your profile that prove it; code checks each quote word for word, so an invented
-  skill counts as missing, one from your basics list only as partly met, and a neighbouring tool
-  (Azure proven by "Google Cloud") as partly met. "Remote" only counts when the posting says so.
-- **Job titles don't matter** — a job is judged only by what it asks for and what the work is, so
-  a "Solution Engineer" that is really your kind of work still lands on top.
-- **Preferences for any profession** — what you bring as chips (strong and basics: tools,
-  experience, degrees, licences), years of experience, your level (Junior, Mid-level or Senior),
-  spoken languages and what you don't want. Nothing is specific to software jobs. _Fill in from a
-  CV_ suggests chips from a CV once; the CV itself is never stored or used for scoring, since most
-  people tailor it per application. Every setting explains itself behind an ⓘ.
-- **Work locations with a radius** — two switches say whether fully remote and office jobs are
-  fine; for office jobs, list the cities you'd commute to, each with its own radius (e.g.
-  Oldenburg + 25 km, Bremen + 25 km). A job inside a radius is fine — hybrid or on site alike; a
-  job outside every radius is Low and says how far it is. Anywhere in the city
-  counts, plus that distance around it as the crow flies. Where a job is comes from the job board,
-  an address in the posting ("93055 Regensburg", "Standort: Bremen") or the city the AI reads; a
-  job whose location can't be found isn't held back, only flagged. Distances come from a bundled
-  place list (Germany, Austria, Switzerland), so no geocoding service is called.
-- **Filters that stay out of the way** — sort order and a single Filters button in the toolbar;
-  the panel (a bottom sheet on phones) filters by chance, workplace (remote, hybrid, on-site) and
-  status, each option showing how many jobs it leaves. Active filters show as removable chips.
-  Choices are remembered per browser.
-- **Hide what you're not interested in** — one click hides a job (with Undo); hidden jobs stay out
-  of the list until you show them again from the Filters panel.
-- **Rescoring on demand** — score only new and outdated jobs or rescore everything, skipping
-  jobs by status (e.g. not interested, applied) or age. Since every job costs AI credits, a run
-  only starts after a second confirmation that unlocks after 3 seconds. Preferences can be
-  written in English or German.
-- **Cover letter generator** — the _Cover letter_ button on any job writes a cover letter for it,
-  in German or English, and downloads it as a Word file (`.docx`). It's built from your Cover
-  Letter Profile: contact details for the letter head, plus a personal story, key achievements and
-  motivation that the AI adapts to each job.
-- **Fill the profile from your CV** — optionally upload your CV (résumé) as PDF, Word or text and
-  your name, contact details and address are filled in. The app doesn't create CVs, and the
-  uploaded file isn't stored.
-- **Application tracker** — one list of everything you applied to, with date, status, link and
-  salary. Jobs you mark as applied on the dashboard land there automatically; jobs found
-  elsewhere can be added by hand or imported from a CSV export of your spreadsheet.
-- **Keyword statistics** — all-time numbers per search keyword (jobs found, share of Good+ chances,
-  applications, overlap with other keywords, why its jobs get blocked, which board works
-  best for it), a verdict per keyword, title-based keyword suggestions, and one-click swapping so
-  you can rotate keywords without losing their history.
-- **Scheduled scans** — `POST /api/cron/scrape` runs a full scrape + score pass, drivable from any
-  scheduler (cron, n8n, GitHub Actions).
-- **Webhook notifications** — get a JSON summary of new high-fit jobs after each run.
-- **Single-user by design** — one email + password login protects the whole deployment, with a read-only
-  demo mode for visitors.
-
-## Application Tracker
-
-The **Applications** page (sidebar → clipboard icon) lists every job you applied to, newest first,
-with a count of applications, interviews and rejections on top. Requires migration
-`029_application_tracking.sql`.
-
-- **From the dashboard** — set a scraped job to _Applied_ (or later) and it appears in the tracker,
-  dated today. Clearing its status takes it out again.
-- **Found elsewhere** — _Add application_ takes a job title, employer, date, status, and an
-  optional link and salary. These jobs are never shown in the match feed, never AI-scored and
-  not counted in the keyword statistics.
-- **CSV import** — export your spreadsheet (Excel: File → Save As → CSV) and pick it under
-  _Import CSV_, or start from the template the dialog offers (_Download CSV template_). You see a preview before anything is saved; rows that can't be read are marked
-  and left out, and rows whose link is already tracked are skipped.
-
-| Statuses       | Meaning                                                                                                    |
-| -------------- | ---------------------------------------------------------------------------------------------------------- |
-| Interested     | Worth applying to — not in the tracker yet                                                                 |
-| Applied        | Application sent                                                                                           |
-| Interview      | Invited to an interview                                                                                    |
-| Offer          | Got an offer                                                                                               |
-| Rejected       | Turned down                                                                                                |
-| Not interested | Hidden from the dashboard list (one click, with Undo; "Show hidden" brings them back) — not in the tracker |
-
-The CSV importer reads both German and English Excel exports:
-
-| Column (any of these headers, case-insensitive)              | Required | Accepted values                                                                     |
-| ------------------------------------------------------------ | -------- | ----------------------------------------------------------------------------------- |
-| `Titel`, `Stelle`, `Position`, `Job`, `Title`                | Yes      | Text                                                                                |
-| `Arbeitgeber`, `Firma`, `Unternehmen`, `Company`, `Employer` | Yes      | Text                                                                                |
-| `Datum`, `Bewerbungsdatum`, `Date`                           | No       | `03.09.2026`, `3.9.26`, `03/09/2026` or `2026-09-03`                                |
-| `Status`                                                     | No       | e.g. _beworben_, _Vorstellungsgespräch_, _Absage_, _Zusage_ — empty means _Applied_ |
-| `Link`, `URL`, `Stellenanzeige`                              | No       | `http(s)://…`                                                                       |
-| `Gehalt`, `Salary`                                           | No       | Free text, e.g. `55–60k`                                                            |
-
-Separators `;` and `,` are both detected, and files saved as plain "CSV" (Windows-1252) keep their
-umlauts. "Remove old posts" on the dashboard never deletes a job you applied to.
-
-## Keyword Statistics
-
-The **Statistics** page (sidebar → chart icon) shows which of your search keywords actually find
-jobs worth applying to, so you can rotate keywords without losing track of the old ones. Every
-scrape records which keyword found which job; removed keywords stay listed as _paused_ with their
-full history. Removing old posts on the dashboard deletes their keyword history with them.
-Requires migration `028_keyword_tracking.sql`.
-
-| Section               | What it shows                                                                                                                                                                                                                                      |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stat tiles            | All-time jobs found, share of Good+ chances, Good+ chances, searches run, keyword slots in use.                                                                                                                                                    |
-| Volume vs. quality    | One dot per keyword: jobs found per search (x) against its share of Good+ chances (y), dot size = Good+ chances. Lines mark your median keyword.                                                                                                   |
-| From found to applied | Funnel from every scraped job down to interviews (applications themselves live in the tracker).                                                                                                                                                    |
-| Keywords              | Per keyword: jobs, new jobs per search, share found by no other keyword, Good+ share, Good+ chances, applications, and a verdict (Strong / Solid / Weak / Redundant / Too new). Rows expand into per-run history, per-board breakdown and overlap. |
-| Keyword × job board   | Which board delivers the good matches for which keyword; flags searches that hit the results limit.                                                                                                                                                |
-| Why jobs fall through | Share of each keyword's jobs blocked by location/remote, skills, seniority, contract type, missing qualifications/languages or your dealbreakers.                                                                                                  |
-| Keywords to try       | Phrases common in the titles of your best matches that no keyword covers yet — swap them in with one click.                                                                                                                                        |
-
-Verdicts compare a keyword's Good+ chances per search with your median keyword (paused ones
-included) and need at least 3 searches; "Redundant" marks the weaker of two keywords that find
-almost the same jobs.
+- **One scan, five boards** — Indeed, LinkedIn, Xing, Stepstone and the Arbeitsagentur.
+- **Chance tiers** — every job gets Low, Fair, Good or Very good, with the reasons on the card.
+- **Work locations** — remote, or the cities you'd commute to, each with its own radius.
+- **Cover letters** — one click writes a German or English letter and downloads it as Word.
+- **CV import** — fills in your skills and contact details from a CV. The file isn't stored.
+- **Application tracker** — every application in one list, added from the dashboard, by hand or from CSV.
+- **Keyword stats** — shows which search keywords actually find jobs worth applying to.
+- **Scheduled scans** — a cron endpoint scrapes and scores, then posts new good matches to a webhook.
 
 ## Live Demo
 
-[ai-job-hunter-rosy.vercel.app](https://ai-job-hunter-rosy.vercel.app/)
-
-The demo runs in guest mode against canned fixtures — you can click through the whole UI, and no
-writes are persisted.
+[ai-job-hunter-rosy.vercel.app](https://ai-job-hunter-rosy.vercel.app/): runs on sample data,
+nothing you do is saved.
 
 ## ⚙️ Installation
 
-**Prerequisites:** Node.js 20.9+ (`.nvmrc` pins the version CI runs), a
-[Supabase](https://supabase.com) project, and — for real scraping and scoring —
-[Apify](https://apify.com) and [OpenRouter](https://openrouter.ai) accounts.
+**Prerequisites:** Node.js 20.9+, a [Supabase](https://supabase.com) project, and
+[Apify](https://apify.com) and [OpenRouter](https://openrouter.ai) accounts for real scraping and
+scoring.
 
-1. **Clone and install**
+1. Clone and install:
 
    ```bash
    git clone https://github.com/lvfranek/ai-job-hunter.git
@@ -195,220 +75,73 @@ writes are persisted.
    npm install
    ```
 
-2. **Create a Supabase project** at [supabase.com](https://supabase.com), then run every file in
-   `supabase/migrations/` against it, in order (via the Supabase SQL editor, or `supabase db push`
-   if you use the Supabase CLI). When you update an existing install, run the new migrations
-   before deploying the new code — it reads the columns they add.
+2. Run every file in `supabase/migrations/` in order (Supabase SQL editor or `supabase db push`).
 
-3. **Copy the env template** and fill in your Supabase project's URL and service role key
-   (Project Settings → API in the Supabase dashboard):
+3. Copy the env file and fill in your Supabase URL, service role key and login email:
 
    ```bash
    cp .env.local.example .env.local
    ```
 
-4. **Set your login and generate the two required app secrets** in `.env.local`:
-   - `AUTH_EMAIL` — the email you log in with (it is not verified or emailed, just compared).
-     Case doesn't matter.
-   - `CREDENTIALS_ENCRYPTION_KEY` — encrypts any API keys you enter later via the Settings page:
-     ```bash
-     openssl rand -hex 32
-     ```
-   - `AUTH_PASSWORD_HASH` — the password that protects your deployment (nobody without it can
-     reach the app):
-     ```bash
-     node -e "const c=require('crypto');const s=c.randomBytes(16).toString('hex');c.scrypt(process.argv[1],s,64,(e,k)=>console.log(s+':'+k.toString('hex')))" "your-password-here"
-     ```
+4. Generate the two secrets and put them in `.env.local`:
 
-5. **Start the app** and log in with your `AUTH_EMAIL` and the password you hashed in step 4:
+   ```bash
+   # CREDENTIALS_ENCRYPTION_KEY
+   openssl rand -hex 32
+   # AUTH_PASSWORD_HASH (your login password)
+   node -e "const c=require('crypto');const s=c.randomBytes(16).toString('hex');c.scrypt(process.argv[1],s,64,(e,k)=>console.log(s+':'+k.toString('hex')))" "your-password"
+   ```
+
+5. Start the app, log in, and add your Apify and OpenRouter keys under Settings → API Keys:
 
    ```bash
    npm run dev
    ```
 
-   Open [http://localhost:3000](http://localhost:3000).
-
-6. **Add your Apify and OpenRouter API keys** via Settings → API Keys in the app itself — no need
-   to touch `.env.local` for these. (You can still set them as env vars instead if you prefer; the
-   Settings UI values take priority when both are set.)
-
 ## Environment Variables
 
-| Variable                     | Description                                                            | Required            |
-| ---------------------------- | ---------------------------------------------------------------------- | ------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`   | Supabase project URL                                                   | Yes                 |
-| `SUPABASE_SERVICE_ROLE_KEY`  | Supabase service role key — server-side only, never expose it          | Yes                 |
-| `AUTH_EMAIL`                 | Email you log in with (see Installation step 4)                        | Yes                 |
-| `AUTH_PASSWORD_HASH`         | `salt:hash` of your app password (see Installation step 4)             | Yes                 |
-| `CREDENTIALS_ENCRYPTION_KEY` | 32-byte hex key encrypting API keys stored in the database             | Yes                 |
-| `OPENROUTER_API_KEY`         | OpenRouter key for match scoring                                       | Or set in Settings  |
-| `APIFY_API_KEY`              | Apify token for the scraper actors                                     | Or set in Settings  |
-| `APIFY_SCRAPER_*`            | Actor id per board (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur) | Or set in Settings  |
-| `CRON_SECRET`                | Bearer token for `POST /api/cron/scrape`                               | Only for automation |
-| `NOTIFICATION_WEBHOOK_URL`   | Receives a JSON summary of new high-fit jobs                           | No                  |
-
-## Available Scripts
-
-| Command             | What it does                                                 |
-| ------------------- | ------------------------------------------------------------ |
-| `npm run dev`       | Start the development server                                 |
-| `npm run build`     | Production build                                             |
-| `npm run start`     | Serve the production build                                   |
-| `npm run lint`      | ESLint                                                       |
-| `npm run typecheck` | TypeScript check without emitting files                      |
-| `npm test`          | Run the Vitest suite                                         |
-| `npm run format`    | Format the repo with Prettier                                |
-| `npm run geo:build` | Rebuild the bundled place data from GeoNames (rarely needed) |
-| `npm run eval`      | Score the 30 test postings with the real model (~3 cents)    |
+| Variable                     | Description                                 | Required           |
+| ---------------------------- | ------------------------------------------- | ------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`   | Supabase project URL                        | Yes                |
+| `SUPABASE_SERVICE_ROLE_KEY`  | Supabase service role key (server only)     | Yes                |
+| `AUTH_EMAIL`                 | Login email                                 | Yes                |
+| `AUTH_PASSWORD_HASH`         | `salt:hash` of your password                | Yes                |
+| `CREDENTIALS_ENCRYPTION_KEY` | Encrypts the API keys saved in Settings     | Yes                |
+| `OPENROUTER_API_KEY`         | OpenRouter key                              | Or in Settings     |
+| `APIFY_API_KEY`              | Apify token                                 | Or in Settings     |
+| `APIFY_SCRAPER_*`            | Apify actor id per job board                | Or in Settings     |
+| `CRON_SECRET`                | Bearer token for `POST /api/cron/scrape`    | For scheduled runs |
+| `NOTIFICATION_WEBHOOK_URL`   | Gets new good matches after a scheduled run | No                 |
 
 ## Tests
 
-Unit tests cover the pure logic that is easiest to get subtly wrong: the HTML-to-Markdown
-conversion for scraped postings (`text-format`), the LLM scoring-response parser and chunking
-(`agents/agent-3`), the chance-tier rules (`scoring-rules`, `chance`), preference validation
-(`preferences`), place parsing and distances (`geo/places`), the job boards' location fields
-(`apify`), the dashboard filters (`job-filters`), the keyword statistics (`keyword-stats`), the
-tracker's CSV import (`csv-import`), the rescoring filters (`rescore`) and `.docx` cover letter
-generation. `scoring-scenarios` runs realistic postings end to end through everything but the
-model — the evidence check, the remote check, the real place data and the rules. They run in CI
-on every push and pull request.
-
 ```bash
-npm test
+npm test       # unit tests: tier rules, parsers, filters, CSV import, …
+npm run eval   # the eval above, with the real model (~3 cents)
 ```
 
-The tests leave the model out. The **evaluation** puts it back in: 30 made-up postings with
-traps, each scored 3 times by the real model, checked for the right tier, the right reason and
-a stable answer. The first run: right tier 87 %, the same tier in all 3 runs for 90 % of the postings.
-Method and findings: [eval/README.md](eval/README.md).
-
-```bash
-npm run eval
-```
+Unit tests, lint, typecheck and build run in CI on every push.
 
 ## Deployment
 
-The reference deployment runs on [Vercel](https://vercel.com), connected directly to this GitHub
-repo — push to your default branch and it redeploys.
-
-Set every variable from `.env.local.example` in **Project Settings → Environment Variables**. Use
-the exact same `AUTH_PASSWORD_HASH` and `CREDENTIALS_ENCRYPTION_KEY` values you generated locally —
-regenerating them on Vercel would lock you out of your own password and make any API keys already
-stored in Supabase undecryptable.
-
-Always serve the app over HTTPS (Vercel and most hosts do this automatically) — the login cookie is
-only meaningful over an encrypted connection.
-
-## Automation (optional)
-
-`POST /api/cron/scrape` runs a full scrape + score pass and waits for it to finish before
-responding — unlike the "Scrape now" button in the UI, which fires in the background. Point any
-scheduler at it: a cron job, [n8n](https://n8n.io), Zapier, a scheduled GitHub Action, whatever
-you already use. The app doesn't depend on a specific one.
-
-1. Generate a secret and set it as `CRON_SECRET` in your env:
-   ```bash
-   openssl rand -hex 32
-   ```
-2. Call the endpoint with it as a bearer token, on whatever schedule you like:
-
-   ```bash
-   curl -X POST https://your-app.vercel.app/api/cron/scrape \
-     -H "Authorization: Bearer $CRON_SECRET"
-   ```
-
-   Response: `{ "runId": "...", "jobsFound": 12, "jobsStored": 9, "jobsScored": 9, "notified": true }`
-
-   Returns 401 if the bearer token is missing or doesn't match `CRON_SECRET`.
-
-### Webhook notifications
-
-Set `NOTIFICATION_WEBHOOK_URL` to have the app POST a summary of newly-scored high-fit jobs after
-each cron run (leave it unset to skip this — the cron endpoint works fine without it). Choose
-"Good chance or better" or "Very good chance only" in Settings → Notifications (default: Good or
-better). Each job is only ever notified once,
-even if it gets rescored later. Any receiver that accepts a JSON POST works — a Slack/Discord
-webhook relay, [webhook.site](https://webhook.site) for testing, your own endpoint, etc.
-
-Payload shape:
-
-```json
-{
-  "event": "new_jobs",
-  "count": 1,
-  "jobs": [
-    {
-      "title": "Senior React Developer",
-      "company": "TechCorp GmbH",
-      "url": "https://...",
-      "platform": "indeed",
-      "chance": "very_good",
-      "chanceLabel": "Very good chance",
-      "reasoning": "Your React and TypeScript work covers the core stack; remote fits.",
-      "postedDate": "2026-08-14"
-    }
-  ]
-}
-```
-
-### Recommended settings for automated scraping
-
-If you point a scheduler at the cron endpoint on a recurring basis (e.g. every 2 hours during work
-hours), these starting values in Settings keep it useful without wasting Apify credits:
-
-| Setting                | Recommended value | Why                                                                                    |
-| ---------------------- | ----------------- | -------------------------------------------------------------------------------------- |
-| Results per scan       | 20                | Covers realistic daily posting volume per portal without wasting Apify credits         |
-| Max posting age (days) | 2                 | Keeps results fresh for time-sensitive applications, avoids re-scraping stale listings |
-| Notify me about        | Very good only    | Only notifies on genuinely strong matches, avoids notification fatigue                 |
-
-Tune these after a few days based on actual `scrape_runs` data (duplicate rate, jobs found vs.
-stored).
+Connect the repo to Vercel and set the same env variables. Reuse the secrets you generated
+locally: new ones lock you out and make saved API keys unreadable.
 
 ## Security Considerations
 
-- **Login gate** — a single email (`AUTH_EMAIL`) plus hashed password (`AUTH_PASSWORD_HASH`,
-  scrypt) protects every page and API route via `src/proxy.ts`. Login attempts are rate limited to
-  10 per 10 minutes per IP. Changing either value invalidates all existing sessions.
-- **Database access** — all queries run server-side with the service role key; the Supabase
-  anon key is deliberately not used anywhere in the app. Row Level Security is enabled on every
-  table, scoped to the single hardcoded app user (`supabase/migrations/015_enable_rls.sql`).
-- **Stored API keys** — the Apify and OpenRouter keys you enter in Settings are encrypted with
-  `CREDENTIALS_ENCRYPTION_KEY` (AES-256-GCM) before they touch the database.
-- **Security headers** — CSP, HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` and
-  `Permissions-Policy` are set in `next.config.ts`.
-- **Cron endpoint** — bypasses the login gate (external schedulers can't hold a login cookie)
-  but requires its own bearer token instead; never expose `CRON_SECRET` in client-side code.
-- **Webhook URL** — `NOTIFICATION_WEBHOOK_URL` has no auth on the receiving end by default; treat
-  the URL itself as a secret, since anyone who has it can see your job matches.
+- One login (scrypt-hashed password, rate limited) protects every page and API route.
+- All database access is server-side, and RLS is on for every table.
+- API keys saved in Settings are encrypted with AES-256-GCM.
+- CSP, HSTS and the other security headers are set in `next.config.ts`.
 
 ## Limitations
 
-- **Single user, one login.** There is no sign-up, no accounts and no multi-tenancy — the RLS
-  policies are pinned to one hardcoded user id rather than `auth.uid()`. Making this multi-user
-  would mean introducing Supabase Auth and rewriting those policies.
-- **Scraping depends on third-party actors.** Job boards change their markup; when an Apify actor
-  breaks, that board silently returns fewer results until the actor is updated.
-- **Scoring costs money and can vary a little.** Each scan sends postings to an LLM. The tier is
-  computed in code from the model's requirement checklist, but the checklist itself can differ
-  slightly between runs, so a job can occasionally move one tier on a rescore.
-
-## Learn More
-
-- [Next.js documentation](https://nextjs.org/docs)
-- [Supabase documentation](https://supabase.com/docs)
-- [Apify documentation](https://docs.apify.com)
-- [OpenRouter documentation](https://openrouter.ai/docs)
-
-## Data Sources
-
-`src/lib/geo/places-dach.json` is built from the [GeoNames](https://www.geonames.org) postal-code
-dumps for Germany, Austria and Switzerland, licensed under
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The data was modified: company and P.O.
-box postcodes were dropped, districts merged into their cities, outlying points removed, and
-places grouped by municipality. `npm run geo:build` (`scripts/build-places.mjs`) rebuilds it.
+- Single user: no sign-up, the RLS policies are pinned to one user id.
+- Scraping depends on third-party Apify actors. When a board changes, its results drop until the
+  actor is fixed.
+- Germany, Austria and Switzerland only (place data and prompts).
 
 ## License
 
-MIT — see [LICENSE](LICENSE). The place data in `src/lib/geo/places-dach.json` is not MIT: it is
-CC BY 4.0, © GeoNames (see [Data Sources](#data-sources)).
+MIT, see [LICENSE](LICENSE). The place data in `src/lib/geo/places-dach.json` comes from
+[GeoNames](https://www.geonames.org) under CC BY 4.0.

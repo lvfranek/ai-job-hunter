@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowSquareOut,
@@ -15,6 +15,7 @@ import {
   MapPin,
   PencilSimpleLine,
   Prohibit,
+  Warning,
   X,
 } from "@phosphor-icons/react/dist/ssr";
 import type { Chance, Requirement, RequirementKind, RequirementStatus } from "@/lib/chance";
@@ -22,6 +23,7 @@ import type { Job, JobMatchDetail, JobStatus } from "@/lib/mock-data";
 import { JOB_STATUSES, jobStatusLabels, platformIconSlugs, platformLabels } from "@/lib/mock-data";
 import { ChanceBadge, ChancePill } from "@/components/ChanceBadge";
 import { coreRequirements } from "@/lib/scoring-rules";
+import { InfoTip } from "@/components/InfoTip";
 import { JobDescription } from "@/components/JobDescription";
 import { RowAction, RowTooltip, rowActionClass, Select } from "@/components/controls";
 
@@ -71,7 +73,18 @@ function RequirementChip({ requirement }: { requirement: Requirement }) {
   );
 }
 
-function ChanceBreakdown({ chance, match }: { chance: Chance; match: JobMatchDetail }) {
+const STALE_NOTE =
+  "This chance was rated with older rules or before you changed your preferences. Use Adjust score to update it.";
+
+function ChanceBreakdown({
+  chance,
+  match,
+  stale,
+}: {
+  chance: Chance;
+  match: JobMatchDetail;
+  stale: boolean;
+}) {
   const { requirements, downgrades, blocker, reasoning } = match;
   // The same split the tier is computed from (scoring-rules.ts): the key
   // requirements weigh most, the rest counts as a share.
@@ -88,6 +101,13 @@ function ChanceBreakdown({ chance, match }: { chance: Chance; match: JobMatchDet
         </div>
         <ChancePill chance={chance} />
       </div>
+
+      {stale && (
+        <p className="mb-2.5 flex items-start gap-1.5 text-[12px] text-amber-700">
+          <Warning size={13} weight="fill" className="mt-0.5 shrink-0 text-amber-400" />
+          {STALE_NOTE}
+        </p>
+      )}
 
       {blocker && (
         <ul className="mb-2.5 flex flex-wrap gap-1.5">
@@ -165,11 +185,53 @@ export const statusTier: Record<JobStatus, { text: string; bg: string; border: s
 };
 
 /**
+ * Text cut off with "…" when its column is too narrow; hovering shows all of it.
+ * The full text only pops up when something was actually cut.
+ */
+function Truncated({
+  text,
+  as: Tag = "span",
+  className = "",
+  wrapperClassName = "",
+}: {
+  text: string;
+  as?: "span" | "h2";
+  className?: string;
+  wrapperClassName?: string;
+}) {
+  const ref = useRef<HTMLElement>(null);
+  const [cut, setCut] = useState(false);
+  return (
+    <span
+      className={`group/cut relative min-w-0 ${wrapperClassName}`}
+      onMouseEnter={() =>
+        setCut(!!ref.current && ref.current.scrollWidth > ref.current.clientWidth)
+      }
+    >
+      <Tag
+        ref={ref as React.RefObject<HTMLHeadingElement>}
+        className={`block truncate ${className}`}
+      >
+        {text}
+      </Tag>
+      {cut && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-full left-0 z-20 mb-1.5 w-max max-w-80 translate-y-0.5 rounded-md border border-border-strong bg-popover px-2 py-1 text-[12px] font-normal whitespace-normal text-text opacity-0 transition-[opacity,translate] duration-150 group-hover/cut:translate-y-0 group-hover/cut:opacity-100"
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
  * The job list's columns on wide screens; the header row in JobResults uses the
  * same template so the two line up.
  */
 export const JOB_ROW_COLUMNS =
-  "xl:grid-cols-[minmax(0,1fr)_6rem_5rem_minmax(0,11rem)_5rem_7.5rem_8rem_7.5rem]";
+  "xl:grid-cols-[minmax(0,1fr)_6.5rem_5rem_minmax(0,8.5rem)_5rem_7.5rem_8rem_7.5rem]";
 
 /** "3/3" key requirements met and "1/2" of the rest, as the breakdown counts them. */
 function mustHaveCounts(requirements: Requirement[]) {
@@ -223,14 +285,31 @@ export function JobCard({
           dimmed ? "bg-slate-100 hover:bg-slate-200" : "hover:bg-surface-2"
         }`}
       >
-        <div className={`flex min-w-0 items-baseline gap-1.5 ${dimClass}`}>
-          <h2 className="truncate text-[14px] font-semibold text-text transition-colors group-hover/row:text-white xl:text-[13px]">
-            {job.title}
-          </h2>
-          <span className="shrink-0 truncate text-text-faint xl:max-w-[45%]">{job.company}</span>
+        {/* Mobile: title on its own line, company below. Desktop: side by side,
+            the title keeping its room and the company shortened first. */}
+        <div className={`flex min-w-0 items-start gap-2 ${dimClass}`}>
+          <div className="flex min-w-0 flex-1 flex-col xl:flex-row xl:items-baseline xl:gap-1.5">
+            <Truncated
+              as="h2"
+              text={job.title}
+              className="text-[14px] font-semibold text-text transition-colors group-hover/row:text-white xl:text-[13px]"
+              wrapperClassName="xl:shrink"
+            />
+            <Truncated
+              text={job.company}
+              className="text-text-faint"
+              wrapperClassName="xl:shrink-[3]"
+            />
+          </div>
           {job.isStale && (
-            <span className="shrink-0 self-center rounded-md border border-amber-300 bg-amber-100 px-1.5 text-[11px] font-medium text-amber-800">
-              Outdated
+            <span className="ml-auto shrink-0 xl:self-center">
+              <InfoTip
+                label="Outdated score"
+                icon={<Warning size={15} weight="fill" />}
+                className="text-amber-400 hover:text-amber-700"
+              >
+                {STALE_NOTE}
+              </InfoTip>
             </span>
           )}
         </div>
@@ -251,7 +330,7 @@ export function JobCard({
             {job.location && !(job.location === "Remote" && job.arrangement === "remote") && (
               <>
                 <MapPin size={12} weight="fill" className="shrink-0 text-text-faint xl:hidden" />
-                <span className="truncate">{job.location}</span>
+                <Truncated text={job.location} />
                 {/* 0 km means it's in one of your cities — the name says enough. */}
                 {job.distanceKm !== null && job.distanceKm > 0 && (
                   <span className="shrink-0 text-text-faint tabular-nums">
@@ -269,7 +348,6 @@ export function JobCard({
               <>
                 <span className="text-text">{counts.key}</span>
                 {counts.other && <span className="text-text-faint"> · {counts.other}</span>}
-                <span className="text-text-faint xl:hidden"> must-haves</span>
               </>
             ) : (
               <span className="text-text-faint">—</span>
@@ -379,7 +457,13 @@ export function JobCard({
                 expanded ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
               }`}
             >
-              {job.chance && job.match && <ChanceBreakdown chance={job.chance} match={job.match} />}
+              {job.chance && job.match && (
+                <ChanceBreakdown
+                  chance={job.chance}
+                  match={job.match}
+                  stale={job.isStale ?? false}
+                />
+              )}
               <JobDescription text={job.description} />
             </div>
           )}

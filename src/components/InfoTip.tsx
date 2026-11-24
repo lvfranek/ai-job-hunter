@@ -13,7 +13,19 @@ const GAP = 8;
  * tap, a tap elsewhere or Escape. Positioned against the viewport, so a card's
  * edge never clips it.
  */
-export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
+export function InfoTip({
+  label,
+  icon = <Info size={16} />,
+  className = "text-text-faint hover:text-text aria-expanded:text-text",
+  children,
+}: {
+  label: string;
+  /** Replaces the ⓘ, e.g. a warning sign. */
+  icon?: ReactNode;
+  /** The trigger's colors. */
+  className?: string;
+  children: ReactNode;
+}) {
   const id = useId();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
@@ -77,14 +89,19 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
           setFocused(false);
           setPinned(false);
         }}
+        // Inside a clickable row, a tap on the tip must not also open the row.
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") e.stopPropagation();
+        }}
         onClick={(e) => {
           e.preventDefault();
+          e.stopPropagation();
           if (pinned) e.currentTarget.blur();
           setPinned(!pinned);
         }}
-        className="inline-flex size-5.5 shrink-0 items-center justify-center rounded-md text-text-faint outline-none transition-colors hover:bg-surface-hover hover:text-text focus-visible:ring-2 focus-visible:ring-black/60 aria-expanded:text-text"
+        className={`inline-flex size-5.5 shrink-0 items-center justify-center rounded-md outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-primary/40 ${className}`}
       >
-        <Info size={16} />
+        {icon}
       </button>
       {open && (
         <span

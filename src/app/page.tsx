@@ -107,14 +107,16 @@ export default function DashboardPage() {
   // what's still in play — hidden jobs are out of the running.
   const activeJobs = jobs.filter((job) => job.status !== "not_interested");
   const tiles = [
-    { label: "Jobs found", value: jobs.length, color: "text-text" },
+    { label: "Jobs found", short: "Jobs found", value: jobs.length, color: "text-text" },
     {
       label: "Very good chance",
+      short: "Very good",
       value: activeJobs.filter((job) => job.chance === "very_good").length,
       color: "text-emerald-700",
     },
     {
       label: "Good chance",
+      short: "Good",
       value: activeJobs.filter((job) => job.chance === "good").length,
       color: "text-sky-700",
     },
@@ -148,10 +150,13 @@ export default function DashboardPage() {
     >
       <h1 className="mb-4 text-xl font-semibold tracking-tight text-text">Job matches</h1>
 
-      <div className="mb-4 grid grid-cols-3 divide-x divide-border rounded-xl border border-border bg-surface sm:flex">
+      <div className="mb-4 grid grid-cols-3 divide-x divide-border rounded-xl border border-border bg-surface">
         {tiles.map((tile) => (
-          <div key={tile.label} className="min-w-0 px-3 py-2.5 sm:w-48 sm:px-4">
-            <p className="truncate text-[12px] text-text-faint">{tile.label}</p>
+          <div key={tile.label} className="min-w-0 px-3 py-2.5 sm:px-5">
+            <p className="truncate text-[12px] text-text-faint">
+              <span className="sm:hidden">{tile.short}</span>
+              <span className="max-sm:hidden">{tile.label}</span>
+            </p>
             {loading ? (
               <div aria-hidden className="mt-0.5 flex h-6 items-center">
                 <CircleNotch size={16} weight="bold" className="animate-spin text-text-faint" />

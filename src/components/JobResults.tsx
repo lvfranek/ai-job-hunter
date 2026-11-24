@@ -255,13 +255,13 @@ export function JobResults({
           ) : needsScoreCount > 0 ? (
             <>
               {/* Shorter label on very narrow phones so it stays on one line. */}
-              <span className="max-[360px]:hidden">Adjust score ({needsScoreCount})</span>
-              <span className="hidden max-[360px]:inline">Adjust ({needsScoreCount})</span>
+              <span className="max-[520px]:hidden">Adjust score ({needsScoreCount})</span>
+              <span className="hidden max-[520px]:inline">Adjust ({needsScoreCount})</span>
             </>
           ) : (
             <>
-              <span className="max-[360px]:hidden">Rescore jobs</span>
-              <span className="hidden max-[360px]:inline">Rescore</span>
+              <span className="max-[520px]:hidden">Rescore jobs</span>
+              <span className="hidden max-[520px]:inline">Rescore</span>
             </>
           )}
         </button>

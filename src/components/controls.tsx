@@ -10,7 +10,7 @@ const control = `h-9 rounded-xl text-[13px] ${controlBase}`;
 // The job list's rows are thin, so their controls are too.
 const controlSmall = `h-7 rounded-lg text-[12px] ${controlBase}`;
 
-const button = `${control} inline-flex shrink-0 items-center justify-center gap-1.5 font-medium active:scale-[0.98]`;
+const button = `${control} inline-flex shrink-0 items-center justify-center gap-1.5 font-medium whitespace-nowrap active:scale-[0.98]`;
 
 const secondaryColors =
   "border border-border-strong bg-surface text-text hover:border-border-hover hover:bg-surface-hover focus-visible:ring-primary/20 disabled:hover:border-border-strong disabled:hover:bg-surface";

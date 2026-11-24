@@ -61,7 +61,7 @@ export function ChanceBadge({ chance }: { chance: Chance | null }) {
   if (chance === null) {
     return (
       <div
-        className="flex h-6 w-24 shrink-0 items-center justify-center rounded-md border border-border bg-surface-2"
+        className="inline-flex h-6 shrink-0 items-center justify-center rounded-md border px-2 border-border bg-surface-2"
         aria-label="Not scored yet"
       >
         <span className="text-[12px] font-medium text-text-faint">Not scored</span>
@@ -71,7 +71,7 @@ export function ChanceBadge({ chance }: { chance: Chance | null }) {
   const style = chanceStyles[chance];
   return (
     <div
-      className={`flex h-6 w-24 shrink-0 items-center gap-1.5 rounded-md border px-2 ${style.bg} ${style.border}`}
+      className={`inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border px-2 ${style.bg} ${style.border}`}
       aria-label={chanceLabels[chance]}
       title={chanceLabels[chance]}
     >

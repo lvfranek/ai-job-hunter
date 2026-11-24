@@ -1,7 +1,7 @@
 {
   "date": "2026-11-24",
   "model": "qwen/qwen3-next-80b-a3b-instruct",
-  "scoringVersion": 11,
+  "scoringVersion": 12,
   "runs": 3,
   "outcomes": [
     {
@@ -32,7 +32,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Next.js",
-            "core": true,
+            "core": false,
             "specific": true
           },
           {
@@ -40,7 +40,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Git",
-            "core": true,
+            "core": false,
             "specific": true
           },
           {
@@ -57,7 +57,7 @@
         "work_location": "Berlin",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, Next.js, and Git skills match perfectly; no experience gap since it's junior level."
+        "reasoning": "Your React, TypeScript, and Next.js skills match the core tasks perfectly; no gap."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000001",
@@ -84,7 +84,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Next.js",
-            "core": true
+            "core": false
           },
           {
             "text": "Git",
@@ -92,7 +92,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Git",
-            "core": true
+            "core": false
           },
           {
             "text": "German C1",
@@ -111,7 +111,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Next.js, and Git skills match perfectly; no experience gap since it's junior level."
+        "reasoning": "Your React, TypeScript, and Next.js skills match the core tasks perfectly; no gap."
       }
     },
     {
@@ -141,7 +141,7 @@
             "text": "Python with Django",
             "kind": "skill",
             "status": "met",
-            "evidence": "Django",
+            "evidence": "Python, Django",
             "core": true,
             "specific": true
           },
@@ -150,7 +150,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Git",
-            "core": true,
+            "core": false,
             "specific": true
           },
           {
@@ -167,7 +167,7 @@
         "work_location": "Bremen",
         "work_arrangement": "hybrid",
         "blocker": null,
-        "reasoning": "Your full-stack React, TypeScript, and Django skills match exactly; no dealbreakers and hybrid work is acceptable."
+        "reasoning": "Your React, TypeScript, and Django skills match exactly; no gap."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000002",
@@ -193,7 +193,7 @@
             "kind": "skill",
             "specific": true,
             "status": "met",
-            "evidence": "Django",
+            "evidence": "Python, Django",
             "core": true
           },
           {
@@ -202,7 +202,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Git",
-            "core": true
+            "core": false
           },
           {
             "text": "German C1",
@@ -221,7 +221,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your full-stack React, TypeScript, and Django skills match exactly; no dealbreakers and hybrid work is acceptable."
+        "reasoning": "Your React, TypeScript, and Django skills match exactly; no gap."
       }
     },
     {
@@ -251,7 +251,7 @@
             "text": "Python with Django",
             "kind": "skill",
             "status": "met",
-            "evidence": "Django",
+            "evidence": "Python, Django",
             "core": true,
             "specific": true
           },
@@ -260,7 +260,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Git",
-            "core": true,
+            "core": false,
             "specific": true
           }
         ],
@@ -269,7 +269,7 @@
         "work_location": "München",
         "work_arrangement": "hybrid",
         "blocker": "Office in München, 566 km away – you want within 25 km of Oldenburg or 25 km of Bremen",
-        "reasoning": "Your React, TypeScript, Django, and Git skills match the core stack; on-site days in Munich are acceptable."
+        "reasoning": "Your React, TypeScript, and Django skills match exactly; no gap."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000003",
@@ -295,7 +295,7 @@
             "kind": "skill",
             "specific": true,
             "status": "met",
-            "evidence": "Django",
+            "evidence": "Python, Django",
             "core": true
           },
           {
@@ -304,7 +304,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Git",
-            "core": true
+            "core": false
           }
         ],
         "required_years": 2,
@@ -315,7 +315,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Django, and Git skills match the core stack; on-site days in Munich are acceptable."
+        "reasoning": "Your React, TypeScript, and Django skills match exactly; no gap."
       }
     },
     {
@@ -342,7 +342,7 @@
             "specific": true
           },
           {
-            "text": "Mentoring junior developers",
+            "text": "Mentoring juniors",
             "kind": "skill",
             "status": "missing",
             "evidence": null,
@@ -350,7 +350,7 @@
             "specific": false
           },
           {
-            "text": "Architecture decisions for large applications",
+            "text": "Architecture decisions",
             "kind": "skill",
             "status": "missing",
             "evidence": null,
@@ -363,7 +363,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": "Senior role – your level is Junior",
-        "reasoning": "Your React and TypeScript skills match, but mentoring and architecture experience are missing and required for senior role."
+        "reasoning": "Your React and TypeScript skills match; mentoring and architecture experience are missing."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000004",
@@ -385,7 +385,7 @@
             "core": true
           },
           {
-            "text": "Mentoring junior developers",
+            "text": "Mentoring juniors",
             "kind": "skill",
             "specific": false,
             "status": "missing",
@@ -393,7 +393,7 @@
             "core": true
           },
           {
-            "text": "Architecture decisions for large applications",
+            "text": "Architecture decisions",
             "kind": "skill",
             "specific": false,
             "status": "missing",
@@ -409,7 +409,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React and TypeScript skills match, but mentoring and architecture experience are missing and required for senior role."
+        "reasoning": "Your React and TypeScript skills match; mentoring and architecture experience are missing."
       }
     },
     {
@@ -440,7 +440,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Next.js",
-            "core": true,
+            "core": false,
             "specific": true
           },
           {
@@ -448,7 +448,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Git",
-            "core": true,
+            "core": false,
             "specific": true
           }
         ],
@@ -484,7 +484,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Next.js",
-            "core": true
+            "core": false
           },
           {
             "text": "Git",
@@ -492,7 +492,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Git",
-            "core": true
+            "core": false
           }
         ],
         "required_years": 5,
@@ -511,7 +511,7 @@
       "run": 1,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000006",
-        "chance": "low",
+        "chance": "good",
         "requirements": [
           {
             "text": "React",
@@ -546,12 +546,12 @@
             "specific": true
           }
         ],
-        "downgrades": [],
+        "downgrades": ["Asks 3 years, you have 2 years – at most Good"],
         "distance_km": null,
         "work_location": "Remote",
         "work_arrangement": "remote",
-        "blocker": "Senior role – your level is Junior",
-        "reasoning": "Your React, TypeScript, Next.js and Git match perfectly; you lack the required 3 years of experience."
+        "blocker": null,
+        "reasoning": "Your React, TypeScript, Next.js, and Git skills match perfectly; you lack the required 3 years of experience."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000006",
@@ -587,25 +587,17 @@
             "status": "met",
             "evidence": "Git",
             "core": true
-          },
-          {
-            "text": "3 years",
-            "kind": "skill",
-            "specific": false,
-            "status": "missing",
-            "evidence": null,
-            "core": false
           }
         ],
         "required_years": 3,
-        "posting_level": "senior",
+        "posting_level": "mid",
         "task_fit": "same",
         "work_arrangement": "remote",
         "work_locations": [],
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Next.js and Git match perfectly; you lack the required 3 years of experience."
+        "reasoning": "Your React, TypeScript, Next.js, and Git skills match perfectly; you lack the required 3 years of experience."
       }
     },
     {
@@ -630,22 +622,14 @@
             "evidence": "TypeScript",
             "core": true,
             "specific": true
-          },
-          {
-            "text": "Hochschule in Deutschland",
-            "kind": "qualification",
-            "status": "missing",
-            "evidence": null,
-            "core": false,
-            "specific": true
           }
         ],
-        "downgrades": [],
+        "downgrades": ["Posting names few concrete requirements – at most Good"],
         "distance_km": null,
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": "Working student position – not a contract form you accept",
-        "reasoning": "Your React and TypeScript fit the tasks; you are not enrolled in a German university."
+        "reasoning": "Your React and TypeScript skills fit the role; you have more experience than expected for a Werkstudent position."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000007",
@@ -665,17 +649,9 @@
             "status": "partial",
             "evidence": "TypeScript",
             "core": true
-          },
-          {
-            "text": "Hochschule in Deutschland",
-            "kind": "qualification",
-            "specific": true,
-            "status": "missing",
-            "evidence": null,
-            "core": false
           }
         ],
-        "required_years": 1,
+        "required_years": null,
         "posting_level": "junior",
         "task_fit": "same",
         "work_arrangement": "remote",
@@ -683,7 +659,7 @@
         "contract_form": "werkstudent",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your React and TypeScript fit the tasks; you are not enrolled in a German university."
+        "reasoning": "Your React and TypeScript skills fit the role; you have more experience than expected for a Werkstudent position."
       }
     },
     {
@@ -723,7 +699,7 @@
         "work_location": "Oldenburg",
         "work_arrangement": "hybrid",
         "blocker": null,
-        "reasoning": "Your React, TypeScript and Git match the core tasks; you have sufficient experience for this junior role."
+        "reasoning": "Your React and TypeScript skills match the core tasks; you have more experience than the 'erste praktische Erfahrung' required."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000008",
@@ -753,7 +729,7 @@
             "core": true
           }
         ],
-        "required_years": 1,
+        "required_years": null,
         "posting_level": "junior",
         "task_fit": "same",
         "work_arrangement": "hybrid",
@@ -761,7 +737,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript and Git match the core tasks; you have sufficient experience for this junior role."
+        "reasoning": "Your React and TypeScript skills match the core tasks; you have more experience than the 'erste praktische Erfahrung' required."
       }
     },
     {
@@ -769,7 +745,7 @@
       "run": 1,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000009",
-        "chance": "low",
+        "chance": "good",
         "requirements": [
           {
             "text": "React",
@@ -788,12 +764,12 @@
             "specific": true
           },
           {
-            "text": "REST-APIs",
+            "text": "Anbindung von REST-APIs",
             "kind": "skill",
-            "status": "met",
-            "evidence": "Supabase",
+            "status": "missing",
+            "evidence": null,
             "core": true,
-            "specific": false
+            "specific": true
           },
           {
             "text": "Git",
@@ -804,20 +780,20 @@
             "specific": true
           },
           {
-            "text": "German C1",
+            "text": "Deutsch C1",
             "kind": "language",
             "status": "met",
-            "evidence": "Deutsch Muttersprache",
+            "evidence": "Deutsch: Muttersprache C2",
             "core": false,
             "specific": false
           }
         ],
-        "downgrades": [],
-        "distance_km": 75,
+        "downgrades": ["Tasks only partly match your experience – at most Good"],
+        "distance_km": null,
         "work_location": "Hamburg",
-        "work_arrangement": "hybrid",
-        "blocker": "Office in Hamburg, 75 km away – you want within 25 km of Oldenburg or 25 km of Bremen",
-        "reasoning": "Your React, TypeScript, Supabase (as REST-API experience) and German match perfectly; no gap exceeds your profile."
+        "work_arrangement": "remote",
+        "blocker": null,
+        "reasoning": "Your React and TypeScript skills are strong; you lack direct experience with REST-API integration."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000009",
@@ -839,11 +815,11 @@
             "core": true
           },
           {
-            "text": "REST-APIs",
+            "text": "Anbindung von REST-APIs",
             "kind": "skill",
-            "specific": false,
-            "status": "met",
-            "evidence": "Supabase",
+            "specific": true,
+            "status": "missing",
+            "evidence": null,
             "core": true
           },
           {
@@ -855,23 +831,23 @@
             "core": true
           },
           {
-            "text": "German C1",
+            "text": "Deutsch C1",
             "kind": "language",
             "specific": false,
             "status": "met",
-            "evidence": "Deutsch Muttersprache",
+            "evidence": "Deutsch: Muttersprache C2",
             "core": false
           }
         ],
         "required_years": 2,
         "posting_level": "mid",
-        "task_fit": "same",
+        "task_fit": "adjacent",
         "work_arrangement": "hybrid",
         "work_locations": ["Hamburg"],
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Supabase (as REST-API experience) and German match perfectly; no gap exceeds your profile."
+        "reasoning": "Your React and TypeScript skills are strong; you lack direct experience with REST-API integration."
       }
     },
     {
@@ -879,7 +855,7 @@
       "run": 1,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000010",
-        "chance": "very_good",
+        "chance": "good",
         "requirements": [
           {
             "text": "Vue.js or React",
@@ -898,12 +874,12 @@
             "specific": true
           },
           {
-            "text": "REST-APIs",
+            "text": "Anbindung von REST-APIs",
             "kind": "skill",
-            "status": "met",
-            "evidence": "Supabase",
+            "status": "missing",
+            "evidence": null,
             "core": true,
-            "specific": false
+            "specific": true
           },
           {
             "text": "Git",
@@ -914,12 +890,12 @@
             "specific": true
           }
         ],
-        "downgrades": [],
+        "downgrades": ["Tasks only partly match your experience – at most Good"],
         "distance_km": null,
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, Supabase and Git fully match the requirements; you meet all core tasks remotely."
+        "reasoning": "Your React and TypeScript skills match; you lack documented experience with REST-API integration."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000010",
@@ -941,11 +917,11 @@
             "core": true
           },
           {
-            "text": "REST-APIs",
+            "text": "Anbindung von REST-APIs",
             "kind": "skill",
-            "specific": false,
-            "status": "met",
-            "evidence": "Supabase",
+            "specific": true,
+            "status": "missing",
+            "evidence": null,
             "core": true
           },
           {
@@ -959,13 +935,13 @@
         ],
         "required_years": 2,
         "posting_level": "mid",
-        "task_fit": "same",
+        "task_fit": "adjacent",
         "work_arrangement": "remote",
         "work_locations": [],
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Supabase and Git fully match the requirements; you meet all core tasks remotely."
+        "reasoning": "Your React and TypeScript skills match; you lack documented experience with REST-API integration."
       }
     },
     {
@@ -992,12 +968,12 @@
             "specific": true
           },
           {
-            "text": "SQL",
+            "text": "SQL and relational databases",
             "kind": "skill",
             "status": "missing",
             "evidence": null,
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "Docker",
@@ -1021,7 +997,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "You have Docker and Git but lack Java and Spring Boot; your frontend stack doesn't match the Java backend focus."
+        "reasoning": "You have Docker and Git but no Java or Spring Boot experience; backend Java development is unrelated to your stack."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000011",
@@ -1043,9 +1019,9 @@
             "core": true
           },
           {
-            "text": "SQL",
+            "text": "SQL and relational databases",
             "kind": "skill",
-            "specific": true,
+            "specific": false,
             "status": "missing",
             "evidence": null,
             "core": true
@@ -1054,7 +1030,7 @@
             "text": "Docker",
             "kind": "skill",
             "specific": true,
-            "status": "partial",
+            "status": "met",
             "evidence": "Docker",
             "core": false
           },
@@ -1075,7 +1051,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "You have Docker and Git but lack Java and Spring Boot; your frontend stack doesn't match the Java backend focus."
+        "reasoning": "You have Docker and Git but no Java or Spring Boot experience; backend Java development is unrelated to your stack."
       }
     },
     {
@@ -1086,18 +1062,10 @@
         "chance": "very_good",
         "requirements": [
           {
-            "text": "React",
+            "text": "React and TypeScript",
             "kind": "skill",
             "status": "met",
-            "evidence": "React",
-            "core": true,
-            "specific": true
-          },
-          {
-            "text": "TypeScript",
-            "kind": "skill",
-            "status": "met",
-            "evidence": "TypeScript",
+            "evidence": "React, Next.js, TypeScript",
             "core": true,
             "specific": true
           },
@@ -1110,10 +1078,10 @@
             "specific": true
           },
           {
-            "text": "English",
+            "text": "Fluent English",
             "kind": "language",
             "status": "met",
-            "evidence": "Englisch Verhandlungssicher",
+            "evidence": "Englisch Verhandlungssicher C1",
             "core": false,
             "specific": false
           }
@@ -1123,25 +1091,17 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React and TypeScript match perfectly; your English meets the fluency requirement."
+        "reasoning": "Your React and TypeScript skills match perfectly; you meet all must-haves with no gap."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000012",
         "requirements": [
           {
-            "text": "React",
+            "text": "React and TypeScript",
             "kind": "skill",
             "specific": true,
             "status": "met",
-            "evidence": "React",
-            "core": true
-          },
-          {
-            "text": "TypeScript",
-            "kind": "skill",
-            "specific": true,
-            "status": "met",
-            "evidence": "TypeScript",
+            "evidence": "React, Next.js, TypeScript",
             "core": true
           },
           {
@@ -1153,11 +1113,11 @@
             "core": false
           },
           {
-            "text": "English",
+            "text": "Fluent English",
             "kind": "language",
             "specific": false,
             "status": "met",
-            "evidence": "Englisch Verhandlungssicher",
+            "evidence": "Englisch Verhandlungssicher C1",
             "core": false
           }
         ],
@@ -1169,7 +1129,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React and TypeScript match perfectly; your English meets the fluency requirement."
+        "reasoning": "Your React and TypeScript skills match perfectly; you meet all must-haves with no gap."
       }
     },
     {
@@ -1180,18 +1140,10 @@
         "chance": "low",
         "requirements": [
           {
-            "text": "React",
+            "text": "React and TypeScript",
             "kind": "skill",
             "status": "met",
-            "evidence": "React",
-            "core": true,
-            "specific": true
-          },
-          {
-            "text": "TypeScript",
-            "kind": "skill",
-            "status": "met",
-            "evidence": "TypeScript",
+            "evidence": "React, Next.js, TypeScript",
             "core": true,
             "specific": true
           },
@@ -1204,7 +1156,7 @@
             "specific": true
           },
           {
-            "text": "French C1",
+            "text": "Fluent French C1",
             "kind": "language",
             "status": "missing",
             "evidence": null,
@@ -1216,26 +1168,18 @@
         "distance_km": null,
         "work_location": "Remote",
         "work_arrangement": "remote",
-        "blocker": "Missing language: French C1",
+        "blocker": "Missing language: Fluent French C1",
         "reasoning": "Your React and TypeScript fit the role; you lack the required French C1 language skill."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000013",
         "requirements": [
           {
-            "text": "React",
+            "text": "React and TypeScript",
             "kind": "skill",
             "specific": true,
             "status": "met",
-            "evidence": "React",
-            "core": true
-          },
-          {
-            "text": "TypeScript",
-            "kind": "skill",
-            "specific": true,
-            "status": "met",
-            "evidence": "TypeScript",
+            "evidence": "React, Next.js, TypeScript",
             "core": true
           },
           {
@@ -1247,7 +1191,7 @@
             "core": false
           },
           {
-            "text": "French C1",
+            "text": "Fluent French C1",
             "kind": "language",
             "specific": false,
             "status": "missing",
@@ -1274,11 +1218,11 @@
         "chance": "low",
         "requirements": [
           {
-            "text": "Customer acquisition",
+            "text": "Technical understanding of web development",
             "kind": "skill",
-            "status": "missing",
-            "evidence": null,
-            "core": true,
+            "status": "met",
+            "evidence": "Full Stack Entwickler",
+            "core": false,
             "specific": false
           },
           {
@@ -1290,18 +1234,10 @@
             "specific": false
           },
           {
-            "text": "Web development understanding",
-            "kind": "skill",
-            "status": "partial",
-            "evidence": "Full Stack Entwickler",
-            "core": false,
-            "specific": false
-          },
-          {
-            "text": "German",
+            "text": "Very good German",
             "kind": "language",
             "status": "met",
-            "evidence": "Deutsch Muttersprache",
+            "evidence": "Deutsch Muttersprache C2",
             "core": false,
             "specific": false
           }
@@ -1314,18 +1250,18 @@
         "work_location": "Bremen",
         "work_arrangement": "hybrid",
         "blocker": "Dealbreaker: Cold calling",
-        "reasoning": "Your web development knowledge is adjacent but you lack sales experience; cold calling is a dealbreaker."
+        "reasoning": "You have web development knowledge but no sales experience; cold calling is a dealbreaker."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000014",
         "requirements": [
           {
-            "text": "Customer acquisition",
+            "text": "Technical understanding of web development",
             "kind": "skill",
             "specific": false,
-            "status": "missing",
-            "evidence": null,
-            "core": true
+            "status": "met",
+            "evidence": "Full Stack Entwickler",
+            "core": false
           },
           {
             "text": "Sales experience",
@@ -1336,19 +1272,11 @@
             "core": true
           },
           {
-            "text": "Web development understanding",
-            "kind": "skill",
-            "specific": false,
-            "status": "partial",
-            "evidence": "Full Stack Entwickler",
-            "core": false
-          },
-          {
-            "text": "German",
+            "text": "Very good German",
             "kind": "language",
             "specific": false,
             "status": "met",
-            "evidence": "Deutsch Muttersprache",
+            "evidence": "Deutsch Muttersprache C2",
             "core": false
           }
         ],
@@ -1360,7 +1288,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": "Cold calling",
-        "reasoning": "Your web development knowledge is adjacent but you lack sales experience; cold calling is a dealbreaker."
+        "reasoning": "You have web development knowledge but no sales experience; cold calling is a dealbreaker."
       }
     },
     {
@@ -1384,7 +1312,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React expertise matches exactly; no other requirements are listed."
+        "reasoning": "Your React expertise matches the core requirement; no other must-haves are listed."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000015",
@@ -1406,7 +1334,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React expertise matches exactly; no other requirements are listed."
+        "reasoning": "Your React expertise matches the core requirement; no other must-haves are listed."
       }
     },
     {
@@ -1462,7 +1390,7 @@
         "work_location": "Oldenburg",
         "work_arrangement": "onsite",
         "blocker": null,
-        "reasoning": "You lack Windows and Active Directory skills; your full-stack experience doesn't match IT support tasks."
+        "reasoning": "You have no experience with Windows client admin or Active Directory; your full-stack web skills don't match IT support tasks."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000016",
@@ -1516,7 +1444,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "You lack Windows and Active Directory skills; your full-stack experience doesn't match IT support tasks."
+        "reasoning": "You have no experience with Windows client admin or Active Directory; your full-stack web skills don't match IT support tasks."
       }
     },
     {
@@ -1532,7 +1460,7 @@
             "status": "missing",
             "evidence": null,
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "Erste Erfahrung mit React",
@@ -1556,7 +1484,7 @@
           {
             "text": "Studium der Informatik oder Medieninformatik",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "missing",
             "evidence": null,
             "core": true
@@ -1589,14 +1517,6 @@
         "chance": "very_good",
         "requirements": [
           {
-            "text": "Erste Berufserfahrung in der Softwareentwicklung",
-            "kind": "skill",
-            "status": "met",
-            "evidence": "Full Stack Entwickler",
-            "core": true,
-            "specific": false
-          },
-          {
             "text": "React und TypeScript",
             "kind": "skill",
             "status": "met",
@@ -1626,7 +1546,7 @@
         "work_location": "Oldenburg",
         "work_arrangement": "onsite",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, Python, and Git skills match perfectly; you must work on-site in Oldenburg."
+        "reasoning": "Your React, TypeScript, Python, and Git skills match perfectly; you must accept on-site work in Oldenburg."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000018",
@@ -1672,7 +1592,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Python, and Git skills match perfectly; you must work on-site in Oldenburg."
+        "reasoning": "Your React, TypeScript, Python, and Git skills match perfectly; you must accept on-site work in Oldenburg."
       }
     },
     {
@@ -1704,7 +1624,7 @@
         "work_location": "Frankfurt am Main",
         "work_arrangement": "hybrid",
         "blocker": "Office in Frankfurt am Main, 318 km away – you want within 25 km of Oldenburg or 25 km of Bremen",
-        "reasoning": "Your React, TypeScript, and Git skills fit exactly; you must commute to Frankfurt 2 days per week."
+        "reasoning": "Your React, TypeScript, and Git skills match; you meet the 2-year requirement but must commute to Frankfurt twice weekly."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000019",
@@ -1734,7 +1654,7 @@
             "core": true
           }
         ],
-        "required_years": 1,
+        "required_years": 2,
         "posting_level": "mid",
         "task_fit": "same",
         "work_arrangement": "hybrid",
@@ -1742,7 +1662,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, and Git skills fit exactly; you must commute to Frankfurt 2 days per week."
+        "reasoning": "Your React, TypeScript, and Git skills match; you meet the 2-year requirement but must commute to Frankfurt twice weekly."
       }
     },
     {
@@ -1782,7 +1702,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, and Tailwind skills match perfectly; you can work fully remote."
+        "reasoning": "Your React, TypeScript, and Tailwind skills match exactly; you can work fully remote with no gaps."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000020",
@@ -1820,7 +1740,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, and Tailwind skills match perfectly; you can work fully remote."
+        "reasoning": "Your React, TypeScript, and Tailwind skills match exactly; you can work fully remote with no gaps."
       }
     },
     {
@@ -1828,12 +1748,12 @@
       "run": 1,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000021",
-        "chance": "good",
+        "chance": "very_good",
         "requirements": [
           {
             "text": "Abgeschlossene kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
             "specific": true
@@ -1876,7 +1796,7 @@
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": null,
-        "reasoning": "Your Kaufmann für Büromanagement and DATEV experience match perfectly; no dealbreakers."
+        "reasoning": "Your Kaufmann für Büromanagement and DATEV experience match perfectly; no dealbreakers and all core requirements are met."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000021",
@@ -1938,7 +1858,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Kaufmann für Büromanagement and DATEV experience match perfectly; no dealbreakers."
+        "reasoning": "Your Kaufmann für Büromanagement and DATEV experience match perfectly; no dealbreakers and all core requirements are met."
       }
     },
     {
@@ -1951,10 +1871,10 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "MS Office",
@@ -1962,7 +1882,7 @@
             "status": "met",
             "evidence": "MS Office",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "Erfahrung in der Büroorganisation",
@@ -1978,7 +1898,7 @@
         "work_location": "Langenhagen (Niedersachsen)",
         "work_arrangement": "onsite",
         "blocker": "Full-time – not a working time you accept",
-        "reasoning": "Your Büromanagement background fits office organization tasks; no gaps or dealbreakers."
+        "reasoning": "Your Büromanagement background fits office organization and correspondence; no gaps in core requirements."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000022",
@@ -1986,7 +1906,7 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
@@ -1994,7 +1914,7 @@
           {
             "text": "MS Office",
             "kind": "skill",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "MS Office",
             "core": true
@@ -2008,7 +1928,7 @@
             "core": true
           }
         ],
-        "required_years": null,
+        "required_years": 1,
         "posting_level": "mid",
         "task_fit": "same",
         "work_arrangement": "onsite",
@@ -2016,7 +1936,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your Büromanagement background fits office organization tasks; no gaps or dealbreakers."
+        "reasoning": "Your Büromanagement background fits office organization and correspondence; no gaps in core requirements."
       }
     },
     {
@@ -2024,15 +1944,15 @@
       "run": 1,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000023",
-        "chance": "good",
+        "chance": "very_good",
         "requirements": [
           {
             "text": "Abgeschlossene kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "Kenntnisse in der Buchhaltung",
@@ -2064,7 +1984,7 @@
         "work_location": "Hannover",
         "work_arrangement": "hybrid",
         "blocker": null,
-        "reasoning": "Your Buchhaltung and DATEV skills align exactly; home office is offered, no dealbreakers."
+        "reasoning": "Your Buchhaltung and DATEV skills align exactly with the tasks; Excel and qualification fully met."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000023",
@@ -2072,7 +1992,7 @@
           {
             "text": "Abgeschlossene kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
@@ -2102,7 +2022,7 @@
             "core": true
           }
         ],
-        "required_years": null,
+        "required_years": 2,
         "posting_level": "mid",
         "task_fit": "same",
         "work_arrangement": "hybrid",
@@ -2110,7 +2030,7 @@
         "contract_form": "regular",
         "work_time": "both",
         "dealbreaker": null,
-        "reasoning": "Your Buchhaltung and DATEV skills align exactly; home office is offered, no dealbreakers."
+        "reasoning": "Your Buchhaltung and DATEV skills align exactly with the tasks; Excel and qualification fully met."
       }
     },
     {
@@ -2126,7 +2046,7 @@
             "status": "missing",
             "evidence": null,
             "core": true,
-            "specific": true
+            "specific": false
           }
         ],
         "downgrades": [
@@ -2137,7 +2057,7 @@
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Apprenticeship – not a contract form you accept; Full-time – not a working time you accept",
-        "reasoning": "You already completed your Ausbildung; this is a training role for beginners."
+        "reasoning": "You already completed your Ausbildung, so this traineeship is not for you; no match in career stage."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000024",
@@ -2145,13 +2065,13 @@
           {
             "text": "Realschulabschluss oder Abitur",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "missing",
             "evidence": null,
             "core": true
           }
         ],
-        "required_years": null,
+        "required_years": 0,
         "posting_level": "junior",
         "task_fit": "different",
         "work_arrangement": "onsite",
@@ -2159,7 +2079,7 @@
         "contract_form": "ausbildung",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "You already completed your Ausbildung; this is a training role for beginners."
+        "reasoning": "You already completed your Ausbildung, so this traineeship is not for you; no match in career stage."
       }
     },
     {
@@ -2172,10 +2092,10 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "SAP-Kenntnisse",
@@ -2199,7 +2119,7 @@
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Dealbreaker: Shift work",
-        "reasoning": "Your SAP and administrative skills fit; but shift work is a dealbreaker for you."
+        "reasoning": "Your SAP and Kaufmann background fit, but shift work is a hard dealbreaker for you."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000025",
@@ -2207,7 +2127,7 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
@@ -2229,7 +2149,7 @@
             "core": true
           }
         ],
-        "required_years": null,
+        "required_years": 2,
         "posting_level": "mid",
         "task_fit": "adjacent",
         "work_arrangement": "onsite",
@@ -2237,7 +2157,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": "Shift work",
-        "reasoning": "Your SAP and administrative skills fit; but shift work is a dealbreaker for you."
+        "reasoning": "Your SAP and Kaufmann background fit, but shift work is a hard dealbreaker for you."
       }
     },
     {
@@ -2276,7 +2196,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Excel",
-            "core": false,
+            "core": true,
             "specific": true
           }
         ],
@@ -2285,7 +2205,7 @@
         "work_location": "Hannover",
         "work_arrangement": "hybrid",
         "blocker": null,
-        "reasoning": "Your DATEV, Buchhaltung and Excel match core tasks; you lack the required Steuerfachangestellte/r or Bilanzbuchhalter qualification."
+        "reasoning": "Your Buchhaltung and DATEV match the core tasks; you lack the required Steuerfachangestellte/r or Bilanzbuchhalter qualification."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000026",
@@ -2294,14 +2214,6 @@
             "text": "Abgeschlossene Ausbildung als Steuerfachangestellte/r oder Weiterbildung zum Bilanzbuchhalter",
             "kind": "qualification",
             "specific": true,
-            "status": "missing",
-            "evidence": null,
-            "core": true
-          },
-          {
-            "text": "3 Jahre Erfahrung in der Finanzbuchhaltung",
-            "kind": "skill",
-            "specific": false,
             "status": "missing",
             "evidence": null,
             "core": true
@@ -2328,7 +2240,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Excel",
-            "core": false
+            "core": true
           }
         ],
         "required_years": 3,
@@ -2339,7 +2251,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your DATEV, Buchhaltung and Excel match core tasks; you lack the required Steuerfachangestellte/r or Bilanzbuchhalter qualification."
+        "reasoning": "Your Buchhaltung and DATEV match the core tasks; you lack the required Steuerfachangestellte/r or Bilanzbuchhalter qualification."
       }
     },
     {
@@ -2379,7 +2291,7 @@
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Missing language: Verhandlungssichere Spanischkenntnisse in Wort und Schrift",
-        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required native-level Spanish."
+        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required Spanish language skills."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000027",
@@ -2417,7 +2329,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required native-level Spanish."
+        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required Spanish language skills."
       }
     },
     {
@@ -2457,7 +2369,7 @@
         "work_location": "Berlin",
         "work_arrangement": "onsite",
         "blocker": "Office in Berlin, 223 km away – you want within 20 km of Hannover",
-        "reasoning": "Your Kaufmännische Ausbildung, MS Office and DATEV match exactly; no gaps."
+        "reasoning": "Your Kauffrau für Büromanagement, MS Office, and DATEV match exactly; no gaps."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000028",
@@ -2495,7 +2407,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Kaufmännische Ausbildung, MS Office and DATEV match exactly; no gaps."
+        "reasoning": "Your Kauffrau für Büromanagement, MS Office, and DATEV match exactly; no gaps."
       }
     },
     {
@@ -2535,7 +2447,7 @@
         "work_location": "Leipzig",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your Terminkoordination, MS Office and German match perfectly; no gaps."
+        "reasoning": "Your Terminkoordination, MS Office, and German match perfectly; your experience exceeds the requirement."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000029",
@@ -2581,7 +2493,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Terminkoordination, MS Office and German match perfectly; no gaps."
+        "reasoning": "Your Terminkoordination, MS Office, and German match perfectly; your experience exceeds the requirement."
       }
     },
     {
@@ -2616,7 +2528,7 @@
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Senior role – your level is Mid-level",
-        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required team leadership experience."
+        "reasoning": "Your Büromanagement skills fit; you lack the required team leadership experience."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000030",
@@ -2646,7 +2558,7 @@
             "core": false
           }
         ],
-        "required_years": null,
+        "required_years": 2,
         "posting_level": "senior",
         "task_fit": "adjacent",
         "work_arrangement": "onsite",
@@ -2654,7 +2566,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required team leadership experience."
+        "reasoning": "Your Büromanagement skills fit; you lack the required team leadership experience."
       }
     },
     {
@@ -2685,7 +2597,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Next.js",
-            "core": false,
+            "core": true,
             "specific": true
           },
           {
@@ -2693,7 +2605,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Git",
-            "core": false,
+            "core": true,
             "specific": true
           },
           {
@@ -2710,7 +2622,7 @@
         "work_location": "Berlin",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, and Next.js skills match perfectly; no experience gap since only 1 year is required."
+        "reasoning": "Your React, TypeScript, Next.js, and Git match perfectly; no experience gap since it only requires 1 year."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000001",
@@ -2737,7 +2649,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Next.js",
-            "core": false
+            "core": true
           },
           {
             "text": "Git",
@@ -2745,7 +2657,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Git",
-            "core": false
+            "core": true
           },
           {
             "text": "German C1",
@@ -2764,7 +2676,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, and Next.js skills match perfectly; no experience gap since only 1 year is required."
+        "reasoning": "Your React, TypeScript, Next.js, and Git match perfectly; no experience gap since it only requires 1 year."
       }
     },
     {
@@ -2803,7 +2715,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Git",
-            "core": false,
+            "core": true,
             "specific": true
           },
           {
@@ -2820,7 +2732,7 @@
         "work_location": "Bremen",
         "work_arrangement": "hybrid",
         "blocker": null,
-        "reasoning": "Your full-stack React and Django skills match exactly; no dealbreakers and hybrid work is acceptable."
+        "reasoning": "Your full-stack React, TypeScript, and Django skills match exactly; no dealbreakers and hybrid work is acceptable."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000002",
@@ -2855,7 +2767,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Git",
-            "core": false
+            "core": true
           },
           {
             "text": "German C1",
@@ -2874,7 +2786,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your full-stack React and Django skills match exactly; no dealbreakers and hybrid work is acceptable."
+        "reasoning": "Your full-stack React, TypeScript, and Django skills match exactly; no dealbreakers and hybrid work is acceptable."
       }
     },
     {
@@ -2913,7 +2825,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Git",
-            "core": false,
+            "core": true,
             "specific": true
           }
         ],
@@ -2922,7 +2834,7 @@
         "work_location": "München",
         "work_arrangement": "hybrid",
         "blocker": "Office in München, 566 km away – you want within 25 km of Oldenburg or 25 km of Bremen",
-        "reasoning": "Your React and Django stack matches the core requirements; on-site days are acceptable and no dealbreakers."
+        "reasoning": "Your React, TypeScript, Django, and Git match the core stack; office requirement is acceptable."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000003",
@@ -2957,7 +2869,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Git",
-            "core": false
+            "core": true
           }
         ],
         "required_years": 2,
@@ -2968,7 +2880,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React and Django stack matches the core requirements; on-site days are acceptable and no dealbreakers."
+        "reasoning": "Your React, TypeScript, Django, and Git match the core stack; office requirement is acceptable."
       }
     },
     {
@@ -2995,7 +2907,7 @@
             "specific": true
           },
           {
-            "text": "Mentoring junior developers",
+            "text": "Mentoring juniors",
             "kind": "skill",
             "status": "missing",
             "evidence": null,
@@ -3016,7 +2928,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": "Senior role – your level is Junior",
-        "reasoning": "Your React and TypeScript fit, but mentoring and architecture experience are missing and required for senior level."
+        "reasoning": "Your React and TypeScript are strong, but mentoring and architecture experience are missing and required for senior level."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000004",
@@ -3038,7 +2950,7 @@
             "core": true
           },
           {
-            "text": "Mentoring junior developers",
+            "text": "Mentoring juniors",
             "kind": "skill",
             "specific": false,
             "status": "missing",
@@ -3062,7 +2974,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React and TypeScript fit, but mentoring and architecture experience are missing and required for senior level."
+        "reasoning": "Your React and TypeScript are strong, but mentoring and architecture experience are missing and required for senior level."
       }
     },
     {
@@ -3093,7 +3005,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Next.js",
-            "core": false,
+            "core": true,
             "specific": true
           },
           {
@@ -3101,7 +3013,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Git",
-            "core": false,
+            "core": true,
             "specific": true
           }
         ],
@@ -3110,7 +3022,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": "Senior role – your level is Junior",
-        "reasoning": "Your frontend stack matches perfectly, but you have only 2 years of experience, falling short of the 5-year requirement."
+        "reasoning": "Your React, TypeScript, and Next.js match perfectly; you lack the required 5 years of experience."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000005",
@@ -3137,7 +3049,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Next.js",
-            "core": false
+            "core": true
           },
           {
             "text": "Git",
@@ -3145,7 +3057,7 @@
             "specific": true,
             "status": "met",
             "evidence": "Git",
-            "core": false
+            "core": true
           }
         ],
         "required_years": 5,
@@ -3156,7 +3068,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your frontend stack matches perfectly, but you have only 2 years of experience, falling short of the 5-year requirement."
+        "reasoning": "Your React, TypeScript, and Next.js match perfectly; you lack the required 5 years of experience."
       }
     },
     {
@@ -3204,7 +3116,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, Next.js, and Git match exactly; you have 2 years vs. the required 3."
+        "reasoning": "Your React, TypeScript, Next.js, and Git skills match exactly; you have 2 years vs. the required 3."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000006",
@@ -3250,7 +3162,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Next.js, and Git match exactly; you have 2 years vs. the required 3."
+        "reasoning": "Your React, TypeScript, Next.js, and Git skills match exactly; you have 2 years vs. the required 3."
       }
     },
     {
@@ -3282,7 +3194,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": "Working student position – not a contract form you accept",
-        "reasoning": "Your React matches perfectly; TypeScript is listed as strong, but the role asks for basic knowledge."
+        "reasoning": "Your React and TypeScript skills fit the role; you exceed the experience level expected for a Werkstudent."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000007",
@@ -3312,7 +3224,7 @@
         "contract_form": "werkstudent",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your React matches perfectly; TypeScript is listed as strong, but the role asks for basic knowledge."
+        "reasoning": "Your React and TypeScript skills fit the role; you exceed the experience level expected for a Werkstudent."
       }
     },
     {
@@ -3352,7 +3264,7 @@
         "work_location": "Oldenburg",
         "work_arrangement": "hybrid",
         "blocker": null,
-        "reasoning": "Your React and TypeScript fit the core tasks; Git is met, and experience from projects satisfies the entry-level requirement."
+        "reasoning": "Your React and TypeScript skills match the core tasks; you have 2 years vs. no minimum required."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000008",
@@ -3390,7 +3302,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React and TypeScript fit the core tasks; Git is met, and experience from projects satisfies the entry-level requirement."
+        "reasoning": "Your React and TypeScript skills match the core tasks; you have 2 years vs. no minimum required."
       }
     },
     {
@@ -3398,7 +3310,7 @@
       "run": 2,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000009",
-        "chance": "low",
+        "chance": "good",
         "requirements": [
           {
             "text": "React",
@@ -3419,8 +3331,8 @@
           {
             "text": "REST-APIs",
             "kind": "skill",
-            "status": "met",
-            "evidence": "Supabase",
+            "status": "missing",
+            "evidence": null,
             "core": true,
             "specific": false
           },
@@ -3441,12 +3353,12 @@
             "specific": false
           }
         ],
-        "downgrades": [],
-        "distance_km": 75,
+        "downgrades": ["Tasks only partly match your experience – at most Good"],
+        "distance_km": null,
         "work_location": "Hamburg",
-        "work_arrangement": "hybrid",
-        "blocker": "Office in Hamburg, 75 km away – you want within 25 km of Oldenburg or 25 km of Bremen",
-        "reasoning": "Your React, TypeScript, Supabase (as REST-API experience), Git, and German match; no dealbreaker, and experience matches exactly."
+        "work_arrangement": "remote",
+        "blocker": null,
+        "reasoning": "Your React and TypeScript fit perfectly; you lack direct REST-API integration experience."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000009",
@@ -3471,8 +3383,8 @@
             "text": "REST-APIs",
             "kind": "skill",
             "specific": false,
-            "status": "met",
-            "evidence": "Supabase",
+            "status": "missing",
+            "evidence": null,
             "core": true
           },
           {
@@ -3494,13 +3406,13 @@
         ],
         "required_years": 2,
         "posting_level": "mid",
-        "task_fit": "same",
+        "task_fit": "adjacent",
         "work_arrangement": "hybrid",
         "work_locations": ["Hamburg"],
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Supabase (as REST-API experience), Git, and German match; no dealbreaker, and experience matches exactly."
+        "reasoning": "Your React and TypeScript fit perfectly; you lack direct REST-API integration experience."
       }
     },
     {
@@ -3508,7 +3420,7 @@
       "run": 2,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000010",
-        "chance": "very_good",
+        "chance": "good",
         "requirements": [
           {
             "text": "Vue.js or React",
@@ -3529,8 +3441,8 @@
           {
             "text": "REST-APIs",
             "kind": "skill",
-            "status": "met",
-            "evidence": "Supabase",
+            "status": "missing",
+            "evidence": null,
             "core": true,
             "specific": false
           },
@@ -3543,12 +3455,12 @@
             "specific": true
           }
         ],
-        "downgrades": [],
+        "downgrades": ["Tasks only partly match your experience – at most Good"],
         "distance_km": null,
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, Supabase (as REST-API experience), and Git fully match; experience level and remote setup align perfectly."
+        "reasoning": "Your React and TypeScript match; you lack documented REST-API integration experience."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000010",
@@ -3573,8 +3485,8 @@
             "text": "REST-APIs",
             "kind": "skill",
             "specific": false,
-            "status": "met",
-            "evidence": "Supabase",
+            "status": "missing",
+            "evidence": null,
             "core": true
           },
           {
@@ -3588,13 +3500,13 @@
         ],
         "required_years": 2,
         "posting_level": "mid",
-        "task_fit": "same",
+        "task_fit": "adjacent",
         "work_arrangement": "remote",
         "work_locations": [],
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Supabase (as REST-API experience), and Git fully match; experience level and remote setup align perfectly."
+        "reasoning": "Your React and TypeScript match; you lack documented REST-API integration experience."
       }
     },
     {
@@ -3621,12 +3533,12 @@
             "specific": true
           },
           {
-            "text": "SQL",
+            "text": "SQL and relational databases",
             "kind": "skill",
             "status": "missing",
             "evidence": null,
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "Docker",
@@ -3650,7 +3562,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "You have Docker and Git but lack Java and Spring Boot; your frontend stack doesn't match the Java backend focus."
+        "reasoning": "You have Docker and Git but lack Java and Spring Boot, which are core to this backend role."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000011",
@@ -3672,9 +3584,9 @@
             "core": true
           },
           {
-            "text": "SQL",
+            "text": "SQL and relational databases",
             "kind": "skill",
-            "specific": true,
+            "specific": false,
             "status": "missing",
             "evidence": null,
             "core": true
@@ -3683,7 +3595,7 @@
             "text": "Docker",
             "kind": "skill",
             "specific": true,
-            "status": "partial",
+            "status": "met",
             "evidence": "Docker",
             "core": false
           },
@@ -3704,7 +3616,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "You have Docker and Git but lack Java and Spring Boot; your frontend stack doesn't match the Java backend focus."
+        "reasoning": "You have Docker and Git but lack Java and Spring Boot, which are core to this backend role."
       }
     },
     {
@@ -3752,7 +3664,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React and TypeScript match perfectly; your English meets the fluency requirement."
+        "reasoning": "Your React and TypeScript skills match perfectly; English proficiency meets the requirement."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000012",
@@ -3798,7 +3710,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React and TypeScript match perfectly; your English meets the fluency requirement."
+        "reasoning": "Your React and TypeScript skills match perfectly; English proficiency meets the requirement."
       }
     },
     {
@@ -3833,7 +3745,7 @@
             "specific": true
           },
           {
-            "text": "Fließende Französischkenntnisse",
+            "text": "Fluent French",
             "kind": "language",
             "status": "missing",
             "evidence": null,
@@ -3845,8 +3757,8 @@
         "distance_km": null,
         "work_location": "Remote",
         "work_arrangement": "remote",
-        "blocker": "Missing language: Fließende Französischkenntnisse",
-        "reasoning": "Your React and TypeScript fit the role; you lack the required French language proficiency."
+        "blocker": "Missing language: Fluent French",
+        "reasoning": "Your React and TypeScript fit the role; you lack the required fluent French language skill."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000013",
@@ -3876,7 +3788,7 @@
             "core": false
           },
           {
-            "text": "Fließende Französischkenntnisse",
+            "text": "Fluent French",
             "kind": "language",
             "specific": false,
             "status": "missing",
@@ -3892,7 +3804,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React and TypeScript fit the role; you lack the required French language proficiency."
+        "reasoning": "Your React and TypeScript fit the role; you lack the required fluent French language skill."
       }
     },
     {
@@ -3903,23 +3815,7 @@
         "chance": "low",
         "requirements": [
           {
-            "text": "Neukundengewinnung",
-            "kind": "skill",
-            "status": "missing",
-            "evidence": null,
-            "core": true,
-            "specific": false
-          },
-          {
-            "text": "Vertrieb",
-            "kind": "skill",
-            "status": "missing",
-            "evidence": null,
-            "core": true,
-            "specific": false
-          },
-          {
-            "text": "Technisches Verständnis für Webentwicklung",
+            "text": "Technical understanding of web development",
             "kind": "skill",
             "status": "met",
             "evidence": "Full Stack Entwickler",
@@ -3927,7 +3823,15 @@
             "specific": false
           },
           {
-            "text": "Sehr gute Deutschkenntnisse",
+            "text": "Sales experience",
+            "kind": "skill",
+            "status": "missing",
+            "evidence": null,
+            "core": true,
+            "specific": false
+          },
+          {
+            "text": "Excellent German",
             "kind": "language",
             "status": "met",
             "evidence": "Deutsch Muttersprache",
@@ -3943,29 +3847,13 @@
         "work_location": "Bremen",
         "work_arrangement": "hybrid",
         "blocker": "Dealbreaker: Cold calling",
-        "reasoning": "Your web development skills match but you avoid sales; cold calling is a dealbreaker."
+        "reasoning": "You have web development knowledge but no sales experience, and cold calling is a dealbreaker."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000014",
         "requirements": [
           {
-            "text": "Neukundengewinnung",
-            "kind": "skill",
-            "specific": false,
-            "status": "missing",
-            "evidence": null,
-            "core": true
-          },
-          {
-            "text": "Vertrieb",
-            "kind": "skill",
-            "specific": false,
-            "status": "missing",
-            "evidence": null,
-            "core": true
-          },
-          {
-            "text": "Technisches Verständnis für Webentwicklung",
+            "text": "Technical understanding of web development",
             "kind": "skill",
             "specific": false,
             "status": "met",
@@ -3973,7 +3861,15 @@
             "core": false
           },
           {
-            "text": "Sehr gute Deutschkenntnisse",
+            "text": "Sales experience",
+            "kind": "skill",
+            "specific": false,
+            "status": "missing",
+            "evidence": null,
+            "core": true
+          },
+          {
+            "text": "Excellent German",
             "kind": "language",
             "specific": false,
             "status": "met",
@@ -3989,7 +3885,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": "Cold calling",
-        "reasoning": "Your web development skills match but you avoid sales; cold calling is a dealbreaker."
+        "reasoning": "You have web development knowledge but no sales experience, and cold calling is a dealbreaker."
       }
     },
     {
@@ -4013,7 +3909,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React expertise matches exactly; no other requirements are listed."
+        "reasoning": "Your React expertise matches the role exactly; no other requirements are specified."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000015",
@@ -4035,7 +3931,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React expertise matches exactly; no other requirements are listed."
+        "reasoning": "Your React expertise matches the role exactly; no other requirements are specified."
       }
     },
     {
@@ -4083,7 +3979,7 @@
             "status": "missing",
             "evidence": null,
             "core": false,
-            "specific": true
+            "specific": false
           }
         ],
         "downgrades": ["Tasks differ from what you've done – at most Fair"],
@@ -4091,7 +3987,7 @@
         "work_location": "Oldenburg",
         "work_arrangement": "onsite",
         "blocker": null,
-        "reasoning": "You lack Windows and Active Directory skills; your frontend stack doesn't match IT support tasks."
+        "reasoning": "Your full-stack web skills don't match IT support tasks; no Windows or Active Directory experience."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000016",
@@ -4131,7 +4027,7 @@
           {
             "text": "Hardware-Installation",
             "kind": "skill",
-            "specific": true,
+            "specific": false,
             "status": "missing",
             "evidence": null,
             "core": false
@@ -4145,7 +4041,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "You lack Windows and Active Directory skills; your frontend stack doesn't match IT support tasks."
+        "reasoning": "Your full-stack web skills don't match IT support tasks; no Windows or Active Directory experience."
       }
     },
     {
@@ -4161,7 +4057,7 @@
             "status": "missing",
             "evidence": null,
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "Erste Erfahrung mit React",
@@ -4185,7 +4081,7 @@
           {
             "text": "Studium der Informatik oder Medieninformatik",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "missing",
             "evidence": null,
             "core": true
@@ -4215,16 +4111,8 @@
       "run": 2,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000018",
-        "chance": "good",
+        "chance": "very_good",
         "requirements": [
-          {
-            "text": "Erste Berufserfahrung in der Softwareentwicklung",
-            "kind": "skill",
-            "status": "partial",
-            "evidence": null,
-            "core": true,
-            "specific": false
-          },
           {
             "text": "React und TypeScript",
             "kind": "skill",
@@ -4255,7 +4143,7 @@
         "work_location": "Oldenburg",
         "work_arrangement": "onsite",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, Python, and Git skills match perfectly; you must accept on-site work in Oldenburg."
+        "reasoning": "Your React, TypeScript, Python, and Git match perfectly; you must accept on-site work in Oldenburg."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000018",
@@ -4301,7 +4189,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Python, and Git skills match perfectly; you must accept on-site work in Oldenburg."
+        "reasoning": "Your React, TypeScript, Python, and Git match perfectly; you must accept on-site work in Oldenburg."
       }
     },
     {
@@ -4333,7 +4221,7 @@
         "work_location": "Frankfurt am Main",
         "work_arrangement": "hybrid",
         "blocker": "Office in Frankfurt am Main, 318 km away – you want within 25 km of Oldenburg or 25 km of Bremen",
-        "reasoning": "Your React, TypeScript, and Git skills fit exactly; you must commute to Frankfurt 2 days per week."
+        "reasoning": "Your React, TypeScript, and Git match the core stack; you must commute to Frankfurt 2 days per week."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000019",
@@ -4363,7 +4251,7 @@
             "core": true
           }
         ],
-        "required_years": 2,
+        "required_years": 1,
         "posting_level": "mid",
         "task_fit": "same",
         "work_arrangement": "hybrid",
@@ -4371,7 +4259,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, and Git skills fit exactly; you must commute to Frankfurt 2 days per week."
+        "reasoning": "Your React, TypeScript, and Git match the core stack; you must commute to Frankfurt 2 days per week."
       }
     },
     {
@@ -4411,7 +4299,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, and Tailwind skills match perfectly; no dealbreakers and fully remote."
+        "reasoning": "Your React, TypeScript, and Tailwind match exactly; no dealbreakers and fully remote."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000020",
@@ -4441,7 +4329,7 @@
             "core": true
           }
         ],
-        "required_years": null,
+        "required_years": 0,
         "posting_level": "junior",
         "task_fit": "same",
         "work_arrangement": "remote",
@@ -4449,7 +4337,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, and Tailwind skills match perfectly; no dealbreakers and fully remote."
+        "reasoning": "Your React, TypeScript, and Tailwind match exactly; no dealbreakers and fully remote."
       }
     },
     {
@@ -4457,23 +4345,31 @@
       "run": 2,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000021",
-        "chance": "good",
+        "chance": "very_good",
         "requirements": [
           {
-            "text": "Kaufmännische Ausbildung",
+            "text": "Abgeschlossene kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
             "specific": true
           },
           {
-            "text": "MS Office, insbesondere Excel",
+            "text": "Mehrfache Berufserfahrung in der Sachbearbeitung",
             "kind": "skill",
             "status": "met",
-            "evidence": "MS Office, Excel",
+            "evidence": "Buchhaltung",
             "core": true,
-            "specific": true
+            "specific": false
+          },
+          {
+            "text": "Sicherer Umgang mit MS Office",
+            "kind": "skill",
+            "status": "met",
+            "evidence": "MS Office",
+            "core": true,
+            "specific": false
           },
           {
             "text": "Erfahrung mit DATEV",
@@ -4497,13 +4393,13 @@
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": null,
-        "reasoning": "Your Kaufmann für Büromanagement and DATEV experience match perfectly; no dealbreakers or gaps."
+        "reasoning": "Your Kaufmann für Büromanagement and DATEV experience match perfectly; no gap stands out."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000021",
         "requirements": [
           {
-            "text": "Kaufmännische Ausbildung",
+            "text": "Abgeschlossene kaufmännische Ausbildung",
             "kind": "qualification",
             "specific": true,
             "status": "met",
@@ -4511,19 +4407,19 @@
             "core": true
           },
           {
-            "text": "Mehrjährige Berufserfahrung in der Sachbearbeitung",
+            "text": "Mehrfache Berufserfahrung in der Sachbearbeitung",
             "kind": "skill",
             "specific": false,
             "status": "met",
-            "evidence": "Buchhaltung, Rechnungsprüfung, Kundenservice",
+            "evidence": "Buchhaltung",
             "core": true
           },
           {
-            "text": "MS Office, insbesondere Excel",
+            "text": "Sicherer Umgang mit MS Office",
             "kind": "skill",
-            "specific": true,
+            "specific": false,
             "status": "met",
-            "evidence": "MS Office, Excel",
+            "evidence": "MS Office",
             "core": true
           },
           {
@@ -4551,7 +4447,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Kaufmann für Büromanagement and DATEV experience match perfectly; no dealbreakers or gaps."
+        "reasoning": "Your Kaufmann für Büromanagement and DATEV experience match perfectly; no gap stands out."
       }
     },
     {
@@ -4564,10 +4460,10 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "MS Office",
@@ -4581,7 +4477,7 @@
             "text": "Erfahrung in der Büroorganisation",
             "kind": "skill",
             "status": "met",
-            "evidence": "Terminkoordination, Korrespondenz",
+            "evidence": "Büromanagement",
             "core": true,
             "specific": false
           }
@@ -4591,7 +4487,7 @@
         "work_location": "Langenhagen (Niedersachsen)",
         "work_arrangement": "onsite",
         "blocker": "Full-time – not a working time you accept",
-        "reasoning": "Your administrative and coordination skills align with the role; no experience gap or dealbreaker."
+        "reasoning": "Your Büromanagement background fits office organization and correspondence; no major gap."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000022",
@@ -4599,7 +4495,7 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
@@ -4617,11 +4513,11 @@
             "kind": "skill",
             "specific": false,
             "status": "met",
-            "evidence": "Terminkoordination, Korrespondenz",
+            "evidence": "Büromanagement",
             "core": true
           }
         ],
-        "required_years": null,
+        "required_years": 1,
         "posting_level": "mid",
         "task_fit": "same",
         "work_arrangement": "onsite",
@@ -4629,7 +4525,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your administrative and coordination skills align with the role; no experience gap or dealbreaker."
+        "reasoning": "Your Büromanagement background fits office organization and correspondence; no major gap."
       }
     },
     {
@@ -4637,15 +4533,15 @@
       "run": 2,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000023",
-        "chance": "good",
+        "chance": "very_good",
         "requirements": [
           {
-            "text": "Kaufmännische Ausbildung",
+            "text": "Abgeschlossene kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "Kenntnisse in der Buchhaltung",
@@ -4677,15 +4573,15 @@
         "work_location": "Hannover",
         "work_arrangement": "hybrid",
         "blocker": null,
-        "reasoning": "Your Buchhaltung and DATEV experience fit exactly; home office is offered and matches your preferences."
+        "reasoning": "Your Buchhaltung and DATEV skills align exactly; Excel proficiency is a strong match."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000023",
         "requirements": [
           {
-            "text": "Kaufmännische Ausbildung",
+            "text": "Abgeschlossene kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
@@ -4715,7 +4611,7 @@
             "core": true
           }
         ],
-        "required_years": null,
+        "required_years": 2,
         "posting_level": "mid",
         "task_fit": "same",
         "work_arrangement": "hybrid",
@@ -4723,7 +4619,7 @@
         "contract_form": "regular",
         "work_time": "both",
         "dealbreaker": null,
-        "reasoning": "Your Buchhaltung and DATEV experience fit exactly; home office is offered and matches your preferences."
+        "reasoning": "Your Buchhaltung and DATEV skills align exactly; Excel proficiency is a strong match."
       }
     },
     {
@@ -4739,7 +4635,7 @@
             "status": "missing",
             "evidence": null,
             "core": true,
-            "specific": true
+            "specific": false
           }
         ],
         "downgrades": [
@@ -4750,7 +4646,7 @@
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Apprenticeship – not a contract form you accept; Full-time – not a working time you accept",
-        "reasoning": "You already completed your Ausbildung, so this traineeship is not applicable to you."
+        "reasoning": "You already completed your Ausbildung; this is a training position for beginners."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000024",
@@ -4758,13 +4654,13 @@
           {
             "text": "Realschulabschluss oder Abitur",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "missing",
             "evidence": null,
             "core": true
           }
         ],
-        "required_years": null,
+        "required_years": 0,
         "posting_level": "junior",
         "task_fit": "different",
         "work_arrangement": "onsite",
@@ -4772,7 +4668,7 @@
         "contract_form": "ausbildung",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "You already completed your Ausbildung, so this traineeship is not applicable to you."
+        "reasoning": "You already completed your Ausbildung; this is a training position for beginners."
       }
     },
     {
@@ -4785,10 +4681,10 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "SAP-Kenntnisse",
@@ -4812,7 +4708,7 @@
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Dealbreaker: Shift work",
-        "reasoning": "Your SAP and administrative skills match, but shift work is a hard dealbreaker for you."
+        "reasoning": "Your SAP and Kaufmann background fit; but shift work is a dealbreaker for you."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000025",
@@ -4820,7 +4716,7 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
@@ -4842,7 +4738,7 @@
             "core": true
           }
         ],
-        "required_years": null,
+        "required_years": 2,
         "posting_level": "mid",
         "task_fit": "adjacent",
         "work_arrangement": "onsite",
@@ -4850,7 +4746,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": "Shift work",
-        "reasoning": "Your SAP and administrative skills match, but shift work is a hard dealbreaker for you."
+        "reasoning": "Your SAP and Kaufmann background fit; but shift work is a dealbreaker for you."
       }
     },
     {
@@ -4858,7 +4754,7 @@
       "run": 2,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000026",
-        "chance": "fair",
+        "chance": "good",
         "requirements": [
           {
             "text": "Abgeschlossene Ausbildung als Steuerfachangestellte/r oder …",
@@ -4869,7 +4765,7 @@
             "specific": true
           },
           {
-            "text": "DATEV",
+            "text": "DATEV-Kenntnisse",
             "kind": "skill",
             "status": "met",
             "evidence": "DATEV",
@@ -4879,9 +4775,9 @@
           {
             "text": "Kreditoren- und Debitorenbuchhaltung",
             "kind": "skill",
-            "status": "missing",
-            "evidence": null,
-            "core": false,
+            "status": "met",
+            "evidence": "Buchhaltung",
+            "core": true,
             "specific": false
           },
           {
@@ -4891,14 +4787,22 @@
             "evidence": "Excel",
             "core": false,
             "specific": true
+          },
+          {
+            "text": "Finanzbuchhaltung Erfahrung",
+            "kind": "skill",
+            "status": "met",
+            "evidence": "Buchhaltung",
+            "core": false,
+            "specific": false
           }
         ],
-        "downgrades": ["Tasks only partly match your experience – at most Good"],
+        "downgrades": [],
         "distance_km": 0,
         "work_location": "Hannover",
         "work_arrangement": "hybrid",
         "blocker": null,
-        "reasoning": "Your DATEV and Excel skills match; you lack formal tax accounting qualification and financial accounting experience."
+        "reasoning": "Your Buchhaltung and DATEV match core tasks; you lack the required Steuerfachangestellte/r or Bilanzbuchhalter qualification."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000026",
@@ -4912,15 +4816,7 @@
             "core": true
           },
           {
-            "text": "3 Jahre Erfahrung in der Finanzbuchhaltung",
-            "kind": "skill",
-            "specific": false,
-            "status": "missing",
-            "evidence": null,
-            "core": true
-          },
-          {
-            "text": "DATEV",
+            "text": "DATEV-Kenntnisse",
             "kind": "skill",
             "specific": true,
             "status": "met",
@@ -4931,9 +4827,9 @@
             "text": "Kreditoren- und Debitorenbuchhaltung",
             "kind": "skill",
             "specific": false,
-            "status": "missing",
-            "evidence": null,
-            "core": false
+            "status": "met",
+            "evidence": "Buchhaltung",
+            "core": true
           },
           {
             "text": "Excel",
@@ -4942,17 +4838,25 @@
             "status": "met",
             "evidence": "Excel",
             "core": false
+          },
+          {
+            "text": "Finanzbuchhaltung Erfahrung",
+            "kind": "skill",
+            "specific": false,
+            "status": "met",
+            "evidence": "Buchhaltung",
+            "core": false
           }
         ],
         "required_years": 3,
         "posting_level": "mid",
-        "task_fit": "adjacent",
+        "task_fit": "same",
         "work_arrangement": "hybrid",
         "work_locations": ["Hannover"],
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your DATEV and Excel skills match; you lack formal tax accounting qualification and financial accounting experience."
+        "reasoning": "Your Buchhaltung and DATEV match core tasks; you lack the required Steuerfachangestellte/r or Bilanzbuchhalter qualification."
       }
     },
     {
@@ -4976,7 +4880,7 @@
             "status": "met",
             "evidence": "MS Office",
             "core": true,
-            "specific": false
+            "specific": true
           },
           {
             "text": "Verhandlungssichere Spanischkenntnisse in Wort und Schrift",
@@ -4984,15 +4888,15 @@
             "status": "missing",
             "evidence": null,
             "core": false,
-            "specific": false
+            "specific": true
           }
         ],
-        "downgrades": [],
+        "downgrades": ["Tasks only partly match your experience – at most Good"],
         "distance_km": 0,
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Missing language: Verhandlungssichere Spanischkenntnisse in Wort und Schrift",
-        "reasoning": "Your administrative background and MS Office fit; you lack required Spanish language proficiency."
+        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required native-level Spanish."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000027",
@@ -5008,7 +4912,7 @@
           {
             "text": "MS Office",
             "kind": "skill",
-            "specific": false,
+            "specific": true,
             "status": "met",
             "evidence": "MS Office",
             "core": true
@@ -5016,7 +4920,7 @@
           {
             "text": "Verhandlungssichere Spanischkenntnisse in Wort und Schrift",
             "kind": "language",
-            "specific": false,
+            "specific": true,
             "status": "missing",
             "evidence": null,
             "core": false
@@ -5024,13 +4928,13 @@
         ],
         "required_years": null,
         "posting_level": "mid",
-        "task_fit": "same",
+        "task_fit": "adjacent",
         "work_arrangement": "onsite",
         "work_locations": ["Hannover"],
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your administrative background and MS Office fit; you lack required Spanish language proficiency."
+        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required native-level Spanish."
       }
     },
     {
@@ -5054,7 +4958,7 @@
             "status": "met",
             "evidence": "MS Office",
             "core": true,
-            "specific": false
+            "specific": true
           },
           {
             "text": "DATEV",
@@ -5070,7 +4974,7 @@
         "work_location": "Berlin",
         "work_arrangement": "onsite",
         "blocker": "Office in Berlin, 223 km away – you want within 20 km of Hannover",
-        "reasoning": "Your Kaufmann, MS Office, and DATEV match exactly; no gaps in core requirements."
+        "reasoning": "Your Kauffrau für Büromanagement, MS Office, and DATEV match exactly; no gap."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000028",
@@ -5086,7 +4990,7 @@
           {
             "text": "MS Office",
             "kind": "skill",
-            "specific": false,
+            "specific": true,
             "status": "met",
             "evidence": "MS Office",
             "core": true
@@ -5108,7 +5012,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Kaufmann, MS Office, and DATEV match exactly; no gaps in core requirements."
+        "reasoning": "Your Kauffrau für Büromanagement, MS Office, and DATEV match exactly; no gap."
       }
     },
     {
@@ -5124,14 +5028,14 @@
             "status": "met",
             "evidence": "MS Office, Excel, Outlook",
             "core": true,
-            "specific": false
+            "specific": true
           },
           {
             "text": "Terminkoordination",
             "kind": "skill",
             "status": "met",
             "evidence": "Terminkoordination",
-            "core": true,
+            "core": false,
             "specific": false
           },
           {
@@ -5148,7 +5052,7 @@
         "work_location": "Leipzig",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your office experience, MS Office, terminkoordination, and German match perfectly; no gaps."
+        "reasoning": "Your Terminkoordination, MS Office, and German match perfectly; no gap."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000029",
@@ -5164,7 +5068,7 @@
           {
             "text": "MS Office, besonders Outlook und Excel",
             "kind": "skill",
-            "specific": false,
+            "specific": true,
             "status": "met",
             "evidence": "MS Office, Excel, Outlook",
             "core": true
@@ -5175,7 +5079,7 @@
             "specific": false,
             "status": "met",
             "evidence": "Terminkoordination",
-            "core": true
+            "core": false
           },
           {
             "text": "Sehr gute Deutschkenntnisse",
@@ -5194,7 +5098,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your office experience, MS Office, terminkoordination, and German match perfectly; no gaps."
+        "reasoning": "Your Terminkoordination, MS Office, and German match perfectly; no gap."
       }
     },
     {
@@ -5218,7 +5122,7 @@
             "status": "met",
             "evidence": "MS Office",
             "core": false,
-            "specific": false
+            "specific": true
           }
         ],
         "downgrades": [
@@ -5229,7 +5133,7 @@
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Senior role – your level is Mid-level",
-        "reasoning": "Your administrative background and MS Office fit; you lack required team leadership experience."
+        "reasoning": "Your Büromanagement skills fit; you lack required team leadership experience."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000030",
@@ -5253,7 +5157,7 @@
           {
             "text": "MS Office",
             "kind": "skill",
-            "specific": false,
+            "specific": true,
             "status": "met",
             "evidence": "MS Office",
             "core": false
@@ -5267,7 +5171,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your administrative background and MS Office fit; you lack required team leadership experience."
+        "reasoning": "Your Büromanagement skills fit; you lack required team leadership experience."
       }
     },
     {
@@ -5535,7 +5439,7 @@
         "work_location": "München",
         "work_arrangement": "hybrid",
         "blocker": "Office in München, 566 km away – you want within 25 km of Oldenburg or 25 km of Bremen",
-        "reasoning": "Your React and Django stack fits perfectly; 3 days in-office in Munich is acceptable."
+        "reasoning": "Your React and Django stack fits perfectly; office requirement is acceptable and no dealbreakers."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000003",
@@ -5581,7 +5485,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React and Django stack fits perfectly; 3 days in-office in Munich is acceptable."
+        "reasoning": "Your React and Django stack fits perfectly; office requirement is acceptable and no dealbreakers."
       }
     },
     {
@@ -5629,7 +5533,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": "Senior role – your level is Junior",
-        "reasoning": "Your React and TypeScript are strong, but mentoring and architecture experience are missing and required for senior level."
+        "reasoning": "Your React and TypeScript skills match; mentoring and architecture experience are missing but you're junior-level."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000004",
@@ -5675,7 +5579,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React and TypeScript are strong, but mentoring and architecture experience are missing and required for senior level."
+        "reasoning": "Your React and TypeScript skills match; mentoring and architecture experience are missing but you're junior-level."
       }
     },
     {
@@ -5723,7 +5627,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": "Senior role – your level is Junior",
-        "reasoning": "Your frontend stack matches exactly, but you have only 2 years of experience, falling short of the 5-year requirement."
+        "reasoning": "Your React and Next.js skills match; you have only 2 years, falling short of the 5-year requirement."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000005",
@@ -5769,7 +5673,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your frontend stack matches exactly, but you have only 2 years of experience, falling short of the 5-year requirement."
+        "reasoning": "Your React and Next.js skills match; you have only 2 years, falling short of the 5-year requirement."
       }
     },
     {
@@ -5817,7 +5721,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, Next.js, and Git skills match perfectly; you have 2 years vs. the required 3."
+        "reasoning": "Your React, TypeScript, Next.js and Git match perfectly; you lack the required 3 years of experience."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000006",
@@ -5853,6 +5757,14 @@
             "status": "met",
             "evidence": "Git",
             "core": true
+          },
+          {
+            "text": "3 years Berufserfahrung",
+            "kind": "skill",
+            "specific": false,
+            "status": "missing",
+            "evidence": null,
+            "core": false
           }
         ],
         "required_years": 3,
@@ -5863,7 +5775,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Next.js, and Git skills match perfectly; you have 2 years vs. the required 3."
+        "reasoning": "Your React, TypeScript, Next.js and Git match perfectly; you lack the required 3 years of experience."
       }
     },
     {
@@ -5888,14 +5800,22 @@
             "evidence": "TypeScript",
             "core": true,
             "specific": true
+          },
+          {
+            "text": "Hochschule in Deutschland eingeschrieben",
+            "kind": "qualification",
+            "status": "missing",
+            "evidence": null,
+            "core": false,
+            "specific": true
           }
         ],
-        "downgrades": ["Posting names few concrete requirements – at most Good"],
+        "downgrades": [],
         "distance_km": null,
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": "Working student position – not a contract form you accept",
-        "reasoning": "Your React and TypeScript skills fit the role; you exceed the experience level expected for a Werkstudent."
+        "reasoning": "Your React and TypeScript match the tasks; you are not enrolled at a German university."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000007",
@@ -5915,9 +5835,17 @@
             "status": "partial",
             "evidence": "TypeScript",
             "core": true
+          },
+          {
+            "text": "Hochschule in Deutschland eingeschrieben",
+            "kind": "qualification",
+            "specific": true,
+            "status": "missing",
+            "evidence": null,
+            "core": false
           }
         ],
-        "required_years": null,
+        "required_years": 1,
         "posting_level": "junior",
         "task_fit": "same",
         "work_arrangement": "remote",
@@ -5925,7 +5853,7 @@
         "contract_form": "werkstudent",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your React and TypeScript skills fit the role; you exceed the experience level expected for a Werkstudent."
+        "reasoning": "Your React and TypeScript match the tasks; you are not enrolled at a German university."
       }
     },
     {
@@ -5958,6 +5886,14 @@
             "evidence": "Git",
             "core": true,
             "specific": true
+          },
+          {
+            "text": "Erste praktische Erfahrung",
+            "kind": "skill",
+            "status": "met",
+            "evidence": "Full Stack Entwickler",
+            "core": false,
+            "specific": false
           }
         ],
         "downgrades": [],
@@ -5965,7 +5901,7 @@
         "work_location": "Oldenburg",
         "work_arrangement": "hybrid",
         "blocker": null,
-        "reasoning": "Your React and TypeScript skills match the core tasks; you have 2 years of experience beyond the expected entry level."
+        "reasoning": "Your React, TypeScript and Git match the core tasks; you have sufficient experience for entry level."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000008",
@@ -5993,9 +5929,17 @@
             "status": "met",
             "evidence": "Git",
             "core": true
+          },
+          {
+            "text": "Erste praktische Erfahrung",
+            "kind": "skill",
+            "specific": false,
+            "status": "met",
+            "evidence": "Full Stack Entwickler",
+            "core": false
           }
         ],
-        "required_years": null,
+        "required_years": 1,
         "posting_level": "junior",
         "task_fit": "same",
         "work_arrangement": "hybrid",
@@ -6003,7 +5947,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React and TypeScript skills match the core tasks; you have 2 years of experience beyond the expected entry level."
+        "reasoning": "Your React, TypeScript and Git match the core tasks; you have sufficient experience for entry level."
       }
     },
     {
@@ -6011,7 +5955,7 @@
       "run": 3,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000009",
-        "chance": "low",
+        "chance": "good",
         "requirements": [
           {
             "text": "React",
@@ -6032,8 +5976,8 @@
           {
             "text": "Anbindung von REST-APIs",
             "kind": "skill",
-            "status": "met",
-            "evidence": "Django",
+            "status": "missing",
+            "evidence": null,
             "core": true,
             "specific": false
           },
@@ -6054,12 +5998,12 @@
             "specific": false
           }
         ],
-        "downgrades": [],
-        "distance_km": 75,
+        "downgrades": ["Tasks only partly match your experience – at most Good"],
+        "distance_km": null,
         "work_location": "Hamburg",
-        "work_arrangement": "hybrid",
-        "blocker": "Office in Hamburg, 75 km away – you want within 25 km of Oldenburg or 25 km of Bremen",
-        "reasoning": "Your React, TypeScript, REST API experience via Django, and German match perfectly; no gap in core requirements."
+        "work_arrangement": "remote",
+        "blocker": null,
+        "reasoning": "Your React and TypeScript match perfectly; you lack direct experience with REST-API integration."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000009",
@@ -6084,8 +6028,8 @@
             "text": "Anbindung von REST-APIs",
             "kind": "skill",
             "specific": false,
-            "status": "met",
-            "evidence": "Django",
+            "status": "missing",
+            "evidence": null,
             "core": true
           },
           {
@@ -6107,13 +6051,13 @@
         ],
         "required_years": 2,
         "posting_level": "mid",
-        "task_fit": "same",
+        "task_fit": "adjacent",
         "work_arrangement": "hybrid",
         "work_locations": ["Hamburg"],
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, REST API experience via Django, and German match perfectly; no gap in core requirements."
+        "reasoning": "Your React and TypeScript match perfectly; you lack direct experience with REST-API integration."
       }
     },
     {
@@ -6121,7 +6065,7 @@
       "run": 3,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000010",
-        "chance": "very_good",
+        "chance": "good",
         "requirements": [
           {
             "text": "Vue.js or React",
@@ -6142,8 +6086,8 @@
           {
             "text": "Anbindung von REST-APIs",
             "kind": "skill",
-            "status": "met",
-            "evidence": "Django",
+            "status": "missing",
+            "evidence": null,
             "core": true,
             "specific": false
           },
@@ -6156,12 +6100,12 @@
             "specific": true
           }
         ],
-        "downgrades": [],
+        "downgrades": ["Tasks only partly match your experience – at most Good"],
         "distance_km": null,
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, REST API, and Git skills match exactly; your experience meets the 1-2 year requirement."
+        "reasoning": "Your React and TypeScript match; you lack documented experience with REST-API integration."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000010",
@@ -6186,8 +6130,8 @@
             "text": "Anbindung von REST-APIs",
             "kind": "skill",
             "specific": false,
-            "status": "met",
-            "evidence": "Django",
+            "status": "missing",
+            "evidence": null,
             "core": true
           },
           {
@@ -6201,13 +6145,13 @@
         ],
         "required_years": 2,
         "posting_level": "mid",
-        "task_fit": "same",
+        "task_fit": "adjacent",
         "work_arrangement": "remote",
         "work_locations": [],
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, REST API, and Git skills match exactly; your experience meets the 1-2 year requirement."
+        "reasoning": "Your React and TypeScript match; you lack documented experience with REST-API integration."
       }
     },
     {
@@ -6242,6 +6186,14 @@
             "specific": true
           },
           {
+            "text": "relational databases",
+            "kind": "skill",
+            "status": "missing",
+            "evidence": null,
+            "core": true,
+            "specific": false
+          },
+          {
             "text": "Docker",
             "kind": "skill",
             "status": "partial",
@@ -6263,7 +6215,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "You have Docker and Git but lack Java and Spring Boot; your frontend stack doesn't match the backend focus."
+        "reasoning": "You have Docker and Git but lack Java and Spring Boot; backend Java development is unrelated to your stack."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000011",
@@ -6293,10 +6245,18 @@
             "core": true
           },
           {
+            "text": "relational databases",
+            "kind": "skill",
+            "specific": false,
+            "status": "missing",
+            "evidence": null,
+            "core": true
+          },
+          {
             "text": "Docker",
             "kind": "skill",
             "specific": true,
-            "status": "partial",
+            "status": "met",
             "evidence": "Docker",
             "core": false
           },
@@ -6317,7 +6277,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "You have Docker and Git but lack Java and Spring Boot; your frontend stack doesn't match the backend focus."
+        "reasoning": "You have Docker and Git but lack Java and Spring Boot; backend Java development is unrelated to your stack."
       }
     },
     {
@@ -6446,7 +6406,7 @@
             "specific": true
           },
           {
-            "text": "Fließende Französischkenntnisse",
+            "text": "Fluent French",
             "kind": "language",
             "status": "missing",
             "evidence": null,
@@ -6458,8 +6418,8 @@
         "distance_km": null,
         "work_location": "Remote",
         "work_arrangement": "remote",
-        "blocker": "Missing language: Fließende Französischkenntnisse",
-        "reasoning": "Your React and TypeScript fit the role; you lack the required French language proficiency."
+        "blocker": "Missing language: Fluent French",
+        "reasoning": "Your React and TypeScript fit the role; you lack the required fluent French language skill."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000013",
@@ -6489,7 +6449,7 @@
             "core": false
           },
           {
-            "text": "Fließende Französischkenntnisse",
+            "text": "Fluent French",
             "kind": "language",
             "specific": false,
             "status": "missing",
@@ -6505,7 +6465,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React and TypeScript fit the role; you lack the required French language proficiency."
+        "reasoning": "Your React and TypeScript fit the role; you lack the required fluent French language skill."
       }
     },
     {
@@ -6516,23 +6476,7 @@
         "chance": "low",
         "requirements": [
           {
-            "text": "Neukundengewinnung",
-            "kind": "skill",
-            "status": "missing",
-            "evidence": null,
-            "core": true,
-            "specific": false
-          },
-          {
-            "text": "Vertrieb",
-            "kind": "skill",
-            "status": "missing",
-            "evidence": null,
-            "core": true,
-            "specific": false
-          },
-          {
-            "text": "Technisches Verständnis für Webentwicklung",
+            "text": "Technical understanding of web development",
             "kind": "skill",
             "status": "met",
             "evidence": "Full Stack Entwickler",
@@ -6540,7 +6484,15 @@
             "specific": false
           },
           {
-            "text": "Sehr gute Deutschkenntnisse",
+            "text": "Sales experience",
+            "kind": "skill",
+            "status": "missing",
+            "evidence": null,
+            "core": true,
+            "specific": false
+          },
+          {
+            "text": "Excellent German",
             "kind": "language",
             "status": "met",
             "evidence": "Deutsch Muttersprache",
@@ -6555,30 +6507,14 @@
         "distance_km": 0,
         "work_location": "Bremen",
         "work_arrangement": "hybrid",
-        "blocker": "Dealbreaker: Kundenakquise, Vertrieb",
-        "reasoning": "Your web development skills align but the role requires sales and cold calling, which you explicitly avoid."
+        "blocker": "Dealbreaker: Cold calling",
+        "reasoning": "Your web development skills fit, but sales and cold calling are core tasks you explicitly avoid."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000014",
         "requirements": [
           {
-            "text": "Neukundengewinnung",
-            "kind": "skill",
-            "specific": false,
-            "status": "missing",
-            "evidence": null,
-            "core": true
-          },
-          {
-            "text": "Vertrieb",
-            "kind": "skill",
-            "specific": false,
-            "status": "missing",
-            "evidence": null,
-            "core": true
-          },
-          {
-            "text": "Technisches Verständnis für Webentwicklung",
+            "text": "Technical understanding of web development",
             "kind": "skill",
             "specific": false,
             "status": "met",
@@ -6586,7 +6522,15 @@
             "core": false
           },
           {
-            "text": "Sehr gute Deutschkenntnisse",
+            "text": "Sales experience",
+            "kind": "skill",
+            "specific": false,
+            "status": "missing",
+            "evidence": null,
+            "core": true
+          },
+          {
+            "text": "Excellent German",
             "kind": "language",
             "specific": false,
             "status": "met",
@@ -6601,8 +6545,8 @@
         "work_locations": ["Bremen"],
         "contract_form": "regular",
         "work_time": "fulltime",
-        "dealbreaker": "Kundenakquise, Vertrieb",
-        "reasoning": "Your web development skills align but the role requires sales and cold calling, which you explicitly avoid."
+        "dealbreaker": "Cold calling",
+        "reasoning": "Your web development skills fit, but sales and cold calling are core tasks you explicitly avoid."
       }
     },
     {
@@ -6696,7 +6640,7 @@
             "status": "missing",
             "evidence": null,
             "core": false,
-            "specific": true
+            "specific": false
           }
         ],
         "downgrades": ["Tasks differ from what you've done – at most Fair"],
@@ -6704,7 +6648,7 @@
         "work_location": "Oldenburg",
         "work_arrangement": "onsite",
         "blocker": null,
-        "reasoning": "Your full-stack web skills don't match IT support tasks; no Windows or Active Directory experience."
+        "reasoning": "You lack Windows and Active Directory administration skills; your full-stack web experience doesn't match IT support tasks."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000016",
@@ -6744,7 +6688,7 @@
           {
             "text": "Hardware-Installation",
             "kind": "skill",
-            "specific": true,
+            "specific": false,
             "status": "missing",
             "evidence": null,
             "core": false
@@ -6758,7 +6702,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your full-stack web skills don't match IT support tasks; no Windows or Active Directory experience."
+        "reasoning": "You lack Windows and Active Directory administration skills; your full-stack web experience doesn't match IT support tasks."
       }
     },
     {
@@ -6790,7 +6734,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": "Internship – not a contract form you accept",
-        "reasoning": "Your React experience matches the task; no formal study in computer science is listed."
+        "reasoning": "Your React experience matches the task; you lack the required computer science degree."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000017",
@@ -6820,7 +6764,7 @@
         "contract_form": "praktikum",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React experience matches the task; no formal study in computer science is listed."
+        "reasoning": "Your React experience matches the task; you lack the required computer science degree."
       }
     },
     {
@@ -6828,16 +6772,8 @@
       "run": 3,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000018",
-        "chance": "good",
+        "chance": "very_good",
         "requirements": [
-          {
-            "text": "Erste Berufserfahrung in der Softwareentwicklung",
-            "kind": "skill",
-            "status": "partial",
-            "evidence": null,
-            "core": true,
-            "specific": false
-          },
           {
             "text": "React und TypeScript",
             "kind": "skill",
@@ -6868,7 +6804,7 @@
         "work_location": "Oldenburg",
         "work_arrangement": "onsite",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, Python, and Git match perfectly; you need to accept on-site work in Oldenburg."
+        "reasoning": "Your React, TypeScript, Python, and Git skills match perfectly; you must accept on-site work in Oldenburg."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000018",
@@ -6878,7 +6814,7 @@
             "kind": "skill",
             "specific": false,
             "status": "met",
-            "evidence": "2",
+            "evidence": "Full Stack Entwickler",
             "core": true
           },
           {
@@ -6914,7 +6850,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, Python, and Git match perfectly; you need to accept on-site work in Oldenburg."
+        "reasoning": "Your React, TypeScript, Python, and Git skills match perfectly; you must accept on-site work in Oldenburg."
       }
     },
     {
@@ -6946,7 +6882,7 @@
         "work_location": "Frankfurt am Main",
         "work_arrangement": "hybrid",
         "blocker": "Office in Frankfurt am Main, 318 km away – you want within 25 km of Oldenburg or 25 km of Bremen",
-        "reasoning": "Your React, TypeScript, and Git match the core stack; you must commute to Frankfurt 2 days per week."
+        "reasoning": "Your React, TypeScript, and Git skills match; you need to commute to Frankfurt 2 days per week."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000019",
@@ -6976,7 +6912,7 @@
             "core": true
           }
         ],
-        "required_years": 1,
+        "required_years": 2,
         "posting_level": "mid",
         "task_fit": "same",
         "work_arrangement": "hybrid",
@@ -6984,7 +6920,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, and Git match the core stack; you must commute to Frankfurt 2 days per week."
+        "reasoning": "Your React, TypeScript, and Git skills match; you need to commute to Frankfurt 2 days per week."
       }
     },
     {
@@ -7024,7 +6960,7 @@
         "work_location": "Remote",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your React, TypeScript, and Tailwind match exactly; no location requirement fits your remote preference."
+        "reasoning": "Your React, TypeScript, and Tailwind skills match exactly; you can work fully remote with no gaps."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000020",
@@ -7062,7 +6998,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your React, TypeScript, and Tailwind match exactly; no location requirement fits your remote preference."
+        "reasoning": "Your React, TypeScript, and Tailwind skills match exactly; you can work fully remote with no gaps."
       }
     },
     {
@@ -7070,12 +7006,12 @@
       "run": 3,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000021",
-        "chance": "good",
+        "chance": "very_good",
         "requirements": [
           {
             "text": "Abgeschlossene kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
             "specific": true
@@ -7087,14 +7023,6 @@
             "evidence": "MS Office",
             "core": true,
             "specific": false
-          },
-          {
-            "text": "Excel",
-            "kind": "skill",
-            "status": "met",
-            "evidence": "Excel",
-            "core": true,
-            "specific": true
           },
           {
             "text": "Erfahrung mit DATEV",
@@ -7118,7 +7046,7 @@
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": null,
-        "reasoning": "Your Kauffrau für Büromanagement and DATEV experience match perfectly; no gap."
+        "reasoning": "Your Kaufmann für Büromanagement and DATEV experience match perfectly; no dealbreakers or gaps."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000021",
@@ -7148,14 +7076,6 @@
             "core": true
           },
           {
-            "text": "Excel",
-            "kind": "skill",
-            "specific": true,
-            "status": "met",
-            "evidence": "Excel",
-            "core": true
-          },
-          {
             "text": "Erfahrung mit DATEV",
             "kind": "skill",
             "specific": true,
@@ -7180,7 +7100,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Kauffrau für Büromanagement and DATEV experience match perfectly; no gap."
+        "reasoning": "Your Kaufmann für Büromanagement and DATEV experience match perfectly; no dealbreakers or gaps."
       }
     },
     {
@@ -7193,10 +7113,10 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "MS Office",
@@ -7220,7 +7140,7 @@
         "work_location": "Langenhagen (Niedersachsen)",
         "work_arrangement": "onsite",
         "blocker": "Full-time – not a working time you accept",
-        "reasoning": "Your Büromanagement background fits office organization and correspondence; no gap."
+        "reasoning": "Your Büromanagement background fits office organization and MS Office; no experience requirement or dealbreakers."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000022",
@@ -7228,7 +7148,7 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
@@ -7258,7 +7178,7 @@
         "contract_form": "regular",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "Your Büromanagement background fits office organization and correspondence; no gap."
+        "reasoning": "Your Büromanagement background fits office organization and MS Office; no experience requirement or dealbreakers."
       }
     },
     {
@@ -7266,15 +7186,15 @@
       "run": 3,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000023",
-        "chance": "good",
+        "chance": "very_good",
         "requirements": [
           {
             "text": "Abgeschlossene kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "Kenntnisse in der Buchhaltung",
@@ -7306,7 +7226,7 @@
         "work_location": "Hannover",
         "work_arrangement": "hybrid",
         "blocker": null,
-        "reasoning": "Your Buchhaltung and DATEV skills align exactly; no gap."
+        "reasoning": "Your Buchhaltung and DATEV skills align exactly; 2 days home office is acceptable."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000023",
@@ -7314,7 +7234,7 @@
           {
             "text": "Abgeschlossene kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
@@ -7352,7 +7272,7 @@
         "contract_form": "regular",
         "work_time": "both",
         "dealbreaker": null,
-        "reasoning": "Your Buchhaltung and DATEV skills align exactly; no gap."
+        "reasoning": "Your Buchhaltung and DATEV skills align exactly; 2 days home office is acceptable."
       }
     },
     {
@@ -7368,18 +7288,26 @@
             "status": "missing",
             "evidence": null,
             "core": true,
-            "specific": true
+            "specific": false
+          },
+          {
+            "text": "Freude am Umgang mit Menschen",
+            "kind": "skill",
+            "status": "partial",
+            "evidence": "Kundenservice",
+            "core": false,
+            "specific": false
           }
         ],
         "downgrades": [
-          "Tasks differ from what you've done – at most Fair",
+          "Tasks only partly match your experience – at most Good",
           "Little or no job description – at most Fair"
         ],
         "distance_km": 0,
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Apprenticeship – not a contract form you accept; Full-time – not a working time you accept",
-        "reasoning": "You are already qualified as a Kauffrau; this is an apprenticeship for beginners."
+        "reasoning": "You have customer service but lack the required school diploma; this is an apprenticeship, not a professional role."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000024",
@@ -7387,21 +7315,29 @@
           {
             "text": "Realschulabschluss oder Abitur",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "missing",
             "evidence": null,
             "core": true
+          },
+          {
+            "text": "Freude am Umgang mit Menschen",
+            "kind": "skill",
+            "specific": false,
+            "status": "partial",
+            "evidence": "Kundenservice",
+            "core": false
           }
         ],
         "required_years": null,
         "posting_level": "junior",
-        "task_fit": "different",
+        "task_fit": "adjacent",
         "work_arrangement": "onsite",
         "work_locations": ["Hannover"],
         "contract_form": "ausbildung",
         "work_time": "fulltime",
         "dealbreaker": null,
-        "reasoning": "You are already qualified as a Kauffrau; this is an apprenticeship for beginners."
+        "reasoning": "You have customer service but lack the required school diploma; this is an apprenticeship, not a professional role."
       }
     },
     {
@@ -7414,10 +7350,10 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "SAP-Kenntnisse",
@@ -7441,7 +7377,7 @@
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Dealbreaker: Shift work",
-        "reasoning": "Your SAP and administrative skills fit; shift work is a dealbreaker."
+        "reasoning": "Your SAP and administrative skills fit; but shift work is a hard dealbreaker for you."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000025",
@@ -7449,7 +7385,7 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
@@ -7479,7 +7415,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": "Shift work",
-        "reasoning": "Your SAP and administrative skills fit; shift work is a dealbreaker."
+        "reasoning": "Your SAP and administrative skills fit; but shift work is a hard dealbreaker for you."
       }
     },
     {
@@ -7487,7 +7423,7 @@
       "run": 3,
       "result": {
         "job_id": "00000000-0000-4000-8000-000000000026",
-        "chance": "good",
+        "chance": "fair",
         "requirements": [
           {
             "text": "Abgeschlossene Ausbildung als Steuerfachangestellte/r oder …",
@@ -7498,7 +7434,7 @@
             "specific": true
           },
           {
-            "text": "DATEV-Kenntnisse",
+            "text": "DATEV",
             "kind": "skill",
             "status": "met",
             "evidence": "DATEV",
@@ -7508,7 +7444,7 @@
           {
             "text": "Kreditoren- und Debitorenbuchhaltung",
             "kind": "skill",
-            "status": "met",
+            "status": "partial",
             "evidence": "Buchhaltung",
             "core": false,
             "specific": false
@@ -7522,12 +7458,12 @@
             "specific": true
           }
         ],
-        "downgrades": [],
+        "downgrades": ["Tasks only partly match your experience – at most Good"],
         "distance_km": 0,
         "work_location": "Hannover",
         "work_arrangement": "hybrid",
         "blocker": null,
-        "reasoning": "Your DATEV and Buchhaltung match core tasks; you lack the required Steuerfachangestellte/r or Bilanzbuchhalter qualification."
+        "reasoning": "Your DATEV and Buchhaltung skills match core tasks; you lack the required Steuerfachangestellte/r qualification and 3 years of Finanzbuchhaltung."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000026",
@@ -7549,7 +7485,7 @@
             "core": true
           },
           {
-            "text": "DATEV-Kenntnisse",
+            "text": "DATEV",
             "kind": "skill",
             "specific": true,
             "status": "met",
@@ -7560,7 +7496,7 @@
             "text": "Kreditoren- und Debitorenbuchhaltung",
             "kind": "skill",
             "specific": false,
-            "status": "met",
+            "status": "partial",
             "evidence": "Buchhaltung",
             "core": false
           },
@@ -7575,13 +7511,13 @@
         ],
         "required_years": 3,
         "posting_level": "mid",
-        "task_fit": "same",
+        "task_fit": "adjacent",
         "work_arrangement": "hybrid",
         "work_locations": ["Hannover"],
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your DATEV and Buchhaltung match core tasks; you lack the required Steuerfachangestellte/r or Bilanzbuchhalter qualification."
+        "reasoning": "Your DATEV and Buchhaltung skills match core tasks; you lack the required Steuerfachangestellte/r qualification and 3 years of Finanzbuchhaltung."
       }
     },
     {
@@ -7594,10 +7530,10 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "MS Office",
@@ -7616,12 +7552,12 @@
             "specific": false
           }
         ],
-        "downgrades": ["Tasks only partly match your experience – at most Good"],
+        "downgrades": [],
         "distance_km": 0,
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Missing language: Verhandlungssichere Spanischkenntnisse in Wort und Schrift",
-        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required Spanish language skills."
+        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit perfectly; you lack the required Spanish language proficiency."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000027",
@@ -7629,7 +7565,7 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
@@ -7653,13 +7589,13 @@
         ],
         "required_years": null,
         "posting_level": "mid",
-        "task_fit": "adjacent",
+        "task_fit": "same",
         "work_arrangement": "onsite",
         "work_locations": ["Hannover"],
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required Spanish language skills."
+        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit perfectly; you lack the required Spanish language proficiency."
       }
     },
     {
@@ -7672,10 +7608,10 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true,
-            "specific": true
+            "specific": false
           },
           {
             "text": "MS Office",
@@ -7699,7 +7635,7 @@
         "work_location": "Berlin",
         "work_arrangement": "onsite",
         "blocker": "Office in Berlin, 223 km away – you want within 20 km of Hannover",
-        "reasoning": "Your Kaufmännische Ausbildung, MS Office, and DATEV fully match the tasks."
+        "reasoning": "Your Kaufmännische Ausbildung, MS Office, and DATEV fully match the requirements; no gaps."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000028",
@@ -7707,7 +7643,7 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
@@ -7737,7 +7673,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Kaufmännische Ausbildung, MS Office, and DATEV fully match the tasks."
+        "reasoning": "Your Kaufmännische Ausbildung, MS Office, and DATEV fully match the requirements; no gaps."
       }
     },
     {
@@ -7760,7 +7696,7 @@
             "kind": "skill",
             "status": "met",
             "evidence": "Terminkoordination",
-            "core": true,
+            "core": false,
             "specific": false
           },
           {
@@ -7777,7 +7713,7 @@
         "work_location": "Leipzig",
         "work_arrangement": "remote",
         "blocker": null,
-        "reasoning": "Your Büroerfahrung, MS Office, Terminkoordination, and German match perfectly; no gaps."
+        "reasoning": "Your Büroerfahrung, MS Office, Terminkoordination, and German match exactly; no gaps."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000029",
@@ -7804,7 +7740,7 @@
             "specific": false,
             "status": "met",
             "evidence": "Terminkoordination",
-            "core": true
+            "core": false
           },
           {
             "text": "Sehr gute Deutschkenntnisse",
@@ -7823,7 +7759,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Büroerfahrung, MS Office, Terminkoordination, and German match perfectly; no gaps."
+        "reasoning": "Your Büroerfahrung, MS Office, Terminkoordination, and German match exactly; no gaps."
       }
     },
     {
@@ -7836,16 +7772,8 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "status": "partial",
+            "status": "met",
             "evidence": "Kauffrau für Büromanagement",
-            "core": true,
-            "specific": true
-          },
-          {
-            "text": "Mehrfache Führungserfahrung",
-            "kind": "skill",
-            "status": "missing",
-            "evidence": null,
             "core": true,
             "specific": false
           },
@@ -7858,12 +7786,15 @@
             "specific": true
           }
         ],
-        "downgrades": ["Tasks only partly match your experience – at most Good"],
+        "downgrades": [
+          "Tasks only partly match your experience – at most Good",
+          "Posting names few concrete requirements – at most Good"
+        ],
         "distance_km": 0,
         "work_location": "Hannover",
         "work_arrangement": "onsite",
         "blocker": "Senior role – your level is Mid-level",
-        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required team leadership experience."
+        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack the required team leadership experience."
       },
       "entry": {
         "job_id": "00000000-0000-4000-8000-000000000030",
@@ -7871,13 +7802,13 @@
           {
             "text": "Kaufmännische Ausbildung",
             "kind": "qualification",
-            "specific": true,
+            "specific": false,
             "status": "met",
             "evidence": "Kauffrau für Büromanagement",
             "core": true
           },
           {
-            "text": "Mehrfache Führungserfahrung",
+            "text": "Mehrjährige Führungserfahrung",
             "kind": "skill",
             "specific": false,
             "status": "missing",
@@ -7901,7 +7832,7 @@
         "contract_form": "regular",
         "work_time": "parttime",
         "dealbreaker": null,
-        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack required team leadership experience."
+        "reasoning": "Your Kaufmännische Ausbildung and MS Office fit; you lack the required team leadership experience."
       }
     }
   ]

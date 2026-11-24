@@ -24,7 +24,7 @@ import type { Preferences } from "@/lib/types";
  * the next run — otherwise a fix here would only ever reach newly scraped jobs.
  * Bump it whenever a change should re-score existing jobs.
  */
-export const SCORING_VERSION = 11;
+export const SCORING_VERSION = 12;
 
 export type WorkArrangement = "remote" | "hybrid" | "onsite";
 export type PostingLevel = "junior" | "mid" | "senior";
@@ -107,8 +107,9 @@ const MAX_REQUIREMENT_CHARS = 60;
 
 // Years of experience are judged from required_years by the experience rule;
 // listing them again would count the same gap twice.
+// "Erste Berufserfahrung" is the prompt's 1 year; "Erste Erfahrung mit React" is a skill.
 const YEARS_REQUIREMENT =
-  /\d\s*\+?\s*(?:-\s*\d+\s*)?(?:years?|yrs?|jahre?n?)\b|mehrjährig|langjährig|several years|many years/i;
+  /\d\s*\+?\s*(?:-\s*\d+\s*)?(?:years?|yrs?|jahre?n?)\b|mehrjährig|langjährig|several years|many years|erste\s+(?:praktische\s+)?berufserfahrung|first (?:professional|work) experience/i;
 
 // Soft skills can't be checked against a CV and only ever count against the
 // candidate; the prompt leaves them out, and this catches the ones it lists anyway.
@@ -254,6 +255,16 @@ export function evidenceIn(profile: string, evidence: string): boolean {
  * basics is partly met, and one that isn't in the profile at all is still
  * partly met rather than missing.
  */
+// "Abgeschlossene kaufmännische Ausbildung", "Hochschulabschluss": a whole group
+// of degrees, met by any degree in it ("Kauffrau für Büromanagement"), so no
+// shared word is needed. "Studium der Informatik" names one and stays strict.
+// The model marks these as specific even when the prompt says otherwise.
+const DEGREE_GROUP = /(?:ausbildung|studium|abschluss|degree|apprenticeship)$/i;
+
+function isDegreeGroup(text: string): boolean {
+  return DEGREE_GROUP.test(text.trim());
+}
+
 export function verifyRequirements(
   requirements: Requirement[],
   candidate: Candidate,
@@ -262,7 +273,7 @@ export function verifyRequirements(
     if (requirement.status === "missing") return requirement;
     // Nothing to check a language against when the profile names none.
     if (requirement.kind === "language" && !candidate.languagesStated) return requirement;
-    const specific = requirement.specific !== false;
+    const specific = requirement.specific !== false && !isDegreeGroup(requirement.text);
     const evidence = requirement.evidence ?? "";
     if (evidence && evidenceIn(candidate.profile.strong, evidence)) {
       // "Azure: met — Google Cloud" is a neighbouring tool, not the thing asked
@@ -296,6 +307,8 @@ const OFFICE_PRESENCE = new RegExp(
   [
     // "3 Tage im Büro", "2 Tage Homeoffice", "1-2 Tage pro Woche ins Büro", "3 days in the office"
     String.raw`(?<![\d,.])\b${NUMBER_WORD}\s*(?:tage?n?|days?)\b(?!\s*\w*urlaub)[^.,;\n]{0,40}?(?:b(?:ü|ue)ro|office|vor ort|pr(?:ä|ae)senz|home[\s-]?office|mobil|remote|on[\s-]?site|standort)`,
+    // "Homeoffice an 2 Tagen pro Woche", "remote on 3 days a week"
+    String.raw`(?:home[\s-]?office|mobil\w*|remote)[^.,;\n]{0,20}?(?<![\d,.])\b${NUMBER_WORD}\s*(?:tage?n?|days?)\b(?!\s*\w*urlaub)`,
     // "bis zu 50 % mobiles Arbeiten", "60% Home-Office" — anything short of 100 %
     String.raw`(?<!\d)(?:[1-9]?\d)\s?%[^.,;\n]{0,30}?(?:home|mobil|remote|b(?:ü|ue)ro|office|pr(?:ä|ae)senz|vor ort)`,
     // "Homeoffice-Anteil von 40 %"
@@ -318,15 +331,29 @@ const NO_REMOTE = new RegExp(
   "i",
 );
 
+// Office presence without a number: "Hybrid", "vor Ort", "on-site", "Präsenz".
+const OFFICE_HINT = /\bhybrid|vor[\s-]ort|on[\s-]?site|pr(?:ä|ae)senz/i;
+
 /**
  * "remote" from the model only counts when the posting itself says so, and
  * not when it also names fixed office days (then hybrid) or rules home office
- * out (then on-site). Hybrid and on-site from the model are kept as they are.
+ * out (then on-site). The other way round, "hybrid" becomes remote when the
+ * posting only says home office is possible and names no office presence:
+ * the model reads "Büros in Hamburg, Homeoffice möglich" as hybrid despite
+ * the prompt. On-site from the model is kept as it is.
  */
 export function confirmRemote(
   arrangement: WorkArrangement | null,
   postingText: string,
 ): WorkArrangement | null {
+  if (arrangement === "hybrid") {
+    const homeOfficeOnly =
+      REMOTE_EVIDENCE.test(postingText) &&
+      !OFFICE_PRESENCE.test(postingText) &&
+      !NO_REMOTE.test(postingText) &&
+      !OFFICE_HINT.test(postingText);
+    return homeOfficeOnly ? "remote" : "hybrid";
+  }
   if (arrangement !== "remote") return arrangement;
   if (OFFICE_PRESENCE.test(postingText)) return "hybrid";
   if (NO_REMOTE.test(postingText)) return "onsite";

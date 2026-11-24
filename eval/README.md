@@ -43,23 +43,35 @@ Latest run: [RESULTS.md](RESULTS.md). Every saved run: [results/](results/).
 | Scoring version | Change                          | Right tier | Same tier in all 3 runs | Cost per job |
 | --------------- | ------------------------------- | ---------- | ----------------------- | ------------ |
 | v11             | Baseline, first run of the eval | 87 %       | 90 %                    | $0.0003      |
+| v12             | Fixes for findings 1–3 below    | 97 %       | 97 %                    | $0.0003      |
 
 ## What the first run found
 
-1. **Degrees are checked too strictly.** "Kaufmännische Ausbildung", proved by "Kauffrau für
-   Büromanagement", is only partly met: the evidence check wants a shared word for anything
-   specific. That cost the office worker Very good on two postings, in every run.
-2. **"Erste Berufserfahrung" is treated as a skill.** Years of experience are meant to be judged
-   by the experience rule alone. This phrase has no number, so it slips past the filter, the
-   model quotes "2" (the years) as evidence, and the requirement ends up partly met.
-3. **"Office + home office possible" is read as hybrid.** The prompt says a general home office
-   mention counts as remote unless fixed office days are named. With "Moderne Büros in Hamburg"
-   in the same list, the model answers hybrid anyway, and the job becomes Low for the distance.
-4. **The same posting doesn't always get the same tier,** despite temperature 0 and a fixed seed.
-   3 of 30 postings moved between runs. Once, a 3-year mid-level posting was called senior.
+1. **Degrees were checked too strictly.** "Kaufmännische Ausbildung", proved by "Kauffrau für
+   Büromanagement", was only partly met, because the evidence check wants a shared word for
+   anything specific. Telling the model in the prompt didn't help. **Fix (v12):** code treats a
+   requirement that names a whole group of degrees as general, so any degree in it counts.
+2. **"Erste Berufserfahrung" was treated as a skill.** It has no number, so it slipped past the
+   years filter, the model quoted "2" (the years) as evidence, and the requirement ended up partly
+   met. **Fix (v12):** the filter now knows the phrase; the experience rule judges it.
+3. **"Office + home office possible" was read as hybrid.** The prompt says that counts as
+   remote, but with "Moderne Büros in Hamburg" in the same list the model answered hybrid
+   anyway, so the job became Low for the distance. A second prompt line didn't help either.
+   **Fix (v12):** code turns hybrid into remote when the posting mentions home office and
+   names no office days. The first version of this fix broke "Homeoffice an 2 Tagen pro Woche",
+   which the eval caught right away; the office-days check now knows that word order too.
+4. **The same posting didn't always get the same tier,** despite temperature 0 and a fixed seed.
+   3 of 30 postings moved between runs in v11, 1 in v12.
 5. **The eval had a bug too.** In the very first run one test posting was 283 characters long,
    under the app's 300-character "too little description" rule. That was the test's fault, not
-   the app's; it was fixed before the run above.
+   the app's; it was fixed before the v11 run above.
+
+**Still open:** `dev-alternatives`, a plain frontend job, is rated Good, because the model calls
+its tasks only "adjacent" to the candidate's. It also reads "1-2 Jahre" as 2 years instead of 1
+(no effect on the tier here).
+
+**Lesson:** the model followed none of the three prompt fixes. Where a rule can be checked in code,
+it belongs in code.
 
 ## Limitations
 

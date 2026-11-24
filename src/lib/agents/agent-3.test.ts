@@ -208,11 +208,13 @@ describe("toChanceResult", () => {
     expect(toChanceResult(entry, job, candidate).work_location).toBe("Remote");
   });
 
+  const hybridJob = { ...job, description: `2 Tage pro Woche im Büro. ${"x".repeat(1000)}` };
+
   it("hands the model's cities to locate and measures the distance", () => {
     const seen: string[][] = [];
     const out = toChanceResult(
       { ...entry, work_arrangement: "hybrid", work_locations: ["München"] },
-      job,
+      hybridJob,
       toCandidate({ ...prefs, office_ok: true }, [
         { label: "Hamburg", points: [[53.55, 9.99]], radiusKm: 10 },
       ]),
@@ -230,7 +232,7 @@ describe("toChanceResult", () => {
   it("names every broken rule as the blocker", () => {
     const out = toChanceResult(
       { ...entry, work_arrangement: "hybrid", required_years: 5 },
-      job,
+      hybridJob,
       toCandidate(prefs),
     );
     expect(out.chance).toBe("low");

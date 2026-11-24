@@ -41,7 +41,7 @@ only at the very end), each scored 3 times by the real model.
 
 | Right tier | Same tier in all 3 runs | Cost per job |
 | ---------- | ----------------------- | ------------ |
-| 87 %       | 90 %                    | $0.0003      |
+| 97 %       | 97 %                    | $0.0003      |
 
 What it found and how it works: [eval/README.md](eval/README.md).
 

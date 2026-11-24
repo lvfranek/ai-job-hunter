@@ -151,10 +151,12 @@ in the posting.
       development".
     - specific: true for a concretely named tool, technology, product,
       certificate or degree ("React", "Kubernetes", "SAP S/4HANA", "AWS
-      Certified"); false for a general ability or kind of experience
-      ("Software engineering", "Full-stack development", "Customer service
-      experience", "Product experience", "Kundenberatung", "API integration",
-      "Automation").
+      Certified", "Kauffrau für Büromanagement", "B.Sc. Informatik"); false
+      for a general ability or kind of experience ("Software engineering",
+      "Full-stack development", "Customer service experience", "Product
+      experience", "Kundenberatung", "API integration", "Automation") and for
+      a whole group of degrees ("kaufmännische Ausbildung", "abgeschlossenes
+      Studium", "IT-Ausbildung"), which any degree of that group meets.
     - core: true for the 2-4 requirements the role is built around — its main
       technologies or the qualification it can't do without — false for the
       rest.
@@ -194,6 +196,8 @@ in the posting.
       Arbeitszeiten und Homeoffice", "Home Office" listed as a benefit,
       "remote work options", "100% remote", "ortsunabhängig". If home office
       is mentioned but the details are unclear, choose "remote". A few on-site team events a year still count.
+      An office address or "moderne Büros" next to "Homeoffice möglich" is
+      still "remote": having an office is not a fixed office presence.
     - "hybrid": ONLY when the posting names a fixed office presence — "3 Tage
       im Büro", "2 Tage Homeoffice", "bis zu 50 % mobiles Arbeiten", "1-2 Tage
       pro Woche ins Büro", "regelmäßig vor Ort", "Office-first", "eine reine

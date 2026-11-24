@@ -147,6 +147,8 @@ describe("normalizeRequirements", () => {
       normalizeRequirements([
         { text: "3+ Jahre Berufserfahrung", kind: "skill", status: "missing" },
         { text: "Mehrjährige Erfahrung im Vertrieb", kind: "skill", status: "partial" },
+        { text: "Erste Berufserfahrung in der Softwareentwicklung", kind: "skill", status: "met" },
+        { text: "First professional experience", kind: "skill", status: "met" },
         { text: "React", kind: "skill", status: "maybe" },
         { text: "SAP", kind: "tool", status: "met" },
         { text: "sap", kind: "skill", status: "missing" },
@@ -156,6 +158,14 @@ describe("normalizeRequirements", () => {
     ).toEqual([
       { text: "SAP", kind: "skill", status: "met", evidence: null, core: false, specific: true },
     ]);
+  });
+
+  it("keeps first experience WITH a tool, which is a skill", () => {
+    expect(
+      normalizeRequirements([
+        { text: "Erste Erfahrung mit React", kind: "skill", status: "met" },
+      ]).map((r) => r.text),
+    ).toEqual(["Erste Erfahrung mit React"]);
   });
 
   it("reads specific, treating a missing flag as specific", () => {
@@ -654,6 +664,18 @@ describe("verifyRequirements — the model's claims need proof", () => {
     });
   });
 
+  it("lets any degree meet a whole group of degrees", () => {
+    const office = toCandidate(prefs({ own_skills: "Kauffrau für Büromanagement, DATEV" }));
+    const degree = (text: string) =>
+      ({ ...claim(text, "Kauffrau für Büromanagement"), specific: true }) as Requirement;
+    expect(
+      verifyRequirements(
+        [degree("Abgeschlossene kaufmännische Ausbildung"), degree("Studium der Informatik")],
+        office,
+      ).map((r) => r.status),
+    ).toEqual(["met", "partial"]);
+  });
+
   it("counts a quote from the basics list as partly met", () => {
     expect(statuses([claim("Docker", "Docker")])).toEqual(["partial"]);
   });
@@ -716,8 +738,20 @@ describe("confirmRemote — remote unless the posting names office presence", ()
     expect(confirmRemote("remote", text)).toBe(expected);
   });
 
-  it("never touches hybrid, on-site or unknown", () => {
-    expect(confirmRemote("hybrid", "")).toBe("hybrid");
+  it("turns hybrid into remote when the posting only says home office is possible", () => {
+    expect(confirmRemote("hybrid", "Moderne Büros in Hamburg\n- Homeoffice möglich")).toBe(
+      "remote",
+    );
+    expect(confirmRemote("hybrid", "Hybrid, Homeoffice möglich")).toBe("hybrid");
+    expect(confirmRemote("hybrid", "2 Tage Homeoffice pro Woche")).toBe("hybrid");
+    expect(confirmRemote("hybrid", "Homeoffice an 2 Tagen pro Woche, sonst im Büro")).toBe(
+      "hybrid",
+    );
+    expect(confirmRemote("hybrid", "Arbeit vor Ort, Homeoffice nach Absprache")).toBe("hybrid");
+    expect(confirmRemote("hybrid", "Moderne Büros in Hamburg")).toBe("hybrid");
+  });
+
+  it("never touches on-site or unknown", () => {
     expect(confirmRemote("onsite", "remote")).toBe("onsite");
     expect(confirmRemote(null, "Homeoffice möglich")).toBeNull();
   });

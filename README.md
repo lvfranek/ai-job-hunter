@@ -9,14 +9,14 @@ letter for the ones you like. Works for any profession, not just software.
 
 ## Tech Stack
 
-| Area     | Choice                                                          |
-| -------- | --------------------------------------------------------------- |
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4                |
-| Database | Supabase (Postgres, RLS)                                        |
-| Scraping | Apify (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur)       |
-| AI       | OpenRouter, `qwen3-next-80b-a3b-instruct`                       |
-| Quality  | Vitest (234 tests), GitHub Actions, an eval with the real model |
-| Hosting  | Vercel                                                          |
+| Area     | Choice                                                                |
+| -------- | --------------------------------------------------------------------- |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4                      |
+| Database | Supabase (Postgres, RLS)                                              |
+| Scraping | Apify (Indeed, LinkedIn, Xing, Stepstone, Arbeitsagentur)             |
+| AI       | OpenRouter, `qwen3-next-80b-a3b-instruct`, answers validated with Zod |
+| Quality  | Vitest (234 tests), GitHub Actions, an eval with the real model       |
+| Hosting  | Vercel                                                                |
 
 ## How Scoring Works
 
@@ -41,7 +41,7 @@ only at the very end), each scored 3 times by the real model.
 
 | Right tier | Same tier in all 3 runs | Cost per job |
 | ---------- | ----------------------- | ------------ |
-| 97 %       | 97 %                    | $0.0003      |
+| 98 %       | 93 %                    | $0.0004      |
 
 What it found and how it works: [eval/README.md](eval/README.md).
 

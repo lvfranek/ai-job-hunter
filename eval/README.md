@@ -40,10 +40,11 @@ cost per job.
 
 Latest run: [RESULTS.md](RESULTS.md). Every saved run: [results/](results/).
 
-| Scoring version | Change                          | Right tier | Same tier in all 3 runs | Cost per job |
-| --------------- | ------------------------------- | ---------- | ----------------------- | ------------ |
-| v11             | Baseline, first run of the eval | 87 %       | 90 %                    | $0.0003      |
-| v12             | Fixes for findings 1–3 below    | 97 %       | 97 %                    | $0.0003      |
+| Scoring version | Change                                                      | Right tier | Same tier in all 3 runs | Cost per job |
+| --------------- | ----------------------------------------------------------- | ---------- | ----------------------- | ------------ |
+| v11             | Baseline, first run of the eval                             | 87 %       | 90 %                    | $0.0003      |
+| v12             | Fixes for findings 1–3 below                                | 97 %       | 97 %                    | $0.0003      |
+| v12             | Answers in a fixed format (JSON schema), validated with Zod | 98 %       | 93 %                    | $0.0004      |
 
 ## What the first run found
 
@@ -69,6 +70,12 @@ Latest run: [RESULTS.md](RESULTS.md). Every saved run: [results/](results/).
 **Still open:** `dev-alternatives`, a plain frontend job, is rated Good, because the model calls
 its tasks only "adjacent" to the candidate's. It also reads "1-2 Jahre" as 2 years instead of 1
 (no effect on the tier here).
+
+**Fixed format (no version change):** the model now has to answer in a JSON schema, and every
+answer is validated; a wrong one goes back to the model once with the problems. This replaced
+the old code that cut markdown fences off and salvaged broken JSON. In the run above, 0 of 18
+answers needed a repair. Cost per job went up from about $0.0003 to $0.0004, most likely because
+OpenRouter now only routes to providers that enforce the schema.
 
 **Lesson:** the model followed none of the three prompt fixes. Where a rule can be checked in code,
 it belongs in code.

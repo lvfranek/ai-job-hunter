@@ -8,9 +8,9 @@
 //
 // Needs OPENROUTER_API_KEY (in .env.local, or stored via the Settings page).
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { chunk, CHUNK_SIZE, isCompleteEntry, judgeChunk, readChunk } from "@/lib/agents/agent-3";
+import { chunk, CHUNK_SIZE, judgeChunk, readChunk } from "@/lib/agents/agent-3";
 import { chanceShortLabels, type Chance, type Requirement } from "@/lib/chance";
 import data from "@/lib/geo/places-dach.json";
 import { buildPlaceIndex, resolveHomes } from "@/lib/geo/places";
@@ -94,7 +94,8 @@ interface Outcome {
 
 interface ChunkStat {
   ms: number;
-  usage: Usage | null;
+  /** One per AI call; more than one means the answer needed a repair. */
+  usages: Usage[];
   jobs: number;
 }
 
@@ -109,11 +110,11 @@ async function runOnce(run: number, stats: ChunkStat[]): Promise<Outcome[]> {
     work.map(async ({ candidateId, part }) => {
       const { preferences, geo } = candidateSetup(candidateId);
       const chunkJobs = part.map((c) => jobs.get(c.id)!);
-      let usage: Usage | null = null;
+      const usages: Usage[] = [];
       const start = Date.now();
       try {
-        const entries = await readChunk(chunkJobs, preferences, { onUsage: (u) => (usage = u) });
-        stats.push({ ms: Date.now() - start, usage, jobs: part.length });
+        const entries = await readChunk(chunkJobs, preferences, { onUsage: (u) => usages.push(u) });
+        stats.push({ ms: Date.now() - start, usages, jobs: part.length });
         const results = judgeChunk(entries, chunkJobs, preferences, geo);
         return part.map((c): Outcome => {
           const job = jobs.get(c.id)!;
@@ -121,11 +122,11 @@ async function runOnce(run: number, stats: ChunkStat[]): Promise<Outcome[]> {
             caseId: c.id,
             run,
             result: results.find((r) => r.job_id === job.id) ?? null,
-            entry: entries.find((e) => String(e.job_id) === job.id && isCompleteEntry(e)) ?? null,
+            entry: entries.find((e) => e.job_id === job.id) ?? null,
           };
         });
       } catch (error) {
-        stats.push({ ms: Date.now() - start, usage, jobs: part.length });
+        stats.push({ ms: Date.now() - start, usages, jobs: part.length });
         return part.map((c): Outcome => ({
           caseId: c.id,
           run,
@@ -248,9 +249,10 @@ function report(graded: Map<string, Graded[]>, stats: ChunkStat[]): string {
   ).length;
   const claims = all.reduce((sum, g) => sum + g.claims, 0);
   const overruled = all.flatMap((g) => g.overruled);
-  const costs = stats.map((s) => s.usage?.cost).filter((c): c is number => c != null);
-  const cost = costs.reduce((a, b) => a + b, 0);
-  const jobsCosted = stats.filter((s) => s.usage?.cost != null).reduce((a, s) => a + s.jobs, 0);
+  const costed = stats.filter((s) => s.usages.length > 0 && s.usages.every((u) => u.cost != null));
+  const cost = costed.reduce((a, s) => a + s.usages.reduce((b, u) => b + (u.cost ?? 0), 0), 0);
+  const jobsCosted = costed.reduce((a, s) => a + s.jobs, 0);
+  const repaired = stats.filter((s) => s.usages.length > 1).length;
   const avgMs = stats.reduce((a, s) => a + s.ms, 0) / Math.max(1, stats.length);
 
   const factFields = ["arrangement", "contract", "years", "level", "work time", "requirement"];
@@ -274,7 +276,8 @@ function report(graded: Map<string, Graded[]>, stats: ChunkStat[]): string {
     `| Same tier in all ${RUNS} runs | ${ratio(stable, graded.size)} |`,
     `| Jobs without an answer (skipped or failed) | ${all.length - answered.length} |`,
     `| Model claims (met/partly met) overruled by the evidence check | ${ratio(overruled.length, claims)} |`,
-    `| Avg. time per AI call (${CHUNK_SIZE} jobs) | ${(avgMs / 1000).toFixed(1)} s |`,
+    `| Answers that needed a repair (wrong format) | ${ratio(repaired, stats.length)} |`,
+    `| Avg. time per chunk (${CHUNK_SIZE} jobs) | ${(avgMs / 1000).toFixed(1)} s |`,
     `| Cost per job | ${jobsCosted ? `$${(cost / jobsCosted).toFixed(5)}` : "–"} |`,
     "",
     "## Facts read from the postings",
@@ -351,7 +354,12 @@ async function main() {
     const date = new Date().toISOString().slice(0, 10);
     mkdirSync(path.join(EVAL_DIR, "results"), { recursive: true });
     writeFileSync(path.join(EVAL_DIR, "RESULTS.md"), markdown);
-    writeFileSync(path.join(EVAL_DIR, "results", `${date}-v${SCORING_VERSION}.md`), markdown);
+    // Never overwrite an earlier run of the same day and version.
+    let name = `${date}-v${SCORING_VERSION}`;
+    for (let n = 2; existsSync(path.join(EVAL_DIR, "results", `${name}.md`)); n++) {
+      name = `${date}-v${SCORING_VERSION}-${n}`;
+    }
+    writeFileSync(path.join(EVAL_DIR, "results", `${name}.md`), markdown);
     writeFileSync(
       path.join(EVAL_DIR, "results", "latest.json"),
       JSON.stringify(
@@ -360,7 +368,7 @@ async function main() {
         2,
       ),
     );
-    console.log("Saved eval/RESULTS.md and eval/results/.");
+    console.log(`Saved eval/RESULTS.md and eval/results/${name}.md.`);
   }
 }
 

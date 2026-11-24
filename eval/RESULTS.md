@@ -4,13 +4,14 @@ Run on 2026-11-24 with `npm run eval`: 30 test postings ([cases.ts](cases.ts)), 
 
 |                                                               |                  |
 | ------------------------------------------------------------- | ---------------: |
-| **Right tier**                                                | **87/90 (97 %)** |
-| Right tier for the right reason                               |     87/90 (97 %) |
-| Same tier in all 3 runs                                       |     29/30 (97 %) |
+| **Right tier**                                                | **88/90 (98 %)** |
+| Right tier for the right reason                               |     88/90 (98 %) |
+| Same tier in all 3 runs                                       |     28/30 (93 %) |
 | Jobs without an answer (skipped or failed)                    |                0 |
-| Model claims (met/partly met) overruled by the evidence check |      3/252 (1 %) |
-| Avg. time per AI call (5 jobs)                                |           16.4 s |
-| Cost per job                                                  |         $0.00030 |
+| Model claims (met/partly met) overruled by the evidence check |      0/254 (0 %) |
+| Answers that needed a repair (wrong format)                   |       0/18 (0 %) |
+| Avg. time per chunk (5 jobs)                                  |           14.8 s |
+| Cost per job                                                  |         $0.00043 |
 
 ## Facts read from the postings
 
@@ -35,8 +36,8 @@ Run on 2026-11-24 with `npm run eval`: 30 test postings ([cases.ts](cases.ts)), 
 | `dev-three-years`               | Good             | Good ✓      | Good ✓      | Good ✓      |
 | `dev-werkstudent-in-text`       | Low              | Low ✓       | Low ✓       | Low ✓       |
 | `dev-werkstudent-as-experience` | Very good / Good | Very good ✓ | Very good ✓ | Very good ✓ |
-| `dev-homeoffice-after-cut`      | Very good / Good | Good ✓      | Good ✓      | Good ✓      |
-| `dev-alternatives`              | Very good        | Good ✗      | Good ✗      | Good ✗      |
+| `dev-homeoffice-after-cut`      | Very good / Good | Good ✓      | Very good ✓ | Good ✓      |
+| `dev-alternatives`              | Very good        | Good ✗      | Very good ✗ | Good ✗      |
 | `dev-java-backend`              | Low              | Low ✓       | Low ✓       | Low ✓       |
 | `dev-english-nice-to-have`      | Very good        | Very good ✓ | Very good ✓ | Very good ✓ |
 | `dev-french`                    | Low              | Low ✓       | Low ✓       | Low ✓       |
@@ -52,7 +53,7 @@ Run on 2026-11-24 with `npm run eval`: 30 test postings ([cases.ts](cases.ts)), 
 | `office-full-or-part-time`      | Very good        | Very good ✓ | Very good ✓ | Very good ✓ |
 | `office-apprenticeship`         | Low              | Low ✓       | Low ✓       | Low ✓       |
 | `office-shift-work`             | Low              | Low ✓       | Low ✓       | Low ✓       |
-| `office-bookkeeping-gaps`       | Good / Fair      | Good ✓      | Good ✓      | Fair ✓      |
+| `office-bookkeeping-gaps`       | Good / Fair      | Good ✓      | Good ✓      | Good ✓      |
 | `office-spanish`                | Low              | Low ✓       | Low ✓       | Low ✓       |
 | `office-berlin`                 | Low              | Low ✓       | Low ✓       | Low ✓       |
 | `office-remote-parttime`        | Very good        | Very good ✓ | Very good ✓ | Very good ✓ |
@@ -65,11 +66,11 @@ Run on 2026-11-24 with `npm run eval`: 30 test postings ([cases.ts](cases.ts)), 
 **`dev-alternatives`**: 'Vue.js oder React' is one requirement, met through React.
 
 - Run 1: tier: expected Very good, got Good (Tasks only partly match your experience – at most Good); years: expected 1, got 2
-- Run 2: tier: expected Very good, got Good (Tasks only partly match your experience – at most Good); years: expected 1, got 2
+- Run 2: years: expected 1, got 2
 - Run 3: tier: expected Very good, got Good (Tasks only partly match your experience – at most Good); years: expected 1, got 2
 
 ## Claims the evidence check overruled
 
-- Docker: met → partial (quoted "Docker") (3×)
+None.
 
-Total AI cost of this run: $0.0269.
+Total AI cost of this run: $0.0391.

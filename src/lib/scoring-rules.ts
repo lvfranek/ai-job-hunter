@@ -73,9 +73,9 @@ export interface ChanceResult {
 
 // ---- reading the model's facts ----------------------------------------------
 
-const ARRANGEMENTS: WorkArrangement[] = ["remote", "hybrid", "onsite"];
-const LEVELS: PostingLevel[] = ["junior", "mid", "senior"];
-const CONTRACT_FORMS: ContractForm[] = [
+export const ARRANGEMENTS: WorkArrangement[] = ["remote", "hybrid", "onsite"];
+export const LEVELS: PostingLevel[] = ["junior", "mid", "senior"];
+export const CONTRACT_FORMS: ContractForm[] = [
   "regular",
   "werkstudent",
   "ausbildung",
@@ -83,7 +83,7 @@ const CONTRACT_FORMS: ContractForm[] = [
   "freelance",
   "praktikum",
 ];
-const WORK_TIMES: WorkTime[] = ["fulltime", "parttime", "both", "minijob"];
+export const WORK_TIMES: WorkTime[] = ["fulltime", "parttime", "both", "minijob"];
 export const TASK_FITS: TaskFit[] = ["same", "adjacent", "different"];
 
 // Synonyms the model reaches for despite the prompt.

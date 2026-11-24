@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toCandidate, type CandidatePreferences } from "@/lib/scoring-rules";
-import {
-  chunk,
-  condenseDescription,
-  isCompleteEntry,
-  parseScoringResponse,
-  toChanceResult,
-} from "./agent-3";
+import { chunk, condenseDescription, toChanceResult } from "./agent-3";
 
 describe("condenseDescription", () => {
   it("returns a placeholder for null input", () => {
@@ -45,48 +39,6 @@ describe("chunk", () => {
 
   it("returns a single chunk when size exceeds the item count", () => {
     expect(chunk([1, 2], 10)).toEqual([[1, 2]]);
-  });
-});
-
-describe("parseScoringResponse", () => {
-  it("parses a bare JSON array", () => {
-    const raw = '[{"job_id":"1"},{"job_id":"2"}]';
-    expect(parseScoringResponse(raw)).toEqual([{ job_id: "1" }, { job_id: "2" }]);
-  });
-
-  it("unwraps a { scores: [...] } wrapper", () => {
-    const raw = '{"scores":[{"job_id":"1"}]}';
-    expect(parseScoringResponse(raw)).toEqual([{ job_id: "1" }]);
-  });
-
-  it("strips a markdown code fence around the JSON", () => {
-    const raw = '```json\n[{"job_id":"1"}]\n```';
-    expect(parseScoringResponse(raw)).toEqual([{ job_id: "1" }]);
-  });
-
-  it("salvages whole job entries, checklist included, from truncated JSON", () => {
-    const raw =
-      '[{"job_id":"1","requirements":[{"text":"React","kind":"skill","status":"met"}],"task_fit":"same"},' +
-      '{"job_id":"2","requirements":[{"text":"Vue","kind":"sk';
-    expect(parseScoringResponse(raw)).toEqual([
-      {
-        job_id: "1",
-        requirements: [{ text: "React", kind: "skill", status: "met" }],
-        task_fit: "same",
-      },
-    ]);
-  });
-
-  it("returns an empty array when nothing can be salvaged", () => {
-    expect(parseScoringResponse("not json at all")).toEqual([]);
-  });
-});
-
-describe("isCompleteEntry", () => {
-  it("needs a checklist and a task fit", () => {
-    expect(isCompleteEntry({ job_id: "1", requirements: [], task_fit: "Same" })).toBe(true);
-    expect(isCompleteEntry({ job_id: "1", task_fit: "same" })).toBe(false);
-    expect(isCompleteEntry({ job_id: "1", requirements: [], task_fit: "unsure" })).toBe(false);
   });
 });
 

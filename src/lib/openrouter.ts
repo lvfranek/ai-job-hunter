@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { getCredential } from "./credentials";
 
 // The one model every AI call in the app uses (CV parsing, scoring, cover
@@ -60,11 +61,23 @@ export interface Usage {
   cost: number | null;
 }
 
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
+
+/** A JSON schema the provider must answer in (OpenRouter structured outputs). */
+interface ResponseFormat {
+  name: string;
+  schema: Record<string, unknown>;
+}
+
 async function callOpenRouter(
   model: string,
-  prompt: string,
+  messages: Message[],
   apiKey: string,
   options: GenerateOptions,
+  format?: ResponseFormat,
 ): Promise<string> {
   let res: Response;
   try {
@@ -76,11 +89,21 @@ async function callOpenRouter(
       },
       body: JSON.stringify({
         model,
-        messages: [{ role: "user", content: prompt }],
+        messages,
         max_tokens: options.maxTokens ?? DEFAULT_MAX_TOKENS,
         ...(options.temperature != null ? { temperature: options.temperature } : {}),
         ...(options.seed != null ? { seed: options.seed } : {}),
         ...(options.onUsage ? { usage: { include: true } } : {}),
+        ...(format
+          ? {
+              response_format: {
+                type: "json_schema",
+                json_schema: { name: format.name, strict: true, schema: format.schema },
+              },
+              // Only route to providers that actually enforce the schema.
+              provider: { require_parameters: true },
+            }
+          : {}),
       }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
@@ -121,5 +144,64 @@ async function callOpenRouter(
 /** Send one prompt to {@link AI_MODEL} and return the text of its reply. */
 export async function generateText(prompt: string, options: GenerateOptions = {}): Promise<string> {
   const apiKey = await getCredential("openrouter_api_key");
-  return callOpenRouter(AI_MODEL, prompt, apiKey, options);
+  return callOpenRouter(AI_MODEL, [{ role: "user", content: prompt }], apiKey, options);
+}
+
+/** The model's answer still didn't match the schema after the repair attempt. */
+export class InvalidAnswerError extends Error {
+  constructor(problems: string) {
+    super(`The model's answer didn't match the expected format: ${problems}`);
+    this.name = "InvalidAnswerError";
+  }
+}
+
+// One repair round: the model sees its own answer and what was wrong with it.
+// A second miss is not worth another call; the caller treats it as a failure.
+const JSON_ATTEMPTS = 2;
+
+/** Why an answer is not valid, short enough to send back to the model. */
+function problemsOf(raw: string, schema: z.ZodType): string | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch (error) {
+    return `not valid JSON (${(error as Error).message})`;
+  }
+  const result = schema.safeParse(value);
+  if (result.success) return null;
+  return result.error.issues
+    .slice(0, 10)
+    .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
+    .join("; ");
+}
+
+/**
+ * Send one prompt and get back a value that matches `schema`. The provider is
+ * asked to answer in the schema's exact format, and the answer is validated
+ * here too: an invalid one goes back to the model once, with the problems.
+ */
+export async function generateJson<T>(
+  prompt: string,
+  schema: z.ZodType<T>,
+  options: GenerateOptions = {},
+): Promise<T> {
+  const apiKey = await getCredential("openrouter_api_key");
+  const format = { name: "answer", schema: z.toJSONSchema(schema) };
+  const messages: Message[] = [{ role: "user", content: prompt }];
+  let problems = "";
+  for (let attempt = 1; attempt <= JSON_ATTEMPTS; attempt++) {
+    const raw = await callOpenRouter(AI_MODEL, messages, apiKey, options, format);
+    const found = problemsOf(raw, schema);
+    if (found === null) return schema.parse(JSON.parse(raw));
+    problems = found;
+    console.warn(`Invalid model answer (attempt ${attempt}): ${problems}`);
+    messages.push(
+      { role: "assistant", content: raw },
+      {
+        role: "user",
+        content: `Your answer doesn't match the required format: ${problems}\nReturn the complete corrected JSON.`,
+      },
+    );
+  }
+  throw new InvalidAnswerError(problems);
 }

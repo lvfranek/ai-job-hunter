@@ -1,11 +1,17 @@
-import { generateText, type GenerateOptions } from "@/lib/openrouter";
+import { z } from "zod";
+import { REQUIREMENT_KINDS, REQUIREMENT_STATUSES } from "@/lib/chance";
+import { generateJson, type GenerateOptions } from "@/lib/openrouter";
 import { normalizeBlockText } from "@/lib/text-format";
 import {
+  ARRANGEMENTS,
   computeChance,
   confirmRemote,
+  CONTRACT_FORMS,
+  LEVELS,
   readPostingFacts,
   TASK_FITS,
   toCandidate,
+  WORK_TIMES,
   type Candidate,
   type ChanceResult,
   verifyRequirements,
@@ -225,9 +231,8 @@ in the posting.
   candidate as "you": what matches best and the biggest gap. No verdict.
 
 ## Output
-Return ONLY a minified JSON array — no markdown fences, no commentary — with one
-object per posting, fields in this order:
-[{"job_id":"uuid","requirements":[{"text":"React","kind":"skill","specific":true,"status":"met","evidence":"React","core":true},{"text":"Software engineering","kind":"skill","specific":false,"status":"met","evidence":"TypeScript","core":true},{"text":"German C1","kind":"language","specific":false,"status":"met","evidence":"Deutsch Muttersprache","core":false},{"text":"Node.js","kind":"skill","specific":true,"status":"partial","evidence":"Express","core":false},{"text":"Kubernetes","kind":"skill","specific":true,"status":"missing","evidence":null,"core":false}],"required_years":2,"posting_level":"mid","task_fit":"same","work_arrangement":"hybrid","work_locations":["Hamburg"],"contract_form":"regular","work_time":"fulltime","dealbreaker":null,"reasoning":"Your React and TypeScript work fits the core stack; Node.js on the backend is the biggest gap."}]
+One JSON object with one entry per posting under "postings", for example:
+{"postings":[{"job_id":"uuid","requirements":[{"text":"React","kind":"skill","specific":true,"status":"met","evidence":"React","core":true},{"text":"Software engineering","kind":"skill","specific":false,"status":"met","evidence":"TypeScript","core":true},{"text":"German C1","kind":"language","specific":false,"status":"met","evidence":"Deutsch Muttersprache","core":false},{"text":"Node.js","kind":"skill","specific":true,"status":"partial","evidence":"Express","core":false},{"text":"Kubernetes","kind":"skill","specific":true,"status":"missing","evidence":null,"core":false}],"required_years":2,"posting_level":"mid","task_fit":"same","work_arrangement":"hybrid","work_locations":["Hamburg"],"contract_form":"regular","work_time":"fulltime","dealbreaker":null,"reasoning":"Your React and TypeScript work fits the core stack; Node.js on the backend is the biggest gap."}]}
 
 ## Postings
 ${JSON.stringify(
@@ -241,21 +246,36 @@ ${JSON.stringify(
 )}`;
 }
 
-/**
- * Whether a raw model entry is complete enough to judge. Without the checklist
- * or the task fit there is nothing to compute a tier from — the job stays
- * unscored and the next run retries it, instead of silently landing anywhere.
- */
-export function isCompleteEntry(entry: Record<string, unknown>): boolean {
-  return (
-    Array.isArray(entry.requirements) &&
-    (TASK_FITS as string[]).includes(
-      String(entry.task_fit ?? "")
-        .toLowerCase()
-        .trim(),
-    )
-  );
-}
+// The answer the model must give, as a schema: the provider is asked to answer
+// in exactly this shape and the reply is validated against it, so a job always
+// comes back with a checklist and a task fit. The prompt explains each field.
+const RequirementAnswer = z.object({
+  text: z.string(),
+  kind: z.enum(REQUIREMENT_KINDS),
+  specific: z.boolean(),
+  status: z.enum(REQUIREMENT_STATUSES),
+  evidence: z.string().nullable(),
+  core: z.boolean(),
+});
+
+const PostingAnswer = z.object({
+  job_id: z.string(),
+  requirements: z.array(RequirementAnswer),
+  required_years: z.number().nullable(),
+  posting_level: z.enum(LEVELS),
+  task_fit: z.enum(TASK_FITS),
+  work_arrangement: z.enum([...ARRANGEMENTS, "unknown"]),
+  work_locations: z.array(z.string()),
+  contract_form: z.enum(CONTRACT_FORMS),
+  work_time: z.enum([...WORK_TIMES, "unknown"]),
+  dealbreaker: z.string().nullable(),
+  reasoning: z.string(),
+});
+
+/** One posting as the model answered it, before any checks. */
+export type PostingAnswer = z.infer<typeof PostingAnswer>;
+
+const ScoringAnswer = z.object({ postings: z.array(PostingAnswer) });
 
 /**
  * One raw model entry → the stored result, with the tier decided in code.
@@ -301,74 +321,6 @@ export function toChanceResult(
   };
 }
 
-/**
- * Pull every balanced {...} out of a malformed response, at any nesting depth,
- * keeping only the ones that look like a job entry and actually parse.
- *
- * This is the salvage path: a response truncated mid-object used to throw from
- * JSON.parse and cost the entire chunk. Here the incomplete tail object is
- * simply never closed, so it's skipped while its finished siblings survive.
- */
-function extractJsonObjects(raw: string): Array<Record<string, unknown>> {
-  const found: Array<Record<string, unknown>> = [];
-  const stack: number[] = [];
-  let inString = false;
-  let escaped = false;
-
-  for (let i = 0; i < raw.length; i++) {
-    const ch = raw[i];
-    if (inString) {
-      if (escaped) escaped = false;
-      else if (ch === "\\") escaped = true;
-      else if (ch === '"') inString = false;
-      continue;
-    }
-    if (ch === '"') inString = true;
-    else if (ch === "{") stack.push(i);
-    else if (ch === "}") {
-      const start = stack.pop();
-      if (start === undefined) continue;
-      const slice = raw.slice(start, i + 1);
-      if (!slice.includes('"job_id"')) continue;
-      try {
-        found.push(JSON.parse(slice) as Record<string, unknown>);
-      } catch {
-        // Not a complete/valid object on its own — drop it, keep scanning.
-      }
-    }
-  }
-  return found;
-}
-
-/**
- * Parse a scoring response. Accepts a bare array, a `{ "scores": [...] }`-style
- * wrapper, or — when the JSON is broken or truncated — whatever individual score
- * objects can still be salvaged from the raw text.
- */
-export function parseScoringResponse(raw: string): Array<Record<string, unknown>> {
-  const cleaned = raw
-    .trim()
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/, "")
-    .trim();
-
-  try {
-    const parsed = JSON.parse(cleaned);
-    if (Array.isArray(parsed)) return parsed as Array<Record<string, unknown>>;
-    if (parsed && typeof parsed === "object") {
-      const wrapper = parsed as Record<string, unknown>;
-      for (const key of ["scores", "results", "jobs", "data"]) {
-        if (Array.isArray(wrapper[key])) return wrapper[key] as Array<Record<string, unknown>>;
-      }
-      return [wrapper];
-    }
-  } catch {
-    // Fall through to salvage.
-  }
-
-  return extractJsonObjects(cleaned);
-}
-
 // Small chunks are the whole point: ~5 condensed descriptions is roughly 5k
 // tokens, which comes back in seconds instead of grinding against the request
 // timeout — and a chunk that does fail costs five jobs, not twenty-five. Five,
@@ -385,28 +337,28 @@ export function chunk<T>(items: T[], size: number): T[][] {
 
 /**
  * Ask the model about one chunk of jobs (<= CHUNK_SIZE) in one AI call. The
- * entries come back as the model wrote them — nothing checked yet.
+ * entries have the right shape, but their content is not checked yet.
  */
 export async function readChunk(
   jobs: DbJob[],
   preferences: Preferences,
   options: Pick<GenerateOptions, "onUsage"> = {},
-): Promise<Array<Record<string, unknown>>> {
+): Promise<PostingAnswer[]> {
   // Temperature 0 and a fixed seed: the same posting should get the same
   // checklist on every run. The checklist is ~8 entries per job, so the answer
   // needs more room than the client's default.
-  const text = await generateText(buildPrompt(jobs, preferences), {
+  const answer = await generateJson(buildPrompt(jobs, preferences), ScoringAnswer, {
     temperature: 0,
     seed: SCORING_SEED,
     maxTokens: SCORING_MAX_TOKENS,
     ...options,
   });
-  return parseScoringResponse(text);
+  return answer.postings;
 }
 
 /** The model's raw entries → checked results, at most one per job of the chunk. */
 export function judgeChunk(
-  parsed: Array<Record<string, unknown>>,
+  parsed: PostingAnswer[],
   jobs: DbJob[],
   preferences: Preferences,
   geo: ScoringGeo | null = null,
@@ -417,8 +369,8 @@ export function judgeChunk(
   const seen = new Set<string>();
   const results: ChanceResult[] = [];
   for (const entry of parsed) {
-    const job = byId.get(String(entry.job_id));
-    if (!job || seen.has(job.id) || !isCompleteEntry(entry)) continue;
+    const job = byId.get(entry.job_id);
+    if (!job || seen.has(job.id)) continue;
     seen.add(job.id);
     results.push(
       toChanceResult(entry, job, candidate, (cities) =>

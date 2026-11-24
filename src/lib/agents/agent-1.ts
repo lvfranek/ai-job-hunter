@@ -1,4 +1,5 @@
-import { generateText } from "@/lib/openrouter";
+import { z } from "zod";
+import { generateJson } from "@/lib/openrouter";
 
 // Reads a candidate's CV (résumé) for the details a cover letter header needs.
 // The app never creates a CV — uploading one only fills these fields in.
@@ -20,8 +21,7 @@ CV text below. The CV may be in English or German.
 - location: postcode and city, as in a letter's address line (e.g. "22765 Hamburg");
   just the city if no postcode is given
 
-Use null for anything the CV doesn't contain. Return ONLY valid JSON, no markdown,
-no explanations:
+Use null for anything the CV doesn't contain. Example:
 {
   "name": "John Doe",
   "email": "john@example.com",
@@ -33,10 +33,16 @@ no explanations:
 CV Text:
 `;
 
+const ProfileAnswer = z.object({
+  name: z.string().nullable(),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  street_address: z.string().nullable(),
+  location: z.string().nullable(),
+});
+
 export async function parseProfileFromCV(cvText: string): Promise<ParsedProfile> {
-  const raw = (await generateText(PROMPT + cvText)).trim();
-  const json = raw.replace(/^```(?:json)?\s*|\s*```$/g, "");
-  return JSON.parse(json);
+  return generateJson(PROMPT + cvText, ProfileAnswer, { temperature: 0 });
 }
 
 // Suggests "What you bring" chips for the scoring preferences. The CV is only
@@ -61,29 +67,25 @@ as short chips for a job-matching profile. Any profession, not only IT.
   ("German native, English C1"); "" if the CV names none.
 
 No soft skills (teamwork, reliability, motivation), no job titles, no company
-names, no duplicates. At most 40 strong and 20 basics chips. Return ONLY valid
-JSON, no markdown:
+names, no duplicates. At most 40 strong and 20 basics chips. Example:
 {"strong":["React","Customer service","B.Sc. Media Informatics"],"basics":["Python"],"languages":"German native, English C1"}
 
 CV Text:
 `;
 
-const chipList = (value: unknown): string[] =>
-  Array.isArray(value)
-    ? value
-        .filter((v): v is string => typeof v === "string" && v.trim() !== "")
-        .map((v) => v.trim())
-    : [];
+const SkillsAnswer = z.object({
+  strong: z.array(z.string()),
+  basics: z.array(z.string()),
+  languages: z.string(),
+});
+
+const chipList = (chips: string[]): string[] => chips.map((c) => c.trim()).filter(Boolean);
 
 export async function parseSkillsFromCV(cvText: string): Promise<ParsedSkills> {
-  const raw = (await generateText(SKILLS_PROMPT + cvText, { temperature: 0 })).trim();
-  const parsed = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, "")) as Record<
-    string,
-    unknown
-  >;
+  const parsed = await generateJson(SKILLS_PROMPT + cvText, SkillsAnswer, { temperature: 0 });
   return {
     strong: chipList(parsed.strong).slice(0, 40),
     basics: chipList(parsed.basics).slice(0, 20),
-    languages: typeof parsed.languages === "string" ? parsed.languages.trim() : "",
+    languages: parsed.languages.trim(),
   };
 }

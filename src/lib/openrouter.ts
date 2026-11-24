@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { getCredential } from "./credentials";
 
-// The one model every AI call in the app uses (CV parsing, scoring, cover
-// letters). Deliberately not configurable: scoring prompts and the parser are
-// tuned against it. It must stay a fast INSTRUCT model — see DEFAULT_MAX_TOKENS.
+// The model for CV parsing and scoring (cover letters use a stronger one, see
+// ai/cover-letter-writer.ts). Deliberately not configurable: the scoring prompt
+// is tuned and evaluated against it. It must stay a fast INSTRUCT model — see DEFAULT_MAX_TOKENS.
 export const AI_MODEL = "qwen/qwen3-next-80b-a3b-instruct";
 
 // A stalled connection with no timeout is what lets a single hung request freeze
@@ -50,6 +50,8 @@ export interface GenerateOptions {
   temperature?: number;
   /** Fixed sampling seed, for providers that honour it — more reproducible scoring. */
   seed?: number;
+  /** Another OpenRouter model than {@link AI_MODEL}, for a task it isn't good at. */
+  model?: string;
   /** Receives the tokens and cost of the call (the evaluation adds them up). */
   onUsage?: (usage: Usage) => void;
 }
@@ -144,7 +146,12 @@ async function callOpenRouter(
 /** Send one prompt to {@link AI_MODEL} and return the text of its reply. */
 export async function generateText(prompt: string, options: GenerateOptions = {}): Promise<string> {
   const apiKey = await getCredential("openrouter_api_key");
-  return callOpenRouter(AI_MODEL, [{ role: "user", content: prompt }], apiKey, options);
+  return callOpenRouter(
+    options.model ?? AI_MODEL,
+    [{ role: "user", content: prompt }],
+    apiKey,
+    options,
+  );
 }
 
 /** The model's answer still didn't match the schema after the repair attempt. */
@@ -190,7 +197,7 @@ export async function generateJson<T>(
   const messages: Message[] = [{ role: "user", content: prompt }];
   let problems = "";
   for (let attempt = 1; attempt <= JSON_ATTEMPTS; attempt++) {
-    const raw = await callOpenRouter(AI_MODEL, messages, apiKey, options, format);
+    const raw = await callOpenRouter(options.model ?? AI_MODEL, messages, apiKey, options, format);
     const found = problemsOf(raw, schema);
     if (found === null) return schema.parse(JSON.parse(raw));
     problems = found;

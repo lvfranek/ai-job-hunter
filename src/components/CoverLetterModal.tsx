@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CircleNotch, DownloadSimple, X } from "@phosphor-icons/react/dist/ssr";
-import type { CoverLetterLanguage } from "@/lib/agents/agent-4";
+import type { CoverLetterLanguage } from "@/lib/ai/cover-letter-writer";
 
 type Status = "idle" | "generating" | "done" | "error";
 
@@ -117,7 +117,7 @@ export function CoverLetterModal({
               className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-[#101828] px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
             >
               {status === "generating" && <CircleNotch size={15} className="animate-spin" />}
-              {status === "generating" ? "Writing your cover letter…" : "Generate"}
+              {status === "generating" ? "Writing and checking your letter…" : "Generate"}
             </button>
           )}
         </div>

@@ -10,7 +10,7 @@
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { chunk, CHUNK_SIZE, judgeChunk, readChunk } from "@/lib/agents/agent-3";
+import { chunk, CHUNK_SIZE, judgeChunk, readChunk } from "@/lib/ai/job-scorer";
 import { chanceShortLabels, type Chance, type Requirement } from "@/lib/chance";
 import data from "@/lib/geo/places-dach.json";
 import { buildPlaceIndex, resolveHomes } from "@/lib/geo/places";

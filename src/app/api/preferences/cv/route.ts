@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDemoRequest } from "@/lib/auth";
 import { readCvUpload } from "@/lib/cv-parser";
-import { parseSkillsFromCV } from "@/lib/agents/agent-1";
+import { parseSkillsFromCV } from "@/lib/ai/cv-reader";
 
 // Suggests skill chips from an uploaded CV. Nothing is stored: the page merges
 // the suggestions into its chips, and only a save keeps them.

@@ -1,5 +1,5 @@
 import { getSupabaseServerClient, CURRENT_USER_ID, selectAll } from "@/lib/supabase";
-import { CHUNK_SIZE, chunk, scoreChunk, type ScoringGeo } from "@/lib/agents/agent-3";
+import { CHUNK_SIZE, chunk, scoreChunk, type ScoringGeo } from "@/lib/ai/job-scorer";
 import { getPlaceIndex } from "@/lib/geo/load";
 import { resolveHomes } from "@/lib/geo/places";
 import { parseDbTimestamp } from "@/lib/db-time";

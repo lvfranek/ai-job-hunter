@@ -13,7 +13,7 @@ import {
   WidthType,
 } from "docx";
 import type { DbJob, Profile } from "@/lib/types";
-import type { CoverLetterLanguage } from "@/lib/agents/agent-4";
+import type { CoverLetterLanguage } from "@/lib/ai/cover-letter-writer";
 
 const FONT = "Calibri";
 const SIZE = 24; // 12pt, in half-points (docx unit)

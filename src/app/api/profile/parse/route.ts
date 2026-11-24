@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDemoRequest } from "@/lib/auth";
 import { readCvUpload } from "@/lib/cv-parser";
-import { parseProfileFromCV } from "@/lib/agents/agent-1";
+import { parseProfileFromCV } from "@/lib/ai/cv-reader";
 
 export async function POST(request: NextRequest) {
   if (isDemoRequest(request)) {

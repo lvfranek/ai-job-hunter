@@ -4,8 +4,8 @@
 import { CHANCES, type Chance, type Requirement } from "@/lib/chance";
 import { SCORING_VERSION } from "@/lib/scoring-rules";
 import type { DbJob, JobMatch, JobWithMatch, Preferences, Profile, Settings } from "@/lib/types";
-import type { ParsedProfile } from "@/lib/agents/agent-1";
-import type { CoverLetterLanguage } from "@/lib/agents/agent-4";
+import type { ParsedProfile } from "@/lib/ai/cv-reader";
+import type { CoverLetterLanguage } from "@/lib/ai/cover-letter-writer";
 import type { ApplicationRow } from "@/lib/applications";
 import { APPLIED_STATUSES, MANUAL_PLATFORM, type JobStatus } from "@/lib/mock-data";
 import {

@@ -23,7 +23,7 @@ import {
 import { generateCoverLetterDocx } from "@/lib/generate-coverletter";
 import { placeSearch, withResolvedWorkLocations } from "@/lib/geo/api";
 import { normalizePreferences } from "@/lib/preferences";
-import type { CoverLetterLanguage } from "@/lib/agents/agent-4";
+import type { CoverLetterLanguage } from "@/lib/ai/cover-letter-writer";
 import type { DbJob, Profile } from "@/lib/types";
 
 export const dynamic = "force-dynamic";

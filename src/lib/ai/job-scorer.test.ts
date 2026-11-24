@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toCandidate, type CandidatePreferences } from "@/lib/scoring-rules";
-import { chunk, condenseDescription, toChanceResult } from "./agent-3";
+import { chunk, condenseDescription, toChanceResult } from "./job-scorer";
 
 describe("condenseDescription", () => {
   it("returns a placeholder for null input", () => {

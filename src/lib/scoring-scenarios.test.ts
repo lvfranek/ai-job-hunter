@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toChanceResult } from "./agents/agent-3";
+import { toChanceResult } from "./ai/job-scorer";
 import data from "./geo/places-dach.json";
 import { buildPlaceIndex, resolveHomes, resolveJobPlaces } from "./geo/places";
 import { toCandidate, type CandidatePreferences } from "./scoring-rules";

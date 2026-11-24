@@ -50,7 +50,7 @@ What it found and how it works: [eval/README.md](eval/README.md).
 - **One scan, five boards** — Indeed, LinkedIn, Xing, Stepstone and the Arbeitsagentur.
 - **Chance tiers** — every job gets Low, Fair, Good or Very good, with the reasons on the card.
 - **Work locations** — remote, or the cities you'd commute to, each with its own radius.
-- **Cover letters** — one click writes a German or English letter and downloads it as Word.
+- **Cover letters** — one click writes a German or English letter, checked for invented claims, as a Word file.
 - **CV import** — fills in your skills and contact details from a CV. The file isn't stored.
 - **Application tracker** — every application in one list, added from the dashboard, by hand or from CSV.
 - **Keyword stats** — shows which search keywords actually find jobs worth applying to.

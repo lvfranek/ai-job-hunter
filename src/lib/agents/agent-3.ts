@@ -1,4 +1,4 @@
-import { generateText } from "@/lib/openrouter";
+import { generateText, type GenerateOptions } from "@/lib/openrouter";
 import { normalizeBlockText } from "@/lib/text-format";
 import {
   computeChance,
@@ -379,12 +379,15 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-/** Score a single bounded chunk of jobs (<= CHUNK_SIZE) in one AI call. */
-export async function scoreChunk(
+/**
+ * Ask the model about one chunk of jobs (<= CHUNK_SIZE) in one AI call. The
+ * entries come back as the model wrote them — nothing checked yet.
+ */
+export async function readChunk(
   jobs: DbJob[],
   preferences: Preferences,
-  geo: ScoringGeo | null = null,
-): Promise<ChanceResult[]> {
+  options: Pick<GenerateOptions, "onUsage"> = {},
+): Promise<Array<Record<string, unknown>>> {
   // Temperature 0 and a fixed seed: the same posting should get the same
   // checklist on every run. The checklist is ~8 entries per job, so the answer
   // needs more room than the client's default.
@@ -392,8 +395,18 @@ export async function scoreChunk(
     temperature: 0,
     seed: SCORING_SEED,
     maxTokens: SCORING_MAX_TOKENS,
+    ...options,
   });
-  const parsed = parseScoringResponse(text);
+  return parseScoringResponse(text);
+}
+
+/** The model's raw entries → checked results, at most one per job of the chunk. */
+export function judgeChunk(
+  parsed: Array<Record<string, unknown>>,
+  jobs: DbJob[],
+  preferences: Preferences,
+  geo: ScoringGeo | null = null,
+): ChanceResult[] {
   const candidate = toCandidate(preferences, geo?.homes);
 
   const byId = new Map(jobs.map((j) => [j.id, j]));
@@ -410,4 +423,13 @@ export async function scoreChunk(
     );
   }
   return results;
+}
+
+/** Score a single bounded chunk of jobs (<= CHUNK_SIZE) in one AI call. */
+export async function scoreChunk(
+  jobs: DbJob[],
+  preferences: Preferences,
+  geo: ScoringGeo | null = null,
+): Promise<ChanceResult[]> {
+  return judgeChunk(await readChunk(jobs, preferences), jobs, preferences, geo);
 }

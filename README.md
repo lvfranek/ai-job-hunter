@@ -259,6 +259,7 @@ writes are persisted.
 | `npm test`          | Run the Vitest suite                                         |
 | `npm run format`    | Format the repo with Prettier                                |
 | `npm run geo:build` | Rebuild the bundled place data from GeoNames (rarely needed) |
+| `npm run eval`      | Score the 30 test postings with the real model (~3 cents)    |
 
 ## Tests
 
@@ -274,6 +275,15 @@ on every push and pull request.
 
 ```bash
 npm test
+```
+
+The tests leave the model out. The **evaluation** puts it back in: 30 made-up postings with
+traps, each scored 3 times by the real model, checked for the right tier, the right reason and
+a stable answer. The first run: right tier 87 %, the same tier in all 3 runs for 90 % of the postings.
+Method and findings: [eval/README.md](eval/README.md).
+
+```bash
+npm run eval
 ```
 
 ## Deployment

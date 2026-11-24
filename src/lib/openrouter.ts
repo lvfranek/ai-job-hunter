@@ -49,6 +49,15 @@ export interface GenerateOptions {
   temperature?: number;
   /** Fixed sampling seed, for providers that honour it — more reproducible scoring. */
   seed?: number;
+  /** Receives the tokens and cost of the call (the evaluation adds them up). */
+  onUsage?: (usage: Usage) => void;
+}
+
+export interface Usage {
+  promptTokens: number;
+  completionTokens: number;
+  /** In US dollars, as OpenRouter bills it; null when the response doesn't say. */
+  cost: number | null;
 }
 
 async function callOpenRouter(
@@ -71,6 +80,7 @@ async function callOpenRouter(
         max_tokens: options.maxTokens ?? DEFAULT_MAX_TOKENS,
         ...(options.temperature != null ? { temperature: options.temperature } : {}),
         ...(options.seed != null ? { seed: options.seed } : {}),
+        ...(options.onUsage ? { usage: { include: true } } : {}),
       }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
@@ -86,6 +96,11 @@ async function callOpenRouter(
   }
 
   const data = await res.json();
+  options.onUsage?.({
+    promptTokens: data.usage?.prompt_tokens ?? 0,
+    completionTokens: data.usage?.completion_tokens ?? 0,
+    cost: typeof data.usage?.cost === "number" ? data.usage.cost : null,
+  });
   const choice = data.choices?.[0];
   const content: string = choice?.message?.content ?? "";
 

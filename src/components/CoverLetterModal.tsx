@@ -53,11 +53,11 @@ export function CoverLetterModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#101828]/40 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-5 shadow-[0_20px_50px_-20px_rgba(30,64,120,0.4)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-[15px] font-semibold text-[#1E2A3D]">Generate cover letter</h2>
+            <h2 className="text-[15px] font-semibold text-text">Generate cover letter</h2>
             <p className="mt-1 text-[13px] text-text-muted">
               Applying to: {job.title} at {job.company}
             </p>
@@ -66,7 +66,7 @@ export function CoverLetterModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-text-faint hover:text-[#1E2A3D]"
+            className="text-text-faint hover:text-text"
           >
             <X size={16} weight="bold" />
           </button>
@@ -82,8 +82,8 @@ export function CoverLetterModal({
                 onClick={() => setLanguage(lang)}
                 className={`flex-1 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors ${
                   language === lang
-                    ? "border-[#101828] bg-[#E4EEF5] text-[#1E2A3D]"
-                    : "border-[#B9CCDA] text-text-muted hover:border-[#8FA8BD] hover:bg-[#E4EEF5] hover:text-[#1E2A3D]"
+                    ? "border-primary bg-surface-hover text-text"
+                    : "border-border-strong text-text-muted hover:border-border-hover hover:bg-surface-hover hover:text-text"
                 }`}
               >
                 {lang === "de" ? "Deutsch" : "English"}
@@ -104,7 +104,7 @@ export function CoverLetterModal({
               href={download.url}
               download={download.filename}
               title={download.filename}
-              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-[#101828] px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98]"
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary px-3.5 text-[13px] font-semibold text-on-primary transition-colors hover:bg-primary-hover active:scale-[0.98]"
             >
               <DownloadSimple size={15} weight="bold" className="shrink-0" />
               <span className="truncate">Download {download.filename}</span>
@@ -114,7 +114,7 @@ export function CoverLetterModal({
               type="button"
               onClick={handleGenerate}
               disabled={status === "generating"}
-              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-[#101828] px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary px-3.5 text-[13px] font-semibold text-on-primary transition-colors hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
             >
               {status === "generating" && <CircleNotch size={15} className="animate-spin" />}
               {status === "generating" ? "Writing and checking your letter…" : "Generate"}

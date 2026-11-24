@@ -24,7 +24,7 @@ import {
   type Filters,
 } from "@/lib/job-filters";
 import { useStoredValue } from "@/lib/use-stored-value";
-import { JobCard } from "@/components/JobCard";
+import { JOB_ROW_COLUMNS, JobCard } from "@/components/JobCard";
 import { ActiveFilters, FilterMenu, SortSelect } from "@/components/JobFilters";
 import { AgentStatus } from "@/components/AgentStatus";
 import { CoverLetterModal } from "@/components/CoverLetterModal";
@@ -228,9 +228,9 @@ export function JobResults({
   }
 
   return (
-    <div className="rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)]">
+    <div className="rounded-xl border border-border bg-surface">
       <Toast message={toast?.message ?? null} action={toast?.action} />
-      <div className="grid grid-cols-2 gap-2 border-b border-[#D7E4ED] px-4 py-3 sm:flex sm:flex-wrap sm:items-center">
+      <div className="grid grid-cols-2 gap-2 border-b border-border px-4 py-3 sm:flex sm:flex-wrap sm:items-center">
         {/* Mobile: a grid — two equal buttons, then the status line with the trash
             button at its right end. Desktop: one row with the trash pushed right.
             The filters have their own bar below. */}
@@ -351,7 +351,7 @@ export function JobResults({
                 <Trash size={16} weight="bold" />
               </button>
               {menuOpen && (
-                <div className="absolute right-0 top-full z-30 mt-2 w-64 rounded-2xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-3 shadow-[0_16px_40px_-12px_rgba(30,64,120,0.45)]">
+                <div className="absolute right-0 top-full z-30 mt-2 w-64 rounded-2xl border border-border bg-surface p-3">
                   {confirmingPrune ? (
                     <>
                       <p className="text-[13px] text-text-muted">
@@ -424,7 +424,7 @@ export function JobResults({
       />
 
       {scoreReport && scoreReport.total > 0 && (
-        <div className="border-b border-[#D7E4ED] px-4 py-2 text-[12px]">
+        <div className="border-b border-border px-4 py-2 text-[12px]">
           <div className="flex flex-wrap items-center gap-2">
             <span className={scoreReport.failed > 0 ? "text-amber-800" : "text-emerald-700"}>
               {scoreReport.failed > 0 ? (
@@ -442,7 +442,7 @@ export function JobResults({
                 <button
                   type="button"
                   onClick={() => setReportOpen((o) => !o)}
-                  className="rounded-md px-1.5 py-0.5 text-[12px] font-medium text-text-muted underline-offset-2 transition-colors hover:text-[#1E2A3D] hover:underline"
+                  className="rounded-md px-1.5 py-0.5 text-[12px] font-medium text-text-muted underline-offset-2 transition-colors hover:text-text hover:underline"
                 >
                   {reportOpen ? "Hide details" : "Show details"}
                 </button>
@@ -455,13 +455,13 @@ export function JobResults({
               type="button"
               onClick={dismissScoreReport}
               aria-label="Dismiss scoring report"
-              className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-text-faint transition-colors hover:text-[#1E2A3D]"
+              className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-text-faint transition-colors hover:text-text"
             >
               <X size={12} weight="bold" />
             </button>
           </div>
           {reportOpen && Object.keys(scoreReport.errorSummary).length > 0 && (
-            <ul className="mt-2 space-y-1 border-t border-[#D7E4ED] pt-2">
+            <ul className="mt-2 space-y-1 border-t border-border pt-2">
               {Object.entries(scoreReport.errorSummary).map(([message, count]) => (
                 <li key={message} className="text-[12px] text-text-muted">
                   <span className="tabular-nums text-text-faint">{count}×</span> {message}
@@ -476,12 +476,25 @@ export function JobResults({
         <JobListLoading />
       ) : jobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-          <Briefcase size={28} weight="regular" className="text-[#B8C4D1]" />
+          <Briefcase size={28} weight="regular" className="text-text-faint" />
           <p className="text-[14px] text-text-muted">Click &quot;Scrape Now&quot; to find jobs.</p>
         </div>
       ) : (
         <>
-          <div className="divide-y divide-[#D7E4ED]">
+          <div
+            aria-hidden="true"
+            className={`hidden gap-3 border-b border-border px-4 py-2 text-[12px] text-text-faint xl:grid ${JOB_ROW_COLUMNS}`}
+          >
+            <span>Job</span>
+            <span>Chance</span>
+            <span>Workplace</span>
+            <span>Location</span>
+            <span>Must-haves</span>
+            <span>Posted</span>
+            <span>Status</span>
+            <span />
+          </div>
+          <div className="divide-y divide-border">
             {paged.map((job) => (
               <JobCard
                 key={job.id}
@@ -493,7 +506,7 @@ export function JobResults({
           </div>
 
           {pageCount > 1 && (
-            <div className="flex items-center justify-between border-t border-[#D7E4ED] px-4 py-3">
+            <div className="flex items-center justify-between border-t border-border px-4 py-3">
               <span className="text-[12px] text-text-faint">
                 {sorted.length} jobs · page {currentPage} of {pageCount}
               </span>
@@ -565,8 +578,8 @@ function JobListLoading() {
       aria-live="polite"
       className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center"
     >
-      <CircleNotch size={32} weight="bold" className="animate-spin text-[#1E2A3D]" />
-      <p className="text-[14px] font-medium text-[#1E2A3D]">Loading jobs…</p>
+      <CircleNotch size={32} weight="bold" className="animate-spin text-text" />
+      <p className="text-[14px] font-medium text-text">Loading jobs…</p>
       <p className="text-[12px] text-text-faint">This can take a few seconds</p>
     </div>
   );

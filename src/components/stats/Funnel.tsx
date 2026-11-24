@@ -32,7 +32,7 @@ export function Funnel({ steps }: { steps: FunnelStep[] }) {
                 />
               )}
             </span>
-            <span className="text-right font-semibold tabular-nums text-[#1E2A3D]">
+            <span className="text-right font-semibold tabular-nums text-text">
               {fmtNumber(step.value)}
             </span>
           </li>

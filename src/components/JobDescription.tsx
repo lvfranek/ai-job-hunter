@@ -14,7 +14,7 @@ import { Fragment } from "react";
 function renderInline(text: string) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
     part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
-      <strong key={i} className="font-semibold text-[#101828]">
+      <strong key={i} className="font-semibold text-text">
         {part.slice(2, -2)}
       </strong>
     ) : (
@@ -76,13 +76,13 @@ export function JobDescription({ text }: { text: string | null }) {
   }
 
   return (
-    <div className="space-y-3 text-[13px] leading-relaxed text-[#1E2A3D]">
+    <div className="space-y-3 text-[13px] leading-relaxed text-text">
       {toBlocks(text).map((block, i) => {
         if (block.kind === "heading") {
           return (
             <h3
               key={i}
-              className="pt-2 text-[13px] font-semibold tracking-wide text-[#101828] first:pt-0"
+              className="pt-2 text-[13px] font-semibold tracking-wide text-text first:pt-0"
             >
               {renderInline(block.text)}
             </h3>

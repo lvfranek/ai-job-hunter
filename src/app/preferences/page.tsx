@@ -187,14 +187,14 @@ function HowRatingsWork() {
           id="how-ratings-work"
           role="dialog"
           aria-label="How ratings work"
-          className="absolute top-full right-0 z-40 mt-2 w-[min(390px,calc(100vw-2rem))] rounded-2xl border border-[#D7E4ED] bg-white p-4 shadow-[0_20px_44px_-16px_rgba(30,64,120,0.45)]"
+          className="absolute top-full right-0 z-40 mt-2 w-[min(390px,calc(100vw-2rem))] rounded-2xl border border-border bg-surface p-4"
         >
-          <h2 className="mb-3 text-[13px] font-semibold text-[#1E2A3D]">How each job is rated</h2>
+          <h2 className="mb-3 text-[13px] font-semibold text-text">How each job is rated</h2>
           <ul className="space-y-2.5">
             {tiers.map(([chance, meaning]) => (
               <li
                 key={chance}
-                className="grid grid-cols-[8.5rem_1fr] items-start gap-2 text-[12.5px] leading-relaxed text-[#1E2A3D]"
+                className="grid grid-cols-[8.5rem_1fr] items-start gap-2 text-[12.5px] leading-relaxed text-text"
               >
                 <span>
                   <ChancePill chance={chance} />
@@ -203,7 +203,7 @@ function HowRatingsWork() {
               </li>
             ))}
           </ul>
-          <p className="mt-3.5 border-t border-[#D7E4ED] pt-3 text-[12px] text-text-muted">
+          <p className="mt-3.5 border-t border-border pt-3 text-[12px] text-text-muted">
             Saving this page marks every rating as outdated. Rescore from the dashboard whenever you
             like.
           </p>
@@ -379,7 +379,7 @@ export default function PreferencesPage() {
   const dirty = !loading && JSON.stringify(form) !== savedSnapshot;
 
   return (
-    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0">
+    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:px-6 sm:pt-6 sm:pb-6">
       <PageHeader title="AI Scoring Preferences" action={<HowRatingsWork />} />
 
       {error && <ErrorBanner>{error}</ErrorBanner>}
@@ -458,17 +458,17 @@ export default function PreferencesPage() {
               legend="Your level"
               info="The level of job you're ready for. Jobs at or below it aren't held back; jobs above it are rated lower, as shown below."
             >
-              <div className="inline-flex flex-wrap gap-0.5 rounded-xl bg-[#E9F2F8] p-[3px]">
+              <div className="inline-flex flex-wrap gap-0.5 rounded-xl bg-surface-hover p-[3px]">
                 {LEVELS.map((level) => (
                   <button
                     key={level}
                     type="button"
                     aria-pressed={form.level === level}
                     onClick={() => set("level", level)}
-                    className={`h-7.5 rounded-[9px] px-3 text-[13px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#101828]/30 ${
+                    className={`h-7.5 rounded-[9px] px-3 text-[13px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-black/60 ${
                       form.level === level
-                        ? "bg-white font-medium text-[#101828] shadow-[0_1px_3px_rgba(30,64,120,0.18)]"
-                        : "text-text-muted hover:text-[#101828]"
+                        ? "bg-surface font-medium text-text"
+                        : "text-text-muted hover:text-text"
                     }`}
                   >
                     {LEVEL_LABELS[level]}
@@ -476,7 +476,7 @@ export default function PreferencesPage() {
                 ))}
               </div>
               <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[12.5px]">
-                <span className="w-full font-medium text-[#1E2A3D]">Best possible rating:</span>
+                <span className="w-full font-medium text-text">Best possible rating:</span>
                 {(LEVEL_EFFECTS[form.level] ?? LEVEL_EFFECTS[DEFAULT_LEVEL]).map(
                   ([jobs, chance]) => (
                     <span key={jobs} className="inline-flex items-center gap-1.5">

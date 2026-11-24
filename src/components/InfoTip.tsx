@@ -82,7 +82,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
           if (pinned) e.currentTarget.blur();
           setPinned(!pinned);
         }}
-        className="inline-flex size-5.5 shrink-0 items-center justify-center rounded-md text-[#7B8A99] outline-none transition-colors hover:bg-[#E4EEF5] hover:text-[#101828] focus-visible:ring-2 focus-visible:ring-[#101828]/30 aria-expanded:text-[#101828]"
+        className="inline-flex size-5.5 shrink-0 items-center justify-center rounded-md text-text-faint outline-none transition-colors hover:bg-surface-hover hover:text-text focus-visible:ring-2 focus-visible:ring-black/60 aria-expanded:text-text"
       >
         <Info size={16} />
       </button>
@@ -96,7 +96,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
             left: position?.left ?? -9999,
             top: position?.top ?? -9999,
           }}
-          className="pointer-events-none fixed z-60 rounded-[10px] bg-[#101828] px-2.5 py-2 text-left text-[12px] leading-relaxed font-normal text-white shadow-[0_10px_24px_-8px_rgba(16,24,40,0.5)]"
+          className="pointer-events-none fixed z-60 rounded-[10px] bg-popover border border-border-strong px-2.5 py-2 text-left text-[12px] leading-relaxed font-normal text-white"
         >
           {children}
         </span>

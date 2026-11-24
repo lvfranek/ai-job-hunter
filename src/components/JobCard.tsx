@@ -11,9 +11,9 @@ import {
   CircleHalf,
   Eye,
   EyeSlash,
-  FileText,
   LinkedinLogo,
   MapPin,
+  PencilSimpleLine,
   Prohibit,
   X,
 } from "@phosphor-icons/react/dist/ssr";
@@ -23,7 +23,7 @@ import { JOB_STATUSES, jobStatusLabels, platformIconSlugs, platformLabels } from
 import { ChanceBadge, ChancePill } from "@/components/ChanceBadge";
 import { coreRequirements } from "@/lib/scoring-rules";
 import { JobDescription } from "@/components/JobDescription";
-import { buttonSecondary, iconButton, Select } from "@/components/controls";
+import { RowAction, RowTooltip, rowActionClass, Select } from "@/components/controls";
 
 const REQUIREMENT_STATUS: Record<
   RequirementStatus,
@@ -81,7 +81,7 @@ function ChanceBreakdown({ chance, match }: { chance: Chance; match: JobMatchDet
     { title: "Other must-haves", items: requirements.filter((r) => !key.includes(r)) },
   ].filter((group) => group.items.length > 0);
   return (
-    <div className="mb-4 rounded-xl border border-[#D7E4ED] bg-white p-3.5">
+    <div className="mb-4 rounded-xl border border-border bg-surface p-3.5">
       <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
         <div className="text-[11px] font-semibold uppercase tracking-wide text-text-faint">
           Why this chance
@@ -108,7 +108,7 @@ function ChanceBreakdown({ chance, match }: { chance: Chance; match: JobMatchDet
           {groups.map((group) => (
             <div key={group.title}>
               <p className="mb-1.5 text-[12px] text-text-muted">
-                <span className="font-medium text-[#1E2A3D]">{group.title}</span> ·{" "}
+                <span className="font-medium text-text">{group.title}</span> ·{" "}
                 {group.items.filter((r) => r.status === "met").length} of {group.items.length} met
               </p>
               <ul className="flex flex-wrap gap-1.5">
@@ -137,9 +137,7 @@ function ChanceBreakdown({ chance, match }: { chance: Chance; match: JobMatchDet
       )}
 
       {reasoning ? (
-        <p className="text-[13px] italic leading-relaxed text-[#1E2A3D]">
-          &ldquo;{reasoning}&rdquo;
-        </p>
+        <p className="text-[13px] italic leading-relaxed text-text">&ldquo;{reasoning}&rdquo;</p>
       ) : (
         <p className="text-[12px] text-text-faint">No reasoning recorded for this job.</p>
       )}
@@ -166,6 +164,23 @@ export const statusTier: Record<JobStatus, { text: string; bg: string; border: s
   not_interested: { text: "text-slate-700", bg: "bg-slate-200", border: "border-slate-400" },
 };
 
+/**
+ * The job list's columns on wide screens; the header row in JobResults uses the
+ * same template so the two line up.
+ */
+export const JOB_ROW_COLUMNS =
+  "xl:grid-cols-[minmax(0,1fr)_6rem_5rem_minmax(0,11rem)_5rem_7.5rem_8rem_7.5rem]";
+
+/** "3/3" key requirements met and "1/2" of the rest, as the breakdown counts them. */
+function mustHaveCounts(requirements: Requirement[]) {
+  if (requirements.length === 0) return null;
+  const key = coreRequirements(requirements);
+  const other = requirements.filter((r) => !key.includes(r));
+  const met = (list: Requirement[]) =>
+    `${list.filter((r) => r.status === "met").length}/${list.length}`;
+  return { key: met(key), other: other.length > 0 ? met(other) : null };
+}
+
 export function JobCard({
   job,
   onGenerateCoverLetter,
@@ -189,6 +204,8 @@ export function JobCard({
   const dimmed = job.status === "not_interested";
   const dimClass = dimmed ? "opacity-50 grayscale" : "";
 
+  const counts = job.match ? mustHaveCounts(job.match.requirements) : null;
+
   return (
     <div>
       <div
@@ -202,35 +219,26 @@ export function JobCard({
           }
         }}
         aria-expanded={expanded}
-        className={`flex cursor-pointer flex-col gap-3 px-4 py-3 transition-colors sm:flex-row sm:items-center sm:gap-6 ${
-          dimmed ? "bg-slate-100 hover:bg-slate-200/70" : "hover:bg-[#E9F2F8]"
+        className={`group/row flex cursor-pointer flex-col gap-2 px-4 py-3 text-[13px] transition-colors xl:grid xl:items-center xl:gap-3 xl:py-1.5 ${JOB_ROW_COLUMNS} ${
+          dimmed ? "bg-slate-100 hover:bg-slate-200" : "hover:bg-surface-2"
         }`}
       >
-        <div className={`flex shrink-0 items-center gap-1.5 ${dimClass}`}>
-          <ChanceBadge chance={job.chance} />
-
-          <a
-            href={job.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            aria-label="Open posting"
-            title="Open posting"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-text-faint transition-colors hover:text-[#1E2A3D] active:scale-[0.98]"
-          >
-            <ArrowSquareOut size={17} weight="bold" />
-          </a>
-          <CaretDown
-            size={15}
-            weight="bold"
-            className={`ml-auto shrink-0 text-text-faint transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)] sm:hidden ${expanded ? "rotate-180" : ""}`}
-          />
+        <div className={`flex min-w-0 items-baseline gap-1.5 ${dimClass}`}>
+          <h2 className="truncate text-[14px] font-semibold text-text transition-colors group-hover/row:text-white xl:text-[13px]">
+            {job.title}
+          </h2>
+          <span className="shrink-0 truncate text-text-faint xl:max-w-[45%]">{job.company}</span>
+          {job.isStale && (
+            <span className="shrink-0 self-center rounded-md border border-amber-300 bg-amber-100 px-1.5 text-[11px] font-medium text-amber-800">
+              Outdated
+            </span>
+          )}
         </div>
 
-        <div className={`min-w-0 flex-1 ${dimClass}`}>
-          <h2 className="truncate text-[16px] font-semibold text-[#1E2A3D]">{job.title}</h2>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-text-muted">
-            <span>{job.company}</span>
+        {/* Mobile: one wrapping line of facts. Desktop: each fact is a column. */}
+        <div className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 xl:contents ${dimClass}`}>
+          <ChanceBadge chance={job.chance} />
+          <span>
             {job.arrangement && (
               <span
                 className={`rounded-md border px-1.5 py-0.5 text-[11px] font-medium ${ARRANGEMENT_TAG[job.arrangement].className}`}
@@ -238,50 +246,60 @@ export function JobCard({
                 {ARRANGEMENT_TAG[job.arrangement].label}
               </span>
             )}
+          </span>
+          <span className="flex min-w-0 items-center gap-1 text-text-muted">
             {job.location && !(job.location === "Remote" && job.arrangement === "remote") && (
               <>
-                <span className="text-[#B8C4D1]">·</span>
-                <span className="flex min-w-0 items-center gap-1 text-[12px] text-text-faint">
-                  <MapPin size={12} weight="fill" className="shrink-0" />
-                  <span className="max-w-56 truncate">{job.location}</span>
-                  {/* 0 km means it's in one of your cities — the name says enough. */}
-                  {job.distanceKm !== null && job.distanceKm > 0 && (
-                    <span className="shrink-0 tabular-nums">· {job.distanceKm} km</span>
-                  )}
-                </span>
+                <MapPin size={12} weight="fill" className="shrink-0 text-text-faint xl:hidden" />
+                <span className="truncate">{job.location}</span>
+                {/* 0 km means it's in one of your cities — the name says enough. */}
+                {job.distanceKm !== null && job.distanceKm > 0 && (
+                  <span className="shrink-0 text-text-faint tabular-nums">
+                    · {job.distanceKm} km
+                  </span>
+                )}
               </>
             )}
-            <span className="text-[#B8C4D1]">·</span>
-            <span className="text-[12px] text-text-faint">{job.postedDate}</span>
-            {job.isStale && (
-              <span className="rounded-md border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">
-                Outdated
-              </span>
+          </span>
+          <span
+            className="tabular-nums text-text-muted"
+            title={counts ? "Met: key requirements · other must-haves" : undefined}
+          >
+            {counts ? (
+              <>
+                <span className="text-text">{counts.key}</span>
+                {counts.other && <span className="text-text-faint"> · {counts.other}</span>}
+                <span className="text-text-faint xl:hidden"> must-haves</span>
+              </>
+            ) : (
+              <span className="text-text-faint">—</span>
             )}
-            <span className="ml-1 flex items-center gap-1.5">
-              <span className="flex size-6 items-center justify-center rounded-lg border border-[#C9D8E3] bg-[#EEF4F9]">
-                {job.platform === "linkedin" ? (
-                  <LinkedinLogo size={12} weight="fill" className="text-text-faint" />
-                ) : job.platform === "arbeitsagentur" ? (
-                  <Bank size={12} weight="fill" className="text-text-faint" />
-                ) : job.platform === "stepstone" ? (
-                  <Briefcase size={12} weight="fill" className="text-text-faint" />
-                ) : (
-                  <img
-                    src={`https://cdn.simpleicons.org/${platformIconSlugs[job.platform]}/94A3B8`}
-                    alt=""
-                    width={12}
-                    height={12}
-                  />
-                )}
-              </span>
-              <span className="text-[12px] text-text-faint">{platformLabels[job.platform]}</span>
+          </span>
+          <span className="flex items-center gap-2 text-text-faint">
+            {job.postedDate}
+            <span className="flex items-center" title={platformLabels[job.platform]}>
+              {job.platform === "linkedin" ? (
+                <LinkedinLogo size={13} weight="fill" />
+              ) : job.platform === "arbeitsagentur" ? (
+                <Bank size={13} weight="fill" />
+              ) : job.platform === "stepstone" ? (
+                <Briefcase size={13} weight="fill" />
+              ) : (
+                <img
+                  src={`https://cdn.simpleicons.org/${platformIconSlugs[job.platform]}/86868C`}
+                  alt={platformLabels[job.platform]}
+                  width={13}
+                  height={13}
+                />
+              )}
             </span>
-          </div>
+          </span>
         </div>
 
-        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 sm:flex sm:items-center">
+        <div className="flex items-center gap-1 xl:contents">
           <Select
+            small
+            className="mr-auto xl:mr-0"
             value={job.status ?? ""}
             onClick={(e) => e.stopPropagation()}
             onChange={(e) => {
@@ -303,35 +321,46 @@ export function JobCard({
               </option>
             ))}
           </Select>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onGenerateCoverLetter(job);
-            }}
-            aria-label="Generate cover letter"
-            className={buttonSecondary}
-          >
-            <FileText size={14} weight="bold" />
-            Cover letter
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onStatusChange(job.id, dimmed ? null : "not_interested");
-            }}
-            aria-label={dimmed ? "Restore this job" : "Not interested — hide this job"}
-            title={dimmed ? "Restore" : "Not interested"}
-            className={iconButton}
-          >
-            {dimmed ? <Eye size={16} weight="bold" /> : <EyeSlash size={16} weight="bold" />}
-          </button>
-          <CaretDown
-            size={15}
-            weight="bold"
-            className={`hidden shrink-0 text-text-faint transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)] sm:block ${expanded ? "rotate-180" : ""}`}
-          />
+          <span className="flex items-center justify-end gap-0.5">
+            <RowAction
+              label="Cover letter"
+              className="hover:text-primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onGenerateCoverLetter(job);
+              }}
+            >
+              <PencilSimpleLine size={15} />
+            </RowAction>
+            <a
+              href={job.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              aria-label="Open posting"
+              className={rowActionClass}
+            >
+              <ArrowSquareOut size={15} />
+              <RowTooltip label="Open posting" />
+            </a>
+            <RowAction
+              label={dimmed ? "Restore" : "Not interested"}
+              aria-label={dimmed ? "Restore this job" : "Not interested — hide this job"}
+              onClick={(e) => {
+                e.stopPropagation();
+                onStatusChange(job.id, dimmed ? null : "not_interested");
+              }}
+            >
+              {dimmed ? <Eye size={15} /> : <EyeSlash size={15} />}
+            </RowAction>
+            <span className={rowActionClass} aria-hidden="true">
+              <CaretDown
+                size={14}
+                weight="bold"
+                className={`transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)] ${expanded ? "rotate-180" : ""}`}
+              />
+            </span>
+          </span>
         </div>
       </div>
 
@@ -346,7 +375,7 @@ export function JobCard({
         <div className="min-h-0 overflow-hidden">
           {hasOpened && (
             <div
-              className={`border-t border-[#D7E4ED] bg-[#EEF4F9] px-4 py-5 transition-[opacity,translate] duration-300 ease-[cubic-bezier(0.2,0,0,1)] ${
+              className={`border-t border-border bg-surface-2 px-4 py-5 transition-[opacity,translate] duration-300 ease-[cubic-bezier(0.2,0,0,1)] ${
                 expanded ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
               }`}
             >

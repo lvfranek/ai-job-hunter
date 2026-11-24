@@ -97,7 +97,7 @@ export function ScoreDialog({
     >
       <div className="space-y-5 overflow-y-auto">
         <fieldset className="space-y-2">
-          <legend className="mb-1.5 text-[13px] font-medium text-[#1E2A3D]">Jobs</legend>
+          <legend className="mb-1.5 text-[13px] font-medium text-text">Jobs</legend>
           {(
             [
               ["pending", `New and outdated scores only (${pendingCount})`],
@@ -110,7 +110,7 @@ export function ScoreDialog({
                 name="score-scope"
                 checked={scope === value}
                 onChange={() => setScope(value)}
-                className="accent-[#101828]"
+                className="accent-primary"
               />
               {label}
             </label>
@@ -118,9 +118,7 @@ export function ScoreDialog({
         </fieldset>
 
         <fieldset>
-          <legend className="mb-1.5 text-[13px] font-medium text-[#1E2A3D]">
-            Skip jobs marked as
-          </legend>
+          <legend className="mb-1.5 text-[13px] font-medium text-text">Skip jobs marked as</legend>
           <div className="flex flex-wrap gap-x-5 gap-y-2.5">
             {SKIPPABLE.map((status) => (
               <Checkbox
@@ -139,7 +137,7 @@ export function ScoreDialog({
               type="checkbox"
               checked={limitAge}
               onChange={() => setLimitAge((v) => !v)}
-              className="size-4 accent-[#101828]"
+              className="size-4 accent-primary"
             />
             Skip jobs older than
           </label>
@@ -158,7 +156,7 @@ export function ScoreDialog({
 
       <div className="mt-5 flex items-center justify-between gap-3">
         <span className="text-[13px] text-text-muted">
-          <strong className="text-[#1E2A3D] tabular-nums">{jobsLabel}</strong> selected
+          <strong className="text-text tabular-nums">{jobsLabel}</strong> selected
         </span>
         <div className="flex gap-2">
           <button type="button" onClick={onClose} className={buttonSecondary}>

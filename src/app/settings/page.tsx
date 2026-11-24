@@ -167,7 +167,7 @@ export default function SettingsPage() {
   const dirty = !loading && JSON.stringify(form) !== savedSnapshot;
 
   return (
-    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0">
+    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:px-6 sm:pt-6 sm:pb-6">
       <PageHeader
         title="Scraping Settings"
         description="Adjust keywords, job boards, notifications and connections."

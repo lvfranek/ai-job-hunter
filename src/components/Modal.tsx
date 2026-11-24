@@ -27,7 +27,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#101828]/40 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -36,20 +36,20 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`flex max-h-full w-full flex-col rounded-2xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-5 shadow-[0_20px_50px_-20px_rgba(30,64,120,0.4)] ${
+        className={`flex max-h-full w-full flex-col rounded-2xl border border-border bg-surface p-5 ${
           wide ? "max-w-3xl" : "max-w-md"
         }`}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-[15px] font-semibold text-[#1E2A3D]">{title}</h2>
+            <h2 className="text-[15px] font-semibold text-text">{title}</h2>
             {description && <p className="mt-1 text-[13px] text-text-muted">{description}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-text-faint hover:text-[#1E2A3D]"
+            className="text-text-faint hover:text-text"
           >
             <X size={16} weight="bold" />
           </button>

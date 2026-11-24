@@ -12,13 +12,13 @@ import { InfoTip } from "@/components/InfoTip";
 // grey text under it.
 
 export const textInputClass =
-  "h-9 w-full rounded-xl border border-[#B9CCDA] bg-white px-3 text-[13px] text-[#1E2A3D] outline-none transition-colors placeholder:text-text-faint hover:border-[#8FA8BD] focus:border-[#101828] focus-visible:ring-2 focus-visible:ring-[#101828]/20";
+  "h-9 w-full rounded-xl border border-border-strong bg-surface px-3 text-[13px] text-text outline-none transition-colors placeholder:text-text-faint hover:border-border-hover focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
 
 export const textareaClass =
-  "w-full resize-y rounded-xl border border-[#B9CCDA] bg-white px-3 py-2.5 text-[13px] leading-relaxed text-[#1E2A3D] outline-none transition-colors placeholder:text-text-faint hover:border-[#8FA8BD] focus:border-[#101828] focus-visible:ring-2 focus-visible:ring-[#101828]/20";
+  "w-full resize-y rounded-xl border border-border-strong bg-surface px-3 py-2.5 text-[13px] leading-relaxed text-text outline-none transition-colors placeholder:text-text-faint hover:border-border-hover focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
 
 // A label, with room for an ⓘ beside it.
-const labelRowClass = "mb-1.5 flex items-center gap-1 text-[13px] font-medium text-[#1E2A3D]";
+const labelRowClass = "mb-1.5 flex items-center gap-1 text-[13px] font-medium text-text";
 
 const hintClass = "mt-1.5 space-y-1 text-[12px] leading-relaxed text-text-faint";
 
@@ -65,11 +65,10 @@ export function SettingsSection({
   action?: ReactNode;
   children: ReactNode;
 }) {
-  const card =
-    "rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-5 shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)] sm:p-6";
+  const card = "rounded-xl border border-border bg-surface p-5 sm:p-6";
   const heading = (
     <div className="flex items-center gap-1">
-      <h2 className="text-[15px] font-semibold text-[#1E2A3D]">{title}</h2>
+      <h2 className="text-[15px] font-semibold text-text">{title}</h2>
       {info && <InfoTip label={`About ${title}`}>{info}</InfoTip>}
     </div>
   );
@@ -193,7 +192,7 @@ export function SaveBar({
     <>
       {visible && <div className="h-16" aria-hidden="true" />}
       <div
-        className={`fixed inset-x-4 bottom-4 z-30 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-4 rounded-2xl bg-[#101828] py-1.5 pl-4 text-white shadow-[0_16px_36px_-10px_rgba(16,24,40,0.55)] transition-all duration-200 sm:right-4 sm:left-22 sm:max-w-[calc(100%-7.5rem)] ${
+        className={`fixed inset-x-4 bottom-4 z-30 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-4 rounded-2xl bg-popover border border-border-strong py-1.5 pl-4 text-text transition-all duration-200 sm:right-4 sm:left-22 sm:max-w-[calc(100%-7.5rem)] ${
           visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
         } ${state === "saved" || state === "saving" ? "min-h-11 pr-4" : "pr-1.5"}`}
         aria-hidden={!visible}
@@ -210,7 +209,7 @@ export function SaveBar({
           ) : state === "saved" && shownMessage === DEMO_SAVE_MESSAGE ? (
             <Info size={16} weight="fill" className="shrink-0 text-white/70" />
           ) : state === "saved" ? (
-            <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-[#101828]">
+            <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-text">
               <Check size={10} weight="bold" />
             </span>
           ) : (
@@ -237,7 +236,7 @@ export function SaveBar({
             onClick={onSave}
             disabled={!visible}
             tabIndex={visible ? 0 : -1}
-            className="inline-flex h-8 shrink-0 items-center rounded-xl bg-white px-3 text-[13px] font-medium text-[#101828] outline-none transition-colors hover:bg-[#E4EEF5] focus-visible:ring-2 focus-visible:ring-white/60 active:scale-[0.98] disabled:opacity-60"
+            className="inline-flex h-8 shrink-0 items-center rounded-xl bg-surface px-3 text-[13px] font-medium text-text outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-white/60 active:scale-[0.98] disabled:opacity-60"
           >
             {label}
           </button>

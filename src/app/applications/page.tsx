@@ -63,19 +63,16 @@ function StatusSelect({
 }
 
 function TitleLink({ row }: { row: ApplicationRow }) {
-  if (!row.url) return <span className="font-medium text-[#1E2A3D]">{row.title}</span>;
+  if (!row.url) return <span className="font-medium text-text">{row.title}</span>;
   return (
     <a
       href={row.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group inline-flex items-start gap-1 font-medium text-[#1E2A3D] hover:underline"
+      className="group inline-flex items-start gap-1 font-medium text-text hover:underline"
     >
       {row.title}
-      <ArrowSquareOut
-        size={13}
-        className="mt-0.5 shrink-0 text-text-faint group-hover:text-[#1E2A3D]"
-      />
+      <ArrowSquareOut size={13} className="mt-0.5 shrink-0 text-text-faint group-hover:text-text" />
     </a>
   );
 }
@@ -190,7 +187,7 @@ export default function ApplicationsPage() {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0">
+    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:px-6 sm:pt-6 sm:pb-6">
       <Toast message={toast} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PageHeader
@@ -222,15 +219,15 @@ export default function ApplicationsPage() {
           </div>
 
           {rows.length === 0 ? (
-            <div className="rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-6 text-[13px] text-text-muted shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)]">
-              <p className="font-medium text-[#1E2A3D]">No applications yet.</p>
+            <div className="rounded-xl border border-border bg-surface p-6 text-[13px] text-text-muted">
+              <p className="font-medium text-text">No applications yet.</p>
               <p className="mt-1">
                 Mark a job as <em>Applied</em> on the dashboard, add one by hand, or import your
                 spreadsheet: in Excel use File → Save As → CSV, then Import CSV.
               </p>
             </div>
           ) : (
-            <section className="rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)]">
+            <section className="rounded-xl border border-border bg-surface">
               {/* Desktop: table */}
               <table className="hidden w-full text-left text-[13px] md:table">
                 <thead className="text-[12px] text-text-faint">
@@ -245,7 +242,7 @@ export default function ApplicationsPage() {
                 </thead>
                 <tbody>
                   {rows.map((row) => (
-                    <tr key={row.id} className="border-t border-[#E6EEF4] align-middle">
+                    <tr key={row.id} className="border-t border-border align-middle">
                       <td className="px-5 py-2.5 whitespace-nowrap tabular-nums text-text-muted">
                         {formatAppliedDate(row.applied_at)}
                       </td>
@@ -253,7 +250,7 @@ export default function ApplicationsPage() {
                         <TitleLink row={row} />
                         <p className="text-[12px] text-text-faint">{sourceLabel(row.platform)}</p>
                       </td>
-                      <td className="px-3 py-2.5 text-[#1E2A3D]">{row.company}</td>
+                      <td className="px-3 py-2.5 text-text">{row.company}</td>
                       <td className="px-3 py-2.5">
                         <StatusSelect row={row} onChange={(s) => changeStatus(row, s)} />
                       </td>
@@ -267,7 +264,7 @@ export default function ApplicationsPage() {
               </table>
 
               {/* Mobile: cards */}
-              <ul className="divide-y divide-[#E6EEF4] md:hidden">
+              <ul className="divide-y divide-border md:hidden">
                 {rows.map((row) => (
                   <li key={row.id} className="space-y-2 p-4 text-[13px]">
                     <div>

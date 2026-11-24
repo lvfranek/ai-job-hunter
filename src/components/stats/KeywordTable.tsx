@@ -112,7 +112,7 @@ function Sparkline({ points }: { points: KeywordRunPoint[] }) {
         cy={last[1]}
         r={4}
         fill={chart.accent}
-        stroke="#ffffff"
+        stroke={chart.surface}
         strokeWidth={2}
       />
     </svg>
@@ -334,9 +334,9 @@ function KeywordDetail({
                 <th className="pb-1 text-right font-medium">Good+</th>
               </tr>
             </thead>
-            <tbody className="tabular-nums text-[#1E2A3D]">
+            <tbody className="tabular-nums text-text">
               {k.boards.map((b) => (
-                <tr key={b.portal} className="border-t border-[#E6EEF4]">
+                <tr key={b.portal} className="border-t border-border">
                   <td className="py-1">
                     {portalLabel(b.portal)}
                     {b.capHits > 0 && (
@@ -372,13 +372,13 @@ function KeywordDetail({
           <span className="align-middle">{verdictInfo[k.verdict].explain}</span>
         </p>
         <p>
-          Brought in <b className="font-semibold text-[#1E2A3D]">{k.discovered}</b> of its {k.jobs}{" "}
-          jobs first; <b className="font-semibold text-[#1E2A3D]">{k.exclusive}</b> (
+          Brought in <b className="font-semibold text-text">{k.discovered}</b> of its {k.jobs} jobs
+          first; <b className="font-semibold text-text">{k.exclusive}</b> (
           {fmtPercent(k.jobs ? k.exclusive / k.jobs : null)}) no other keyword found.
         </p>
         {k.overlap && (
           <p>
-            Most overlap with <span className="text-[#1E2A3D]">“{k.overlap.keyword}”</span>:{" "}
+            Most overlap with <span className="text-text">“{k.overlap.keyword}”</span>:{" "}
             {k.overlap.shared} shared jobs ({fmtPercent(k.jobs ? k.overlap.shared / k.jobs : null)}
             ).
           </p>
@@ -446,7 +446,7 @@ export function KeywordTable({
     <div className="relative -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       <table className="w-full min-w-[820px] text-[13px]">
         <thead>
-          <tr className="border-b border-[#D7E4ED] text-left text-[12px] text-text-faint">
+          <tr className="border-b border-border text-left text-[12px] text-text-faint">
             {columns.map((c) => (
               <th
                 key={c.key}
@@ -464,7 +464,7 @@ export function KeywordTable({
                   type="button"
                   onClick={() => toggleSort(c.key)}
                   title={c.title}
-                  className="inline-flex items-center gap-1 rounded-md hover:text-[#1E2A3D] focus-visible:outline-2 focus-visible:outline-[#101828]/30"
+                  className="inline-flex items-center gap-1 rounded-md hover:text-text focus-visible:outline-2 focus-visible:outline-black/60"
                 >
                   {c.label}
                   {sort?.key === c.key &&
@@ -490,13 +490,11 @@ export function KeywordTable({
             return (
               <Fragment key={k.keyword}>
                 <tr
-                  className={`border-b border-[#E6EEF4] ${k.active ? "" : "text-text-muted"} ${open ? "bg-[#F3F8FB]" : ""}`}
+                  className={`border-b border-border ${k.active ? "" : "text-text-muted"} ${open ? "bg-surface-2" : ""}`}
                 >
                   <td className="py-2.5 pr-3">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span
-                        className={`font-medium ${k.active ? "text-[#1E2A3D]" : "text-text-muted"}`}
-                      >
+                      <span className={`font-medium ${k.active ? "text-text" : "text-text-muted"}`}>
                         {k.keyword}
                       </span>
                       <StatusPill active={k.active} />
@@ -530,7 +528,7 @@ export function KeywordTable({
                       onClick={() => setExpanded(open ? null : k.keyword)}
                       aria-expanded={open}
                       aria-label={`${open ? "Hide" : "Show"} details for ${k.keyword}`}
-                      className="inline-flex size-7 items-center justify-center rounded-lg text-text-faint transition-colors hover:bg-[#E4EEF5] hover:text-[#1E2A3D]"
+                      className="inline-flex size-7 items-center justify-center rounded-lg text-text-faint transition-colors hover:bg-surface-hover hover:text-text"
                     >
                       <CaretDown
                         size={14}
@@ -541,7 +539,7 @@ export function KeywordTable({
                   </td>
                 </tr>
                 {open && (
-                  <tr className="border-b border-[#D7E4ED] bg-[#F3F8FB]">
+                  <tr className="border-b border-border bg-surface-2">
                     <td colSpan={columns.length + 2} className="px-3 py-4">
                       <KeywordDetail
                         k={k}

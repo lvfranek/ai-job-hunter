@@ -80,10 +80,9 @@ export function SwapKeywordMenu({
         Swap in
       </button>
       {open && (
-        <div className="mt-2 w-full max-w-80 rounded-2xl border border-[#D7E4ED] bg-white p-2 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)]">
+        <div className="mt-2 w-full max-w-80 rounded-2xl border border-border bg-surface p-2">
           <p className="px-2 pt-1 pb-2 text-[12px] text-text-muted">
-            Replace which keyword with{" "}
-            <span className="font-medium text-[#1E2A3D]">{incoming}</span>?
+            Replace which keyword with <span className="font-medium text-text">{incoming}</span>?
           </p>
           <ul>
             {candidates.map((k) => (
@@ -94,7 +93,7 @@ export function SwapKeywordMenu({
                     setOpen(false);
                     onSwap(incoming, k.keyword);
                   }}
-                  className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-[13px] text-[#1E2A3D] transition-colors hover:bg-[#E4EEF5] focus-visible:bg-[#E4EEF5] focus-visible:outline-none"
+                  className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-[13px] text-text transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
                 >
                   <span className="min-w-0 flex-1 truncate">{k.keyword}</span>
                   <span className="shrink-0 text-[11px] tabular-nums text-text-faint">

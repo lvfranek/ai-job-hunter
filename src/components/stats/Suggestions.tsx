@@ -30,10 +30,10 @@ export function Suggestions({
       {suggestions.map((s) => (
         <li
           key={s.phrase}
-          className="flex flex-col justify-between gap-3 rounded-2xl border border-[#D7E4ED] bg-white p-3.5"
+          className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-surface p-3.5"
         >
           <div>
-            <p className="text-[14px] font-medium text-[#1E2A3D]">{s.phrase}</p>
+            <p className="text-[14px] font-medium text-text">{s.phrase}</p>
             <p className="mt-0.5 text-[12px] text-text-muted">
               In <span className="tabular-nums">{s.goodJobs}</span> good matches —{" "}
               <span className="tabular-nums">{Math.round((s.goodJobs / s.jobs) * 100)}%</span> of

@@ -22,7 +22,7 @@ export function BackgroundRunsIndicator() {
 
   return (
     <div
-      className={`fixed right-4 left-4 z-20 flex flex-col gap-2 rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-4 py-3 shadow-[0_16px_40px_-12px_rgba(30,64,120,0.45)] transition-[bottom] duration-200 sm:left-auto sm:w-80 ${
+      className={`fixed right-4 left-4 z-20 flex flex-col gap-2 rounded-2xl border border-border bg-surface px-4 py-3 transition-[bottom] duration-200 sm:left-auto sm:w-80 ${
         dirty ? "bottom-20" : "bottom-4"
       }`}
     >

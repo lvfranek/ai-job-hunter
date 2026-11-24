@@ -4,31 +4,34 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
+  Briefcase,
   ChartBar,
-  ClipboardText,
-  GearSix,
+  FileText,
+  Globe,
   Lightning,
   SignOut,
+  SlidersHorizontal,
   SquaresFour,
-  Target,
-  UserCircle,
 } from "@phosphor-icons/react/dist/ssr";
 import { useUnsavedChanges } from "@/lib/unsaved-changes";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: SquaresFour },
-  { href: "/applications", label: "Applications", icon: ClipboardText },
+  { href: "/applications", label: "Applications", icon: Briefcase },
   { href: "/stats", label: "Statistics", icon: ChartBar },
-  { href: "/preferences", label: "AI Scoring Preferences", icon: Target },
-  { href: "/settings", label: "Scraping Settings", icon: GearSix },
-  { href: "/profile", label: "Cover Letter Profile", icon: UserCircle },
+  { href: "/preferences", label: "AI Scoring Preferences", icon: SlidersHorizontal },
+  { href: "/settings", label: "Scraping Settings", icon: Globe },
+  { href: "/profile", label: "Cover Letter Profile", icon: FileText },
 ];
 
-// Every control in the bar: 44px square on desktop; on a phone it shares the
-// row (flex-1, at most 44px wide) so the whole bar fits any screen width.
+// Every control in the bar: 40px square on desktop; on a phone it shares the
+// row (flex-1, at most 40px wide) so the whole bar fits any screen width.
 const controlSize =
-  "group relative flex h-11 max-w-11 min-w-0 flex-1 basis-0 items-center justify-center rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#101828]/30 max-[360px]:h-10 sm:size-11 sm:max-w-none sm:flex-none";
+  "group relative flex h-10 max-w-10 min-w-0 flex-1 basis-0 items-center justify-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:size-10 sm:max-w-none sm:flex-none";
+
+// Icons are grey and light; hover brightens and nudges them up in size.
+const iconMotion = "transition-transform duration-150 group-hover:scale-110";
 
 // Stand-in "destination" for the unsaved-changes dialog when leaving via logout.
 const LOGOUT = "logout";
@@ -55,7 +58,7 @@ function NavTooltip({
   return (
     <span
       aria-hidden="true"
-      className={`pointer-events-none absolute top-full z-50 mt-2 rounded-lg bg-[#101828] px-2.5 py-1 text-[12px] font-medium whitespace-nowrap text-white opacity-0 shadow-[0_8px_20px_-6px_rgba(16,24,40,0.45)] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 sm:top-1/2 sm:right-auto sm:left-full sm:mt-0 sm:ml-3 sm:translate-x-0 sm:-translate-y-1/2 ${tooltipAlign[align]}`}
+      className={`pointer-events-none absolute top-full z-50 mt-2 rounded-lg border border-border-strong bg-popover px-2.5 py-1 text-[12px] font-medium whitespace-nowrap text-text opacity-0 transition-[opacity,translate] duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 sm:top-1/2 sm:right-auto sm:left-full sm:mt-0 sm:ml-3 sm:-translate-x-1 sm:-translate-y-1/2 sm:group-hover:translate-x-0 sm:group-focus-visible:translate-x-0 ${tooltipAlign[align]}`}
     >
       {label}
     </span>
@@ -106,59 +109,56 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="pointer-events-none sticky top-0 z-40 flex w-full shrink-0 px-4 py-3 sm:pointer-events-auto sm:top-(--banner-h) sm:h-[calc(100dvh-var(--banner-h))] sm:w-22 sm:items-stretch sm:p-4">
-      {/* Mobile: eight controls in one row don't fit a phone at a fixed 44px, so
-          each one shrinks (flex-1, capped at 44px) and the bar always fits.
-          The nav gets six shares, one per item, so all controls stay the same size. */}
-      <div className="pointer-events-auto flex w-full items-center gap-1 rounded-[22px] border border-white/60 bg-[#F1FAFF] p-1.5 shadow-[0_8px_30px_-10px_rgba(30,64,120,0.28)] sm:flex-col sm:gap-2 sm:px-0">
-        <Link
-          href="/"
-          onClick={(e) => guardNav(e, "/")}
-          aria-label="AI Job Hunter — go to dashboard"
-          className={`${controlSize} bg-linear-to-b from-white to-[#F3F9FD] text-[#1E2A3D] shadow-[0_2px_8px_rgba(30,64,120,0.15)]`}
-        >
-          <Lightning size={18} weight="fill" />
-          <NavTooltip label="AI Job Hunter" align="start" />
-        </Link>
+    <aside className="sticky top-0 z-40 flex w-full shrink-0 border-b border-border bg-bg px-3 py-2 sm:top-(--banner-h) sm:h-[calc(100dvh-var(--banner-h))] sm:w-15 sm:flex-col sm:items-center sm:border-r sm:border-b-0 sm:px-0 sm:py-4">
+      {/* Mobile: one row across the top, each control shrinking to fit.
+          Desktop: logo on top, the pages in the middle, logout at the bottom. */}
+      <Link
+        href="/"
+        onClick={(e) => guardNav(e, "/")}
+        aria-label="AI Job Hunter — go to dashboard"
+        className={`${controlSize} sm:size-8! sm:rounded-[9px] bg-primary text-on-primary transition-colors hover:bg-primary-hover`}
+      >
+        <Lightning size={17} weight="fill" />
+        <NavTooltip label="AI Job Hunter" align="start" />
+      </Link>
 
-        <nav
-          aria-label="Main"
-          className="flex min-w-0 flex-[6_1_0%] items-center gap-1 sm:flex-none sm:flex-col sm:gap-2"
-        >
-          {navItems.map(({ href, label, icon: Icon }, i) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={(e) => guardNav(e, href)}
-                aria-current={active ? "page" : undefined}
-                aria-label={label}
-                className={`${controlSize} transition-colors ${
-                  active
-                    ? "bg-[#101828] text-white shadow-[0_4px_14px_rgba(16,24,40,0.35)]"
-                    : "text-[#5B6B7F] hover:bg-[#C9DFEC] hover:text-[#101828]"
-                }`}
-              >
-                <Icon size={18} weight={active ? "fill" : "regular"} />
-                {/* The last item sits near the right edge of a phone. */}
-                <NavTooltip label={label} align={i === navItems.length - 1 ? "end" : "center"} />
-              </Link>
-            );
-          })}
-        </nav>
+      <nav
+        aria-label="Main"
+        className="flex min-w-0 flex-[6_1_0%] items-center justify-center gap-1 sm:my-auto sm:flex-none sm:flex-col sm:gap-3.5"
+      >
+        {navItems.map(({ href, label, icon: Icon }, i) => {
+          const active = pathname === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={(e) => guardNav(e, href)}
+              aria-current={active ? "page" : undefined}
+              aria-label={label}
+              className={`${controlSize} transition-colors ${
+                active
+                  ? "text-primary after:absolute after:-bottom-2 after:left-2 after:right-2 after:h-0.5 after:bg-primary sm:after:top-1 sm:after:bottom-1 sm:after:left-auto sm:after:-right-2.5 sm:after:h-auto sm:after:w-0.5"
+                  : "text-text-faint hover:text-text"
+              }`}
+            >
+              <Icon size={21} weight="light" className={iconMotion} />
+              {/* The last item sits near the right edge of a phone. */}
+              <NavTooltip label={label} align={i === navItems.length - 1 ? "end" : "center"} />
+            </Link>
+          );
+        })}
+      </nav>
 
-        <button
-          type="button"
-          onClick={requestLogout}
-          disabled={loggingOut}
-          aria-label="Log out"
-          className={`${controlSize} ml-auto text-[#5B6B7F] transition-colors hover:bg-[#C9DFEC] hover:text-[#101828] disabled:opacity-50 sm:mt-auto sm:ml-0`}
-        >
-          <SignOut size={18} />
-          <NavTooltip label="Log out" align="end" />
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={requestLogout}
+        disabled={loggingOut}
+        aria-label="Log out"
+        className={`${controlSize} text-text-faint transition-colors hover:text-text disabled:opacity-50`}
+      >
+        <SignOut size={21} weight="light" className={iconMotion} />
+        <NavTooltip label="Log out" align="end" />
+      </button>
 
       <ConfirmDialog
         open={pendingHref !== null}

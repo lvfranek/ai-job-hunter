@@ -107,16 +107,16 @@ export default function DashboardPage() {
   // what's still in play — hidden jobs are out of the running.
   const activeJobs = jobs.filter((job) => job.status !== "not_interested");
   const tiles = [
-    { label: "Jobs found", value: jobs.length, color: "text-[#1E2A3D]" },
+    { label: "Jobs found", value: jobs.length, color: "text-text" },
     {
       label: "Very good chance",
       value: activeJobs.filter((job) => job.chance === "very_good").length,
-      color: "text-emerald-600",
+      color: "text-emerald-700",
     },
     {
       label: "Good chance",
       value: activeJobs.filter((job) => job.chance === "good").length,
-      color: "text-green-700",
+      color: "text-sky-700",
     },
   ];
 
@@ -144,25 +144,20 @@ export default function DashboardPage() {
     <main
       id="main"
       tabIndex={-1}
-      className="bg-[#DFE9F0] px-4 pt-3 pb-6 sm:min-h-screen sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0"
+      className="bg-bg px-4 pt-3 pb-6 sm:min-h-screen sm:px-6 sm:pt-6 sm:pb-6"
     >
-      <h1 className="mb-4 text-xl font-semibold tracking-tight text-[#1E2A3D] sm:text-2xl">
-        Job matches
-      </h1>
+      <h1 className="mb-4 text-xl font-semibold tracking-tight text-text">Job matches</h1>
 
-      <div className="mb-4 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-4">
+      <div className="mb-4 grid grid-cols-3 divide-x divide-border rounded-xl border border-border bg-surface sm:flex">
         {tiles.map((tile) => (
-          <div
-            key={tile.label}
-            className="w-full rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-3 py-3 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)] sm:w-44 sm:px-5 sm:py-4"
-          >
-            <p className="text-[12px] text-text-faint sm:text-[13px]">{tile.label}</p>
+          <div key={tile.label} className="min-w-0 px-3 py-2.5 sm:w-48 sm:px-4">
+            <p className="truncate text-[12px] text-text-faint">{tile.label}</p>
             {loading ? (
-              <div aria-hidden className="mt-1 flex h-8 items-center">
-                <CircleNotch size={20} weight="bold" className="animate-spin text-text-faint" />
+              <div aria-hidden className="mt-0.5 flex h-6 items-center">
+                <CircleNotch size={16} weight="bold" className="animate-spin text-text-faint" />
               </div>
             ) : (
-              <p className={`mt-1 text-2xl font-semibold tabular-nums ${tile.color}`}>
+              <p className={`mt-0.5 text-[17px] font-semibold tabular-nums ${tile.color}`}>
                 {tile.value}
               </p>
             )}

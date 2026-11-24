@@ -128,7 +128,7 @@ export default function ProfilePage() {
   const dirty = form !== null && savedSnapshot !== null && JSON.stringify(form) !== savedSnapshot;
 
   return (
-    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0">
+    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:px-6 sm:pt-6 sm:pb-6">
       <PageHeader
         title="Cover Letter Profile"
         description="Information used for generating a cover letter."
@@ -159,7 +159,9 @@ export default function ProfilePage() {
               if (file) handleFile(file);
             }}
             className={`flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-dashed px-6 py-8 text-center transition-colors ${
-              dragOver ? "border-[#8FA8BD] bg-[#E9F2F8]" : "border-[#B9CCDA] bg-[#F5F9FC]"
+              dragOver
+                ? "border-border-hover bg-surface-hover"
+                : "border-border-strong bg-surface-2"
             }`}
           >
             {parsing ? (

@@ -15,8 +15,8 @@ import { normalizeKeyword, type StatsResponse } from "@/lib/keyword-stats";
 
 function Notice({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[#C9D6E2] bg-white/70 px-4 py-3 text-[13px] text-text-muted">
-      <Info size={16} weight="fill" className="shrink-0 text-[#5B6B7F]" />
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface-2 px-4 py-3 text-[13px] text-text-muted">
+      <Info size={16} weight="fill" className="shrink-0 text-text-muted" />
       <p className="min-w-0 flex-1">{children}</p>
     </div>
   );
@@ -105,7 +105,7 @@ export default function StatsPage() {
   const paused = stats?.keywords.filter((k) => !k.active).length ?? 0;
 
   return (
-    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:pt-8 sm:pr-4 sm:pb-4 sm:pl-0">
+    <main id="main" tabIndex={-1} className="px-4 pt-3 pb-8 sm:px-6 sm:pt-6 sm:pb-6">
       <Toast message={toast} />
       <PageHeader
         title="Statistics"
@@ -121,7 +121,7 @@ export default function StatsPage() {
           {!stats.trackingReady && (
             <Notice>
               Keyword tracking isn&apos;t set up yet. Run{" "}
-              <code className="rounded bg-[#E4EEF5] px-1 text-[12px]">
+              <code className="rounded bg-surface-hover px-1 text-[12px]">
                 supabase/migrations/028_keyword_tracking.sql
               </code>{" "}
               in the Supabase SQL editor, then reload this page.

@@ -86,12 +86,12 @@ export function ImportCsvModal({
       <button
         type="button"
         onClick={downloadTemplate}
-        className="mb-3 inline-flex items-center gap-1.5 self-start text-[13px] font-medium text-[#1E2A3D] underline-offset-2 hover:underline"
+        className="mb-3 inline-flex items-center gap-1.5 self-start text-[13px] font-medium text-text underline-offset-2 hover:underline"
       >
         <DownloadSimple size={15} />
         Download CSV template
       </button>
-      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#8FA8BD] bg-white px-4 py-5 text-[13px] text-[#1E2A3D] hover:bg-[#F1F7FB]">
+      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border-hover bg-surface px-4 py-5 text-[13px] text-text hover:bg-surface-2">
         <FileArrowUp size={18} />
         {fileName ?? "Choose a .csv file"}
         <input
@@ -109,9 +109,9 @@ export function ImportCsvModal({
       {result && "rows" in result && (
         <>
           <p className="mt-3 text-[12px] text-text-faint">Columns: {result.columns.join(" · ")}</p>
-          <div className="mt-2 min-h-0 flex-1 overflow-auto rounded-xl border border-[#D5E2EB] bg-white">
+          <div className="mt-2 min-h-0 flex-1 overflow-auto rounded-xl border border-border bg-surface">
             <table className="w-full text-left text-[13px]">
-              <thead className="sticky top-0 bg-[#F1F7FB] text-[12px] text-text-faint">
+              <thead className="sticky top-0 bg-surface-2 text-[12px] text-text-faint">
                 <tr>
                   <th className="px-3 py-2 font-medium">Row</th>
                   <th className="px-3 py-2 font-medium">Date</th>
@@ -123,7 +123,7 @@ export function ImportCsvModal({
               <tbody>
                 {rows.map((row) =>
                   row.ok ? (
-                    <tr key={row.line} className="border-t border-[#E6EEF4]">
+                    <tr key={row.line} className="border-t border-border">
                       <td className="px-3 py-1.5 tabular-nums text-text-faint">{row.line}</td>
                       <td className="px-3 py-1.5 tabular-nums whitespace-nowrap">
                         {formatAppliedDate(row.value.applied_at)}
@@ -135,10 +135,7 @@ export function ImportCsvModal({
                       </td>
                     </tr>
                   ) : (
-                    <tr
-                      key={row.line}
-                      className="border-t border-[#E6EEF4] bg-rose-50 text-rose-800"
-                    >
+                    <tr key={row.line} className="border-t border-border bg-rose-50 text-rose-800">
                       <td className="px-3 py-1.5 tabular-nums">{row.line}</td>
                       <td className="px-3 py-1.5" colSpan={4}>
                         {row.error} — <span className="opacity-70">{row.raw.join(" | ")}</span>

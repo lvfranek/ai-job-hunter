@@ -3,21 +3,27 @@
 :root {
   /* Height of the demo banner, set by DemoBanner; 0 when there is none. */
   --banner-h: 0px;
-  --color-bg: #dfe9f0;
-  --color-surface: #ffffff;
-  --color-surface-hover: #e4eef5;
-  --color-border: #d7e4ed;
-  --color-border-strong: #b9ccda;
-  --color-text: #1e2a3d;
-  /* Darkened from the original #64748b/#94a3b8 to clear WCAG AA's 4.5:1 text
-     contrast requirement against --color-bg (#dfe9f0), the palette's lightest
-     surface these colors sit on. */
-  --color-text-muted: #47576a;
-  --color-text-faint: #586878;
+  color-scheme: dark;
 
-  --color-score-high: #059669;
-  --color-score-mid: #d97706;
-  --color-score-low: #dc2626;
+  /* The app is dark only: black page, near-black cards, one green accent. */
+  --color-bg: #000000;
+  --color-surface: #0c0c0d;
+  --color-surface-2: #121214;
+  --color-surface-hover: #1a1a1d;
+  --color-popover: #1f1f23;
+  --color-border: #1d1d20;
+  --color-border-strong: #2c2c31;
+  --color-border-hover: #3a3a40;
+  --color-text: #ededee;
+  --color-text-muted: #a1a1a8;
+  --color-text-faint: #86868c;
+  --color-primary: #2fd472;
+  --color-primary-hover: #4be08a;
+  --color-on-primary: #04140a;
+
+  --color-score-high: #4ade80;
+  --color-score-mid: #fbbf24;
+  --color-score-low: #f87171;
 }
 
 @theme {
@@ -27,17 +33,97 @@
      the stacked layout now holds until 950px. Every `sm:` utility in the app
      means "not mobile", so this one value moves them all together. */
   --breakpoint-sm: 950px;
+
+  /* Status colors for a dark page. The app was built light, with tints like
+     bg-rose-100 + text-rose-800 + border-rose-300. Rather than rename every
+     tint, each step is redefined for dark: 50-200 are dark fills, 300 a dim
+     border, 400-600 the bright color, 700-900 light text. */
+  --color-emerald-50: #0b1f14;
+  --color-emerald-100: #0d2e1a;
+  --color-emerald-200: #134225;
+  --color-emerald-300: #1d5e38;
+  --color-emerald-400: #34d17a;
+  --color-emerald-500: #2fc46f;
+  --color-emerald-600: #2fd472;
+  --color-emerald-700: #6ee79a;
+  --color-emerald-800: #86efac;
+  --color-emerald-900: #bbf7d0;
+
+  --color-green-50: #0c1f12;
+  --color-green-100: #10301b;
+  --color-green-200: #164226;
+  --color-green-300: #205c35;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-green-600: #22c55e;
+  --color-green-700: #7ee2a0;
+  --color-green-800: #8fe9ad;
+  --color-green-900: #c6f6d5;
+
+  --color-amber-50: #211a08;
+  --color-amber-100: #2e240a;
+  --color-amber-200: #463712;
+  --color-amber-300: #6b5317;
+  --color-amber-400: #f0b429;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #e9a23b;
+  --color-amber-700: #f6c453;
+  --color-amber-800: #f8d27a;
+  --color-amber-900: #fbe3a6;
+
+  --color-rose-50: #220f12;
+  --color-rose-100: #331519;
+  --color-rose-200: #4a1d23;
+  --color-rose-300: #6e2a33;
+  --color-rose-400: #e5566a;
+  --color-rose-500: #f43f5e;
+  --color-rose-600: #e5566a;
+  --color-rose-700: #f4919e;
+  --color-rose-800: #f7a8b2;
+  --color-rose-900: #fbcdd3;
+
+  --color-sky-50: #0b1a26;
+  --color-sky-100: #0f2536;
+  --color-sky-200: #16344b;
+  --color-sky-300: #1f4c6c;
+  --color-sky-400: #3ea8e6;
+  --color-sky-700: #8cc4f5;
+  --color-sky-800: #a7d3f8;
+  --color-sky-900: #c8e4fb;
+
+  --color-violet-50: #1a1328;
+  --color-violet-100: #241a38;
+  --color-violet-200: #33244f;
+  --color-violet-300: #4b3675;
+  --color-violet-400: #a78bfa;
+  --color-violet-700: #c4b5fd;
+  --color-violet-800: #d0c3fe;
+  --color-violet-900: #e2d9ff;
+
+  --color-slate-100: #18181b;
+  --color-slate-200: #222226;
+  --color-slate-300: #34343a;
+  --color-slate-400: #55555d;
+  --color-slate-700: #c4c4cc;
+  --color-slate-800: #d4d4da;
+  --color-slate-900: #ededee;
 }
 
 @theme inline {
   --color-bg: var(--color-bg);
   --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
   --color-surface-hover: var(--color-surface-hover);
+  --color-popover: var(--color-popover);
   --color-border: var(--color-border);
   --color-border-strong: var(--color-border-strong);
+  --color-border-hover: var(--color-border-hover);
   --color-text: var(--color-text);
   --color-text-muted: var(--color-text-muted);
   --color-text-faint: var(--color-text-faint);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-on-primary: var(--color-on-primary);
   --color-score-high: var(--color-score-high);
   --color-score-mid: var(--color-score-mid);
   --color-score-low: var(--color-score-low);

@@ -255,8 +255,8 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
                     cx={cx}
                     cy={cy}
                     r={r}
-                    fill={p.active ? chart.accent : "#ffffff"}
-                    stroke={p.active ? "#ffffff" : chart.muted}
+                    fill={p.active ? chart.accent : chart.surface}
+                    stroke={p.active ? chart.surface : chart.muted}
                     strokeWidth={2}
                     opacity={hovered && hovered !== p.keyword ? 0.45 : 1}
                   />
@@ -272,7 +272,7 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
                 fontSize={LABEL_FONT}
                 fill={chart.ink}
                 pointerEvents="none"
-                stroke="#ffffff"
+                stroke={chart.surface}
                 strokeWidth={3}
                 paintOrder="stroke"
               >
@@ -306,7 +306,14 @@ export function KeywordScatter({ keywords }: { keywords: KeywordStat[] }) {
         {hasPaused && (
           <span className="inline-flex items-center gap-1.5">
             <svg width="12" height="12" aria-hidden="true">
-              <circle cx="6" cy="6" r="4.5" fill="#ffffff" stroke={chart.muted} strokeWidth="2" />
+              <circle
+                cx="6"
+                cy="6"
+                r="4.5"
+                fill={chart.surface}
+                stroke={chart.muted}
+                strokeWidth="2"
+              />
             </svg>
             Paused keyword
           </span>

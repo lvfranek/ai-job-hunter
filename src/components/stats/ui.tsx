@@ -8,36 +8,38 @@ import { platformLabels, type Platform } from "@/lib/mock-data";
 // Shared pieces of the Statistics page: the card shell, stat tiles, the verdict
 // pill, number/date formatting and the small helpers the hand-drawn SVG charts use.
 
-// Chart tokens (the dataviz reference palette, light mode — the app has no dark theme).
+// Chart tokens for the dark theme. Green is the app's accent, so the good-match
+// charts use it; orange stays a separate magnitude (blocker share).
 export const chart = {
-  accent: "#2a78d6", // active keywords, new jobs, funnel bars
-  muted: "#898781", // paused keywords
-  context: "#d6d9dd", // "returned" context columns behind "new"
-  grid: "#e6ebf0",
-  axis: "#c3cbd3",
-  ink: "#1E2A3D",
-  inkMuted: "#586878",
+  accent: "#2fd472", // active keywords, new jobs, funnel bars
+  muted: "#6b6b72", // paused keywords
+  context: "#2a2a2f", // "returned" context columns behind "new"
+  grid: "#1d1d20",
+  axis: "#34343a",
+  ink: "#ededee",
+  inkMuted: "#a1a1a8",
+  surface: "#0c0c0d", // the card behind the charts: hollow points, outlines
 };
 
-// Sequential ramps for the heatmaps, light → dark. Blue counts good matches;
+// Sequential ramps for the heatmaps, dark → bright. Green counts good matches;
 // orange is a separate magnitude (blocker share) so the two never read as one scale.
-export const blueRamp = [
-  "#eef4fb",
-  "#cde2fb",
-  "#9ec5f4",
-  "#6da7ec",
-  "#3987e5",
-  "#256abf",
-  "#184f95",
+export const greenRamp = [
+  "#161618",
+  "#0f2a1a",
+  "#14402a",
+  "#1b5c3a",
+  "#23804e",
+  "#2fb066",
+  "#4ade80",
 ];
 export const orangeRamp = [
-  "#fbf1ec",
-  "#fde0d2",
-  "#f9bfa3",
-  "#f39b72",
-  "#eb6834",
-  "#c9501f",
-  "#a03c12",
+  "#161618",
+  "#2e1a0f",
+  "#4a2614",
+  "#6e3518",
+  "#9a4a1f",
+  "#cf6a2c",
+  "#f08a4b",
 ];
 
 /** Ramp step for value/max — step 0 is reserved for exactly zero. */
@@ -47,9 +49,9 @@ export function rampColor(ramp: string[], value: number, max: number): string {
   return ramp[Math.max(1, Math.ceil(t * (ramp.length - 1)))];
 }
 
-/** White text on the dark end of a ramp, ink on the light end. */
+/** Dark text on the bright end of a ramp, light ink on the dark end. */
 export function rampTextColor(ramp: string[], fill: string): string {
-  return ramp.indexOf(fill) >= ramp.length - 3 ? "#ffffff" : chart.ink;
+  return ramp.indexOf(fill) >= ramp.length - 2 ? "#04140a" : chart.ink;
 }
 
 export function StatsCard({
@@ -64,10 +66,10 @@ export function StatsCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-4 shadow-[0_16px_40px_-18px_rgba(30,64,120,0.35)] sm:p-6">
+    <section className="rounded-xl border border-border bg-surface p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 max-w-2xl">
-          <h2 className="text-[15px] font-semibold text-[#1E2A3D]">{title}</h2>
+          <h2 className="text-[15px] font-semibold text-text">{title}</h2>
           {description && (
             <div className="mt-1 text-[12px] leading-relaxed text-text-faint">{description}</div>
           )}
@@ -89,9 +91,9 @@ export function StatTile({
   hint?: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-white bg-linear-to-b from-white to-[#F5FAFD] px-4 py-3 shadow-[0_10px_30px_-14px_rgba(30,64,120,0.3)] sm:px-5 sm:py-4">
+    <div className="rounded-2xl border border-border bg-surface px-4 py-3 sm:px-5 sm:py-4">
       <p className="text-[13px] text-text-faint">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-[#1E2A3D]">{value}</p>
+      <p className="mt-1 text-2xl font-semibold text-text">{value}</p>
       {hint && <p className="mt-0.5 text-[12px] text-text-faint">{hint}</p>}
     </div>
   );
@@ -121,7 +123,7 @@ export const verdictInfo: Record<Verdict, { label: string; className: string; ex
   },
   new: {
     label: "Too new",
-    className: "border-[#C9D6E2] bg-[#EEF3F7] text-text-muted",
+    className: "border-border bg-surface-2 text-text-muted",
     explain: "Fewer than 3 searches so far — not enough data to judge.",
   },
 };
@@ -140,11 +142,11 @@ export function VerdictPill({ verdict }: { verdict: Verdict }) {
 
 export function StatusPill({ active }: { active: boolean }) {
   return active ? (
-    <span className="inline-flex shrink-0 items-center rounded-full bg-[#101828] px-2 py-px text-[11px] font-medium text-white">
+    <span className="inline-flex shrink-0 items-center rounded-full bg-primary px-2 py-px text-[11px] font-medium text-on-primary">
       Active
     </span>
   ) : (
-    <span className="inline-flex shrink-0 items-center rounded-full border border-dashed border-[#9AACBD] px-2 py-px text-[11px] font-medium text-text-muted">
+    <span className="inline-flex shrink-0 items-center rounded-full border border-dashed border-border-hover px-2 py-px text-[11px] font-medium text-text-muted">
       Paused
     </span>
   );
@@ -219,14 +221,14 @@ export function ChartTooltip({
   return (
     <div
       role="tooltip"
-      className="pointer-events-none absolute z-10 w-max max-w-60 -translate-x-1/2 -translate-y-full rounded-xl border border-[#D7E4ED] bg-white px-3 py-2 text-[12px] shadow-[0_12px_30px_-12px_rgba(30,64,120,0.45)]"
+      className="pointer-events-none absolute z-10 w-max max-w-60 -translate-x-1/2 -translate-y-full rounded-xl border border-border bg-surface px-3 py-2 text-[12px]"
       style={{ left: x, top: y - 10 }}
     >
-      <p className="mb-1 font-medium text-[#1E2A3D]">{title}</p>
+      <p className="mb-1 font-medium text-text">{title}</p>
       {rows.map((row) => (
         <p key={row.label} className="flex justify-between gap-4 text-text-muted">
           <span>{row.label}</span>
-          <span className="font-semibold tabular-nums text-[#1E2A3D]">{row.value}</span>
+          <span className="font-semibold tabular-nums text-text">{row.value}</span>
         </p>
       ))}
     </div>

@@ -35,7 +35,7 @@ const WORKPLACE_ACTIVE: Record<Workplace, string> = {
   onsite: "border-slate-400 bg-slate-200 text-slate-900",
 };
 
-const focusRing = "outline-none focus-visible:ring-2 focus-visible:ring-[#101828]/30";
+const focusRing = "outline-none focus-visible:ring-2 focus-visible:ring-black/60";
 
 /** How many filter groups narrow the list — the badge on the Filters button. */
 function activeGroups(filters: Filters): number {
@@ -136,7 +136,7 @@ export function FilterMenu({
         <Funnel size={14} weight={active > 0 ? "fill" : "bold"} />
         Filters
         {active > 0 && (
-          <span className="flex size-4.5 items-center justify-center rounded-full bg-[#101828] text-[10px] font-semibold text-white tabular-nums">
+          <span className="flex size-4.5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-on-primary tabular-nums">
             {active}
           </span>
         )}
@@ -146,22 +146,22 @@ export function FilterMenu({
         <>
           {/* Phone: a dimmed backdrop under a bottom sheet. */}
           <div
-            className="fixed inset-0 z-40 bg-[#101828]/30 sm:hidden"
+            className="fixed inset-0 z-40 bg-black/70 sm:hidden"
             aria-hidden="true"
             onClick={() => setOpen(false)}
           />
           <div
             role="dialog"
             aria-label="Filter jobs"
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-3xl border border-white bg-linear-to-b from-white to-[#F7FBFD] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-12px_rgba(30,64,120,0.45)] sm:absolute sm:inset-x-auto sm:right-0 sm:bottom-auto sm:top-full sm:mt-2 sm:w-88 sm:rounded-2xl sm:p-4 sm:shadow-[0_16px_40px_-12px_rgba(30,64,120,0.45)]"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-3xl border border-border bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:absolute sm:inset-x-auto sm:right-0 sm:bottom-auto sm:top-full sm:mt-2 sm:w-88 sm:rounded-2xl sm:p-4"
           >
             <div className="mb-4 flex items-center justify-between">
-              <span className="text-[15px] font-semibold text-[#1E2A3D]">Filters</span>
+              <span className="text-[15px] font-semibold text-text">Filters</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close filters"
-                className={`${focusRing} flex size-8 items-center justify-center rounded-lg text-text-faint hover:bg-[#E4EEF5] hover:text-[#1E2A3D]`}
+                className={`${focusRing} flex size-8 items-center justify-center rounded-lg text-text-faint hover:bg-surface-hover hover:text-text`}
               >
                 <X size={14} weight="bold" />
               </button>
@@ -172,7 +172,7 @@ export function FilterMenu({
                 <div
                   role="radiogroup"
                   aria-label="Minimum chance"
-                  className="grid grid-cols-4 rounded-xl border border-[#B9CCDA] bg-white p-0.5"
+                  className="grid grid-cols-4 rounded-xl border border-border-strong bg-surface p-0.5"
                 >
                   {CHANCE_OPTIONS.map((option) => {
                     const selected = filters.chance === option;
@@ -186,8 +186,8 @@ export function FilterMenu({
                         onClick={() => onChange({ chance: option })}
                         className={`${focusRing} flex h-12 flex-col items-center justify-center gap-0.5 rounded-[10px] text-[12px] font-medium transition-colors ${
                           selected
-                            ? "bg-[#101828] text-white"
-                            : "text-text-muted hover:bg-[#E4EEF5]"
+                            ? "bg-primary text-on-primary"
+                            : "text-text-muted hover:bg-surface-hover"
                         }`}
                       >
                         <span className="flex items-center gap-1 whitespace-nowrap">
@@ -220,7 +220,7 @@ export function FilterMenu({
                         className={`${focusRing} inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors ${
                           selected
                             ? WORKPLACE_ACTIVE[w]
-                            : "border-[#B9CCDA] bg-white text-[#1E2A3D] hover:border-[#8FA8BD] hover:bg-[#E4EEF5]"
+                            : "border-border-strong bg-surface text-text hover:border-border-hover hover:bg-surface-hover"
                         }`}
                       >
                         {selected && <Check size={12} weight="bold" aria-hidden="true" />}
@@ -256,7 +256,7 @@ export function FilterMenu({
                   role="switch"
                   aria-checked={filters.showHidden}
                   onClick={() => onChange({ showHidden: !filters.showHidden })}
-                  className={`${focusRing} flex w-full items-center justify-between rounded-lg text-[13px] text-[#1E2A3D]`}
+                  className={`${focusRing} flex w-full items-center justify-between rounded-lg text-[13px] text-text`}
                 >
                   <span>
                     Show hidden jobs{" "}
@@ -264,12 +264,12 @@ export function FilterMenu({
                   </span>
                   <span
                     className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-                      filters.showHidden ? "bg-[#101828]" : "bg-[#C3D3DF]"
+                      filters.showHidden ? "bg-primary" : "bg-border-strong"
                     }`}
                     aria-hidden="true"
                   >
                     <span
-                      className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow-sm transition-transform ${
+                      className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-surface shadow-sm transition-transform ${
                         filters.showHidden ? "translate-x-4" : ""
                       }`}
                     />
@@ -278,19 +278,19 @@ export function FilterMenu({
               )}
             </div>
 
-            <div className="mt-5 flex items-center justify-between gap-3 border-t border-[#D7E4ED] pt-4">
+            <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
               <button
                 type="button"
                 onClick={onReset}
                 disabled={active === 0}
-                className={`${focusRing} rounded-md text-[13px] font-medium text-text-muted hover:text-[#1E2A3D] disabled:opacity-40`}
+                className={`${focusRing} rounded-md text-[13px] font-medium text-text-muted hover:text-text disabled:opacity-40`}
               >
                 Reset
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className={`${focusRing} inline-flex h-9 items-center rounded-xl bg-[#101828] px-4 text-[13px] font-medium text-white hover:bg-[#1E293B] active:scale-[0.98]`}
+                className={`${focusRing} inline-flex h-9 items-center rounded-xl bg-primary px-4 text-[13px] font-medium text-on-primary hover:bg-primary-hover active:scale-[0.98]`}
               >
                 Show {shown} job{shown === 1 ? "" : "s"}
               </button>
@@ -341,14 +341,14 @@ export function ActiveFilters({
   if (chips.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 border-b border-[#D7E4ED] px-4 py-2">
+    <div className="flex flex-wrap items-center gap-1.5 border-b border-border px-4 py-2">
       {chips.map((chip) => (
         <button
           key={chip.label}
           type="button"
           onClick={chip.remove}
           aria-label={`Remove filter ${chip.label}`}
-          className={`${focusRing} inline-flex h-6 items-center gap-1 rounded-full bg-[#E4EEF5] pr-1.5 pl-2.5 text-[12px] font-medium text-[#1E2A3D] hover:bg-[#D3E3EE]`}
+          className={`${focusRing} inline-flex h-6 items-center gap-1 rounded-full bg-surface-hover pr-1.5 pl-2.5 text-[12px] font-medium text-text hover:bg-surface-hover`}
         >
           {chip.label}
           <X size={10} weight="bold" className="text-text-faint" />
@@ -360,7 +360,7 @@ export function ActiveFilters({
       <button
         type="button"
         onClick={onReset}
-        className={`${focusRing} ml-auto rounded-md text-[12px] font-medium text-text-muted hover:text-[#1E2A3D]`}
+        className={`${focusRing} ml-auto rounded-md text-[12px] font-medium text-text-muted hover:text-text`}
       >
         Clear all
       </button>

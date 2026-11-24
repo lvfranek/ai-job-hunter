@@ -184,7 +184,7 @@ export function ApiKeysSection({ onDirtyChange }: { onDirtyChange: (dirty: boole
         ))}
       </div>
 
-      <div className="flex items-center justify-end gap-3 border-t border-[#D7E4ED] pt-4">
+      <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
         {message && <span className="text-[13px] text-emerald-700">{message}</span>}
         <button
           type="button"

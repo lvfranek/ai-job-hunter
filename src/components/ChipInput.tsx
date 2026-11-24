@@ -35,15 +35,15 @@ export function ChipInput({
       onClick={(e) => {
         if (e.target === e.currentTarget) document.getElementById(id)?.focus();
       }}
-      className="flex min-h-10 cursor-text flex-wrap gap-1.5 rounded-xl border border-[#B9CCDA] bg-white p-1.5 transition-colors hover:border-[#8FA8BD] focus-within:border-[#101828] focus-within:ring-2 focus-within:ring-[#101828]/10"
+      className="flex min-h-10 cursor-text flex-wrap gap-1.5 rounded-xl border border-border-strong bg-surface p-1.5 transition-colors hover:border-border-hover focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10"
     >
       {values.map((value) => (
         <span
           key={value}
           className={`inline-flex h-7 items-center gap-1 rounded-[9px] pr-1 pl-2.5 text-[12.5px] font-medium ${
             soft
-              ? "border border-dashed border-[#B9CCDA] bg-[#F1F5F9] text-text-muted"
-              : "bg-[#E9F2F8] text-[#1E2A3D]"
+              ? "border border-dashed border-border-strong bg-surface-2 text-text-muted"
+              : "bg-surface-hover text-text"
           }`}
         >
           {value}
@@ -51,7 +51,7 @@ export function ChipInput({
             type="button"
             onClick={() => onChange(values.filter((v) => v !== value))}
             aria-label={`Remove ${value}`}
-            className="inline-flex size-5 items-center justify-center rounded-md text-text-muted outline-none hover:bg-[#C9DFEC] hover:text-[#101828] focus-visible:ring-2 focus-visible:ring-[#101828]/30"
+            className="inline-flex size-5 items-center justify-center rounded-md text-text-muted outline-none hover:bg-surface-hover hover:text-text focus-visible:ring-2 focus-visible:ring-black/60"
           >
             <X size={10} weight="bold" />
           </button>
@@ -71,7 +71,7 @@ export function ChipInput({
         }}
         onBlur={commit}
         placeholder={placeholder}
-        className="h-7 min-w-28 flex-1 bg-transparent px-1.5 text-[13px] text-[#1E2A3D] outline-none placeholder:text-text-faint"
+        className="h-7 min-w-28 flex-1 bg-transparent px-1.5 text-[13px] text-text outline-none placeholder:text-text-faint"
       />
     </div>
   );

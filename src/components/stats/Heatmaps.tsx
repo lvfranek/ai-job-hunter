@@ -9,7 +9,7 @@ import {
   type KeywordStat,
 } from "@/lib/keyword-stats";
 import {
-  blueRamp,
+  greenRamp,
   fmtPercent,
   orangeRamp,
   portalLabel,
@@ -89,7 +89,7 @@ export function BoardMatrix({
               <tr key={k.keyword}>
                 <th
                   scope="row"
-                  className={`pr-3 text-left text-[13px] font-medium whitespace-nowrap ${k.active ? "text-[#1E2A3D]" : "text-text-muted"}`}
+                  className={`pr-3 text-left text-[13px] font-medium whitespace-nowrap ${k.active ? "text-text" : "text-text-muted"}`}
                 >
                   {k.keyword}
                 </th>
@@ -102,8 +102,8 @@ export function BoardMatrix({
                       </td>
                     );
                   }
-                  const fill = rampColor(blueRamp, b.goodMatches, max);
-                  const color = rampTextColor(blueRamp, fill);
+                  const fill = rampColor(greenRamp, b.goodMatches, max);
+                  const color = rampTextColor(greenRamp, fill);
                   const notes = [
                     b.capHits > 0
                       ? `hit the results limit in ${b.capHits} of ${b.searches} searches`
@@ -141,7 +141,7 @@ export function BoardMatrix({
               </th>
               {boards.map((b) => (
                 <td key={b.portal} className="pt-2 text-center tabular-nums">
-                  <div className="font-medium text-[#1E2A3D]">
+                  <div className="font-medium text-text">
                     {b.goodMatches} of {b.jobs}
                   </div>
                   <div className="text-[11px]">{fmtPercent(b.goodShare)} good+</div>
@@ -151,7 +151,7 @@ export function BoardMatrix({
           </tfoot>
         </table>
       </div>
-      <RampLegend ramp={blueRamp} low="0" high={String(max)} label="Good+ chances" />
+      <RampLegend ramp={greenRamp} low="0" high={String(max)} label="Good+ chances" />
       {(hasCapHits || hasFailures) && (
         <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-text-muted">
           {hasCapHits && (
@@ -217,7 +217,7 @@ export function BlockerMatrix({ keywords }: { keywords: KeywordStat[] }) {
               <tr key={k.keyword}>
                 <th
                   scope="row"
-                  className={`pr-3 text-left text-[13px] font-medium whitespace-nowrap ${k.active ? "text-[#1E2A3D]" : "text-text-muted"}`}
+                  className={`pr-3 text-left text-[13px] font-medium whitespace-nowrap ${k.active ? "text-text" : "text-text-muted"}`}
                 >
                   {k.keyword}
                   <span className="ml-1.5 text-[11px] font-normal text-text-faint">

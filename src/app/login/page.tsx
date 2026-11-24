@@ -54,10 +54,10 @@ function LoginForm() {
     <main id="main" tabIndex={-1} className="flex min-h-screen items-center justify-center px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-5 rounded-[28px] border border-white/60 bg-[#F1FAFF] p-6 sm:p-8 shadow-[0_8px_30px_-10px_rgba(30,64,120,0.28)]"
+        className="w-full max-w-sm space-y-5 rounded-[28px] border border-border bg-surface-2 p-6 sm:p-8"
       >
         <div className="flex flex-col items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl bg-linear-to-b from-white to-[#F3F9FD] text-[#1E2A3D] shadow-[0_2px_8px_rgba(30,64,120,0.15)]">
+          <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-on-primary">
             <Lightning size={18} weight="fill" />
           </span>
           <h1 className="text-[15px] font-semibold text-text">AI Job Hunter</h1>
@@ -80,7 +80,7 @@ function LoginForm() {
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+            className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-primary"
           />
         </div>
 
@@ -97,14 +97,14 @@ function LoginForm() {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-[#101828]"
+            className="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-[13px] text-text outline-none focus:border-primary"
           />
         </div>
 
         <button
           type="submit"
           disabled={submitting || !email || !password}
-          className="w-full rounded-xl bg-[#101828] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#1E293B] active:scale-[0.98] disabled:opacity-50"
+          className="w-full rounded-xl bg-primary px-4 py-2 text-[13px] font-medium text-on-primary transition-colors hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
         >
           {submitting ? "Signing in…" : "Sign in"}
         </button>
@@ -120,7 +120,7 @@ function LoginForm() {
             type="button"
             onClick={enterDemo}
             disabled={demoLoading || submitting}
-            className="w-full rounded-xl border border-border-strong bg-surface px-4 py-2 text-[13px] font-medium text-text transition-colors hover:bg-[#E4EEF5] active:scale-[0.98] disabled:opacity-50"
+            className="w-full rounded-xl border border-border-strong bg-surface px-4 py-2 text-[13px] font-medium text-text transition-colors hover:bg-surface-hover active:scale-[0.98] disabled:opacity-50"
           >
             {demoLoading ? "Loading demo…" : "Explore the demo"}
           </button>
